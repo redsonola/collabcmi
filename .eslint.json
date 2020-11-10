@@ -1,0 +1,13 @@
+{
+    "eslintConfig": {
+        "rules": {
+            "semi": [
+                "error",
+                "always"
+            ],
+            "no-undef": [
+                "error"
+            ]
+        }
+    }
+}

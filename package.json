@@ -1,0 +1,77 @@
+{
+  "name": "space-between",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@craco/craco": "^5.7.0",
+    "@storybook/addon-console": "^1.2.2",
+    "@tensorflow-models/posenet": "^2.2.1",
+    "@tensorflow/tfjs": "^2.6.0",
+    "@tensorflow/tfjs-core": "^2.6.0",
+    "@testing-library/jest-dom": "^4.2.4",
+    "@testing-library/react": "^9.5.0",
+    "@testing-library/user-event": "^7.2.1",
+    "@tonejs/midi": "^2.0.25",
+    "@tsconfig/svelte": "^1.0.10",
+    "@types/jest": "^24.9.1",
+    "@types/mathjs": "^6.0.6",
+    "@types/node": "^14.11.10",
+    "abr-xcorr": "^1.0.0",
+    "babel-polyfill": "^6.26.0",
+    "compute-cosine-similarity": "^1.0.0",
+    "compute-covariance": "^1.0.1",
+    "compute-l2norm": "^1.1.0",
+    "mathjs": "^7.5.1",
+    "mermaid": "^8.8.2",
+    "pcm-util": "^3.0.0",
+    "peerjs": "^1.3.1",
+    "pngjs": "^5.0.0",
+    "ramda": "^0.27.1",
+    "react-scripts": "^3.4.3",
+    "three": "^0.120.1",
+    "tone": "14.7.0",
+    "typescript": "beta",
+    "uuid": "^8.3.1"
+  },
+  "scripts": {
+    "mkcert": "mkcert -install && mkcert localhost",
+    "start": "HTTPS=true SSL_CRT_FILE=localhost.pem craco start",
+    "build": "craco build",
+    "test": "craco test",
+    "eject": "craco eject",
+    "storybook": "start-storybook --https --ssl-cert localhost.pem --ssl-key localhost-key.pem -p 6006 -s public",
+    "build-storybook": "build-storybook -o build/storybook",
+    "peer-server": "node ./scripts/devPeerServer"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@babel/core": "^7.12.3",
+    "@storybook/addon-actions": "^6.0.26",
+    "@storybook/addon-essentials": "^6.0.26",
+    "@storybook/addon-links": "^6.0.26",
+    "@storybook/node-logger": "^6.0.26",
+    "@storybook/svelte": "^6.0.26",
+    "anysort": "^2.0.0",
+    "babel-loader": "^8.1.0",
+    "body-parser": "^1.19.0",
+    "peer": "^0.5.3",
+    "svelte": "^3.29.0",
+    "svelte-check": "^1.0.60",
+    "svelte-loader": "^2.13.6",
+    "svelte-preprocess": "^4.5.1"
+  }
+}
