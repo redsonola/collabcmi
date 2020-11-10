@@ -2,7 +2,9 @@
 
 Using nom as a package manager. 
 First Install nvm (node version manager)
+
 https://github.com/nvm-sh/nvm#install--update-script
+
 nvm install 15.1.0
 
 Install mkcert
