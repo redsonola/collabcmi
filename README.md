@@ -20,8 +20,10 @@ Then, to run/build:
 npm run start
 
 Main js file is: App2.svelte
+goLoop(async ()) -- is the main update function. motion analysis measures are then updated in the keypointsUpdated() function called there.
+the three?.dispatch(etc. etc.) is calling the threejs drawing code.
 
-participant.js: holds all the synchroncity measures and data for each participant. Only the calling participant (participant) has the synch info. 
+participant.ts: holds all the synchroncity measures and data for each participant. Only the calling participant (participant) has the synch info. 
 
 Note: Currently, it still has all the code for my audiovisual instrument so it will play a bit of music when it is opened if you move enough.
 
