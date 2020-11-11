@@ -66,7 +66,7 @@ export class AverageFilteredKeyPoints
         this.maxDy = 0;
 
         //for how many distance values to keep. need for the variance
-        this.distanceOutBufferSize = 8; 
+        this.distanceOutBufferSize = avgSz; //try this, perhaps it is a ratio with this, or need to send in the fps
         this.windowedVarianceDistance = [];
 
         for(let i=0; i<PoseIndex.posePointCount; i++)
@@ -113,7 +113,8 @@ export class AverageFilteredKeyPoints
             this.xDx[i].setWindowSize(sz, buffer2Size); 
             this.yDx[i].setWindowSize(sz, buffer2Size); 
 
-            this.distance[i].setWindowSize(sz, buffer2Size); 
+            this.distanceOutBufferSize = sz/2;
+            this.distance[i].setWindowSize(sz, this.distanceOutBufferSize); //fix?
             this.windowedVarianceDistance[i].setWindowSize(sz, buffer2Size); 
         }
     }
@@ -153,10 +154,7 @@ export class AverageFilteredKeyPoints
                     let dist = Math.sqrt(distb4Sqrt); 
 
                     this.distance[i].update( dist );
-                        this.windowedVarianceDistance[i].update(math.variance( this.distance[i].getOutputContents() )); 
-                
-
-
+                    this.windowedVarianceDistance[i].update(math.variance( this.distance[i].getOutputContents() )); 
                 }   
             }
             else 

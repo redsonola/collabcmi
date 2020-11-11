@@ -17,6 +17,7 @@
   import ScoreBar from './scoreBar.svelte';
   import * as Scale from '../scale'
   import { LoadMidiFilePlayground } from '../midiConversion'
+  import { FPSTracker } from '../fpsMeasure'
   
   const webcamVideo = videoSubscription();
   const videoSources = [
@@ -47,6 +48,7 @@
   let participant = new Participant();
   let friendParticipant = new Participant();
   participant.addFriendParticipant(friendParticipant); 
+  let fpsTracker = new FPSTracker(); 
 
   //todo: move
   participant.setPoseSamplesRate();
@@ -87,6 +89,10 @@
       pose,
       size
     })
+
+    //set the current sample rate -- to adjust buffer/window sizes
+    participant.setPoseSamplesRate( fpsTracker.getFPS() );
+    //friendParticipant.setPoseSamplesRate(); //? need to send via peer -- TODO!
 
     //lol, refactor soon. 
     windowedVarianceHead = participant.getAverageBodyPartWindowedVarianceFromIndex(0);
@@ -316,6 +322,7 @@
     goLoop(async () => {
       if (stopped) return goLoop.STOP_LOOP;
       if (!myId || !posenet) return sleep();
+      fpsTracker.refreshLoop();
 
       const pose = await posenet.getPose();
       const size = posenet.getSize();
@@ -364,18 +371,6 @@
   }
 </style>
 
-<canvas bind:this={canvas}
-  style={`width: 100%; height: 100vh`} />
-
-<div class="callPanel">
-  {#if peerIds.length === 0 && idToCall === null}
-    <Call myId={myId} />
-  {:else if !myId}
-    Preparing to answer<br />
-    {idToCall}
-  {/if}
-</div>
-
 <DebugPanel messages={messages} myId={myId} peerConnections={peerConnections}>
   <!--
     anything passed in here will be in the Passed in tab
@@ -401,3 +396,15 @@
 
   <PrintPose keypoints={corrData} />
 </DebugPanel>
+
+<canvas bind:this={canvas}
+  style={`width: 100%; height: 100vh`} />
+
+<div class="callPanel">
+  {#if peerIds.length === 0 && idToCall === null}
+    <Call myId={myId} />
+  {:else if !myId}
+    Preparing to answer<br />
+    {idToCall}
+  {/if}
+</div>

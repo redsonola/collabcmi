@@ -847,6 +847,9 @@ export class Participant {
     //this also updates the buffers & returns the average. gah kind of messy need to refactor. 
     getHighestAvgXCorrAcrossBodyParts(minConfidence : number = 0.35) : number
     {
+        //perhaps use a mix of total body & partial. I felt like when my whole body was moving, I wanted it to do more still, 
+        //than if it was just one body part
+
         let bodyParts : number[] = [];
         bodyParts.push( this.getTorsoXCorrSynchronicity( minConfidence ) ); 
         bodyParts.push( this.getHeadXCorrSynchronicity( minConfidence ) ); 
@@ -943,7 +946,7 @@ export class Participant {
 
     getAverageBodyPartWindowedVarianceFromIndex( index: number, minConfidence : number = 0.3 ) : number
     {
-        let maxWindowedVarTestedMaximums = [10, 10, 10, 10, 10, 10 ]; //just from one session -- TODO: find better maxes.
+        let maxWindowedVarTestedMaximums = [2, 3, 4, 4, 3, 3 ]; //just from one session -- TODO: find better maxes.
 
         let winvar = this.getAverageBodyPartWindowedVariance( PoseIndex.bodyPartArray[index], minConfidence );
         winvar = Scale.linear_scale(winvar, 0, maxWindowedVarTestedMaximums[index], 0, 1) ; 
