@@ -19,9 +19,8 @@ npm run mkcert
 Then, to run/build:
 npm run start
 
-Main js file is: App2.svelte
-goLoop(async ()) -- is the main update function. motion analysis measures are then updated in the keypointsUpdated() function called there.
-the three?.dispatch(etc. etc.) is calling the threejs drawing code.
+Main js file is: 'App2.svelte'. 
+goLoop(async ()) -- is the main update function, calling the keypointsUpdated() function. In keypointsUpdated, motion analysis measures get updated & inside also the three?.dispatch(etc. etc.) is calling the threejs drawing code.
 
 participant.ts: holds all the synchroncity measures and data for each participant. Only the calling participant (participant) has the synch info. 
 
