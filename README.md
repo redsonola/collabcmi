@@ -22,7 +22,7 @@ npm run start
 Main js file is: 'App2.svelte'. 
 goLoop(async ()) -- is the main update function, calling the keypointsUpdated() function. In keypointsUpdated, motion analysis measures get updated & inside also the three?.dispatch(etc. etc.) is calling the threejs drawing code.
 
-drawthreejs.ts -- has all current drawing code
+drawthreejs.ts has drawing code & also in the folder /threejs has more drawing code (eg. for skeleton & video)
 
 participant.ts: holds all the synchroncity measures and data for each participant. Only the calling participant (participant) has the synch info. 
 
