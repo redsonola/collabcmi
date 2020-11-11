@@ -13,6 +13,7 @@ If you have homebrew, which I recommend.
 
 Then, on the command-line:
 npm install
+
 npm run mkcert
 
 Then, to run/build:
