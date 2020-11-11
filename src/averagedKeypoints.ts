@@ -66,7 +66,7 @@ export class AverageFilteredKeyPoints
         this.maxDy = 0;
 
         //for how many distance values to keep. need for the variance
-        this.distanceOutBufferSize = 12; 
+        this.distanceOutBufferSize = 8; 
         this.windowedVarianceDistance = [];
 
         for(let i=0; i<PoseIndex.posePointCount; i++)
@@ -86,7 +86,7 @@ export class AverageFilteredKeyPoints
             this.scaledxDx.push(new Derivative(avgSz, avgOutBufferSize)); 
             this.scaledyDx.push(new Derivative(avgSz, avgOutBufferSize));
 
-            this.windowedVarianceDistance.push(new AveragingFilter(32, avgOutBufferSize)); //fix
+            this.windowedVarianceDistance.push(new AveragingFilter(avgSz, avgOutBufferSize)); //fix
         }
 
     }

@@ -48,6 +48,10 @@
   let friendParticipant = new Participant();
   participant.addFriendParticipant(friendParticipant); 
 
+  //todo: move
+  participant.setPoseSamplesRate();
+  friendParticipant.setPoseSamplesRate(); 
+
   let corrData: Keypoint[] = [];
   let matchScore = 0;
   let xCorrScore = 0;
@@ -85,16 +89,17 @@
     })
 
     //lol, refactor soon. 
-    windowedVarScore = participant.getMaxBodyPartWindowedVariance(); 
     windowedVarianceHead = participant.getAverageBodyPartWindowedVarianceFromIndex(0);
     windowedVarianceTorso = participant.getAverageBodyPartWindowedVarianceFromIndex(1);
     windowedVarianceLeftArm = participant.getAverageBodyPartWindowedVarianceFromIndex(2);
     windowedVarianceRightArm = participant.getAverageBodyPartWindowedVarianceFromIndex(3);
     windowedVarianceLeftLeg = participant.getAverageBodyPartWindowedVarianceFromIndex(4);
     windowedVarianceRightLeg=  participant.getAverageBodyPartWindowedVarianceFromIndex(5);
+    windowedVarScore = participant.getMaxBodyPartWindowedVariance(); 
+
 
     try {
-      participant.xCorrPositions( friendParticipant ); //update xcorr for position
+      // participant.xCorrPositions( friendParticipant ); //update xcorr for position
       participant.xCorrDistance( friendParticipant ); //update xcorr velocity/distance
       participant.updatePoseSimilarity( friendParticipant ); 
 

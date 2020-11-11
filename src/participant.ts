@@ -13,7 +13,7 @@ import * as Scale from './scale'
 
 /* TODO:
 
-1. Different ways of combining x & y values? 2d Xcorr? 8/12/2020-- note: tried fisher's z to combine them buuut THAT sucked.
+1. Different ways of combining x & y values? 2d Xcorr? 8/12/2020-- note: tried fisher's z to combine them buuut THAT sucked. simple avg. better #$%^&*
 2. Different ways of combining max & lag.
 
 */
@@ -85,11 +85,12 @@ export class Participant {
 
     maxVar : number[]; //the max variance we have encountered for each body part
     maxXCorrSkeleton : AveragingFilter;
+    maxVarAvg  : AveragingFilter;
 
 
 
     constructor() {
-        this.windowSize = 4; //should test different window sizes.
+        this.windowSize = 16; //should test different window sizes.
 
         this.keyPointBuffer = new CircularBuffer(this.windowSize);
 
@@ -124,13 +125,14 @@ export class Participant {
          this.dxCorriMaxMAX = 0;
          this.dxCorriMaxMIN = 1;
 
-         this.poseSampleRate = 20; //default rate from testing on my machine. mas o menos ahahah need to fix this
+         this.poseSampleRate = 16; //default rate from testing on my machine. mas o menos ahahah need to fix this
 
          this.avgKeyPoints = new AverageFilteredKeyPoints(); 
 
 
          this.maxVar = [];
          this.maxXCorrSkeleton = new AveragingFilter(); 
+         this.maxVarAvg = new AveragingFilter();
 
          for(let i=0; i<PoseIndex.bodyPartArray.length; i++)
          {
@@ -205,7 +207,8 @@ export class Participant {
     }
 
     //per second -- vary the window size with the samplerate
-    setPoseSamplesRate( sps : number  ) : void
+    //TODO: need to measure samplerate again & change all values accordingly. Also fix some hardcoded shit in the AveragingKeypoints whatever class
+    setPoseSamplesRate( sps : number = 32  ) : void
     {
         this.poseSampleRate = sps; 
         
@@ -224,6 +227,8 @@ export class Participant {
             this.poseAnglesDx[i].setWindowSize( 12, this.windowSize );
         }
         this.avgKeyPoints.setWindowSize(this.keyPointsBufferSize, this.windowSize); 
+        this.maxXCorrSkeleton.setWindowSize(this.windowSize);
+        this.maxVarAvg.setWindowSize(this.windowSize/2, 1);
 
 
     }
@@ -242,7 +247,7 @@ export class Participant {
         return this.matchScore;
     }
 
-    //pretty sure this is wrong.
+    //pretty sure this is wrong. don't use.
     nearestPowerOf2(n : number) : number
     {
         let count = 0; 
@@ -411,149 +416,155 @@ export class Participant {
     }
 
     //this gets the cross-covariance btw each a window of values, in the rescaled (but not L2 normalized) positional data
-    xCorrPositions( otherParticipant: Participant  ): void
-    {
-        //TODO: fix this is not going to work need to use an actual buffer not just current keypoints
-        let other  = otherParticipant.getKeyPointBuffer();
-        let me = this.getKeyPointBuffer();
+    //this was SUCKY so it is depreciated & would need to be updated to run properly
+    // xCorrPositions( otherParticipant: Participant  ): void
+    // {
+    //     //TODO: fix this is not going to work need to use an actual buffer not just current keypoints
+    //     let other  = otherParticipant.getKeyPointBuffer();
+    //     let me = this.getKeyPointBuffer();
 
-        let sz = Math.min(me.length, other.length); //take the lowest sampling rate as the window for comparison
-        if( sz < this.windowSize ) return; 
-        sz = this.windowSize; //force sampling to window size, jesus.
-        // (window as any).windowSizeOtherParticipant = sz;
-        // (window as any).windowSizeParticipant = this.windowSize;
+    //     let sz = Math.min(me.length, other.length); //take the lowest sampling rate as the window for comparison
+    //     if( sz < this.windowSize ) return; 
+    //     sz = this.windowSize; //force sampling to window size, jesus.
+    //     // (window as any).windowSizeOtherParticipant = sz;
+    //     // (window as any).windowSizeParticipant = this.windowSize;
 
-        //take the sample size
-        other = other.slice(other.length-sz, other.length); 
-        me = me.slice(me.length-sz, me.length); 
+    //     //take the sample size
+    //     other = other.slice(other.length-sz, other.length); 
+    //     me = me.slice(me.length-sz, me.length); 
 
-        // (window as any).other = other;
+    //     // (window as any).other = other;
 
-        let otherNorm : any[] = [];
-        let meNorm : any[] = [];
+    //     let otherNorm : any[] = [];
+    //     let meNorm : any[] = [];
 
-        for( let i=0; i<sz; i++ )
-        {
-             otherNorm.push(PoseMatch.reScaleTo1(other[i], otherParticipant.getWidth(), otherParticipant.getHeight()));
-             meNorm.push(PoseMatch.reScaleTo1(me[i], this.getWidth(), this.getHeight()));
-        }
+    //     for( let i=0; i<sz; i++ )
+    //     {
+    //          otherNorm.push(PoseMatch.reScaleTo1(other[i], otherParticipant.getWidth(), otherParticipant.getHeight()));
+    //          meNorm.push(PoseMatch.reScaleTo1(me[i], this.getWidth(), this.getHeight()));
+    //     }
 
-        let buffermeX : any[] = [];
-        let bufferotherX : any[] = [];
-        let buffermeY : any[] = [];
-        let bufferotherY : any[] = [];
-        for(let j=0; j<otherNorm[0].length; j++)
-        {
-            let bufmeX : number[] = [];
-            let bufotherX : number[] = [];
-            let bufmeY : number[] = [];
-            let bufotherY : number[] = [];
+    //     let buffermeX : any[] = [];
+    //     let bufferotherX : any[] = [];
+    //     let buffermeY : any[] = [];
+    //     let bufferotherY : any[] = [];
+    //     for(let j=0; j<otherNorm[0].length; j++)
+    //     {
+    //         let bufmeX : number[] = [];
+    //         let bufotherX : number[] = [];
+    //         let bufmeY : number[] = [];
+    //         let bufotherY : number[] = [];
 
-             for (let i=0; i<otherNorm.length; i++)
-             {
-                bufmeY.push(meNorm[i][j].position.y * 256.0);
-                bufmeX.push(meNorm[i][j].position.x * 256.0);
+    //          for (let i=0; i<otherNorm.length; i++)
+    //          {
+    //             bufmeY.push(meNorm[i][j].position.y * 256.0);
+    //             bufmeX.push(meNorm[i][j].position.x * 256.0);
 
-                bufotherY.push(otherNorm[i][j].position.y * 256.0);
-                bufotherX.push(otherNorm[i][j].position.x * 256.0 );
-             }
-            buffermeX.push(bufmeX);
-            bufferotherX.push(bufotherX);
-            buffermeY.push(bufmeY);
-            bufferotherY.push(bufotherY);
-        }
+    //             bufotherY.push(otherNorm[i][j].position.y * 256.0);
+    //             bufotherX.push(otherNorm[i][j].position.x * 256.0 );
+    //          }
+    //         buffermeX.push(bufmeX);
+    //         bufferotherX.push(bufotherX);
+    //         buffermeY.push(bufmeY);
+    //         bufferotherY.push(bufotherY);
+    //     }
 
-        for( let i=0; i<buffermeX.length; i++ )
-        {
-            const sig1 = Buffer.from( buffermeX[i] );
-            const sig2 = Buffer.from( bufferotherX[i] );
+    //     for( let i=0; i<buffermeX.length; i++ )
+    //     {
+    //         const sig1 = Buffer.from( buffermeX[i] );
+    //         const sig2 = Buffer.from( bufferotherX[i] );
 
-            const sig3 = Buffer.from( buffermeY[i] );
-            const sig4 = Buffer.from( bufferotherY[i] );
+    //         const sig3 = Buffer.from( buffermeY[i] );
+    //         const sig4 = Buffer.from( bufferotherY[i] );
 
-            if(this.getAvgScore(i) >= this.minConfidenceScore && otherParticipant.getAvgScore(i) >= this.minConfidenceScore )
-            {
+    //         if(this.getAvgScore(i) >= this.minConfidenceScore && otherParticipant.getAvgScore(i) >= this.minConfidenceScore )
+    //         {
 
-                let xcorr_out = XCorr.Xcorr(sig1, sig2);
-                if( !isNaN(xcorr_out.xcorrMax)  )
-                {
-                    this.xcorrMaxPos[i].update(xcorr_out.xcorrMax);
-                }
-                else 
-                {
-                    this.xcorrMaxPos[i].update(-100);
-                }
-                this.xcorriMaxPos[i].update(xcorr_out.iMax); 
+    //             let xcorr_out = XCorr.Xcorr(sig1, sig2);
+    //             if( !isNaN(xcorr_out.xcorrMax)  )
+    //             {
+    //                 this.xcorrMaxPos[i].update(xcorr_out.xcorrMax);
+    //             }
+    //             else 
+    //             {
+    //                 this.xcorrMaxPos[i].update(-100);
+    //             }
+    //             this.xcorriMaxPos[i].update(xcorr_out.iMax); 
 
-                let xcorr_out2 = XCorr.Xcorr(sig3, sig4);
-                if( !isNaN(xcorr_out2.xcorrMax)  )
-                {
-                    this.xcorrMaxPosY[i].update(xcorr_out2.xcorrMax);
-                }
-                else 
-                {
-                    this.xcorrMaxPosY[i].update(-100);
-                }
-                this.xcorriMaxPos[i].update(xcorr_out2.iMax); 
-            }
-            else 
-            {
-                //zero values out for low confidence scores.
-                this.xcorrMaxPos[i].update(-1); 
-                this.xcorriMaxPos[i].update(0); 
-            }
-        }  
+    //             let xcorr_out2 = XCorr.Xcorr(sig3, sig4);
+    //             if( !isNaN(xcorr_out2.xcorrMax)  )
+    //             {
+    //                 this.xcorrMaxPosY[i].update(xcorr_out2.xcorrMax);
+    //             }
+    //             else 
+    //             {
+    //                 this.xcorrMaxPosY[i].update(-100);
+    //             }
+    //             this.xcorriMaxPos[i].update(xcorr_out2.iMax); 
+    //         }
+    //         else 
+    //         {
+    //             //zero values out for low confidence scores.
+    //             this.xcorrMaxPos[i].update(-1); 
+    //             this.xcorriMaxPos[i].update(0); 
+    //         }
+    //     }  
 
-        //TODO: this  version of synchronity later now that things work
-        // for( let i=0; i<sz; i++ )
-        // {
-        //      otherNorm.push(PoseMatch.scaleAndL2Norm(other[i], otherParticipant.getWidth(), otherParticipant.getHeight()));
-        //      meNorm.push(PoseMatch.scaleAndL2Norm(me[i], this.getWidth(), this.getHeight()));
-        // }
+    //     //TODO: this  version of synchronity later now that things work
+    //     // for( let i=0; i<sz; i++ )
+    //     // {
+    //     //      otherNorm.push(PoseMatch.scaleAndL2Norm(other[i], otherParticipant.getWidth(), otherParticipant.getHeight()));
+    //     //      meNorm.push(PoseMatch.scaleAndL2Norm(me[i], this.getWidth(), this.getHeight()));
+    //     // }
 
-        // let buffermeX : any[] = [];
-        // let bufferotherX : any[] = [];
-        // let buffermeY : any[] = [];
-        // let bufferotherY : any[] = [];
-        // for(let j=0; j<otherNorm[0].length; j+=2)
-        // {
-        //     let bufmeX : number[] = [];
-        //     let bufotherX : number[] = [];
-        //     let bufmeY : number[] = [];
-        //     let bufotherY : number[] = [];
+    //     // let buffermeX : any[] = [];
+    //     // let bufferotherX : any[] = [];
+    //     // let buffermeY : any[] = [];
+    //     // let bufferotherY : any[] = [];
+    //     // for(let j=0; j<otherNorm[0].length; j+=2)
+    //     // {
+    //     //     let bufmeX : number[] = [];
+    //     //     let bufotherX : number[] = [];
+    //     //     let bufmeY : number[] = [];
+    //     //     let bufotherY : number[] = [];
 
-        //     for (let i=0; i<otherNorm.length; i++)
-        //     {
-        //         bufmeY.push(meNorm[i][j]);
-        //         bufmeX.push(meNorm[i][j+1]);
+    //     //     for (let i=0; i<otherNorm.length; i++)
+    //     //     {
+    //     //         bufmeY.push(meNorm[i][j]);
+    //     //         bufmeX.push(meNorm[i][j+1]);
 
-        //         bufotherY.push(otherNorm[i][j]);
-        //         bufotherX.push(otherNorm[i][j+1]);
-        //     }
-        //     buffermeX.push(bufmeX);
-        //     bufferotherX.push(bufotherX);
-        //     buffermeY.push(bufmeY);
-        //     bufferotherY.push(bufotherY);
-        // }
+    //     //         bufotherY.push(otherNorm[i][j]);
+    //     //         bufotherX.push(otherNorm[i][j+1]);
+    //     //     }
+    //     //     buffermeX.push(bufmeX);
+    //     //     bufferotherX.push(bufotherX);
+    //     //     buffermeY.push(bufmeY);
+    //     //     bufferotherY.push(bufotherY);
+    //     // }
 
-        // for( let i=0; i<buffermeX.length; i++ )
-        // {
-        //     const sig1 = Buffer.from( buffermeX[i] );
-        //     const sig2 = Buffer.from( bufferotherX[i] );
+    //     // for( let i=0; i<buffermeX.length; i++ )
+    //     // {
+    //     //     const sig1 = Buffer.from( buffermeX[i] );
+    //     //     const sig2 = Buffer.from( bufferotherX[i] );
 
-        //     let xcorr_out = XCorr.Xcorr(sig1, sig2);
-        //     if( !isNaN(xcorr_out.xcorrMax)  )
-        //     {
-        //         this.xcorrMaxPos[i].update(xcorr_out.xcorrMax);
-        //     }
-        //     else 
-        //     {
-        //         this.xcorrMaxPos[i].update(-100);
-        //     }
-        //     this.xcorriMaxPos[i].update(xcorr_out.iMax); 
-        // }  
+    //     //     let xcorr_out = XCorr.Xcorr(sig1, sig2);
+    //     //     if( !isNaN(xcorr_out.xcorrMax)  )
+    //     //     {
+    //     //         this.xcorrMaxPos[i].update(xcorr_out.xcorrMax);
+    //     //     }
+    //     //     else 
+    //     //     {
+    //     //         this.xcorrMaxPos[i].update(-100);
+    //     //     }
+    //     //     this.xcorriMaxPos[i].update(xcorr_out.iMax); 
+    //     // }  
         
 
+    // }
+
+    getWindowSize() : number
+    {
+        return this.windowSize;
     }
     //this finds the cross-correlation btw velocities (rate of change of the positions)
     //a problem with this measure is that it is very sensitive to movement (obv) and no movement == no correlation.
@@ -591,6 +602,7 @@ export class Participant {
             otherArrayY.push(otherY[i].getOutputContents(sz));
             myArrayY.push(meY[i].getOutputContents(sz));
         }
+
 
 
         for (let i: number = 0; i < this.xcorrMaxPositionDX.length; i++) {
@@ -800,47 +812,48 @@ export class Participant {
         return this.keyPointBuffer.length();
     }
 
-    getAverageBodyPartXCorrSynchronicity( bodyPartIndices: number[] ) : number
-    {
-        let sum : number = 0; 
-        for(let i = 0 ; i<bodyPartIndices.length; i++)
-        {
-            sum += this.getXCorrPos(bodyPartIndices[i]); 
-        } 
+    // getAverageBodyPartXCorrSynchronicity( bodyPartIndices: number[], minConfidence: number ) : number
+    // {
+    //     let sum : number = 0; 
+    //     for(let i = 0 ; i<bodyPartIndices.length; i++)
+    //     {
+    //         sum += this.getXCorrPos(bodyPartIndices[i]); 
+    //     } 
 
-        return sum/bodyPartIndices.length;
-    }
+    //     return sum/bodyPartIndices.length;
+    // }
+
+    // getAvgSkeletonXCorr(minConfidence : number = 0.25) : number
+    // {
+    //     //    getXCorrPos(index : number)
+    //     //getAvgScore(index)
+
+    //     let sum : number = 0; 
+    //     let count : number = 0;
+    //     for(let i = 0 ; i<PoseIndex.posePointCount; i++)
+    //     {
+    //         if( this.getAvgScore(i) >= minConfidence && this.friendParticipant.getAvgScore(i) >= minConfidence )
+    //         {
+    //             sum += this.getDistXCorrMax(i); 
+    //             count++; 
+    //         }
+    //     } 
+
+    //     return sum/count;
+    // }
 
     //so this will return the highest value PER body part MOVING -- instead of avg. across the body.
-    getAvgSkeletonXCorr(minConfidence : number = 0.25) : number
-    {
-        //    getXCorrPos(index : number)
-        //getAvgScore(index)
-
-        let sum : number = 0; 
-        let count : number = 0;
-        for(let i = 0 ; i<PoseIndex.posePointCount; i++)
-        {
-            if( this.getAvgScore(i) >= minConfidence && this.friendParticipant.getAvgScore(i) >= minConfidence )
-            {
-                sum += this.getDistXCorrMax(i); 
-                count++; 
-            }
-        } 
-
-        return sum/count;
-    }
 
     //this also updates the buffers & returns the average. gah kind of messy need to refactor. 
     getHighestAvgXCorrAcrossBodyParts(minConfidence : number = 0.35) : number
     {
         let bodyParts : number[] = [];
-        bodyParts.push( this.getTorsoXCorrSynchronicity(), minConfidence ); 
-        bodyParts.push( this.getHeadXCorrSynchronicity(), minConfidence ); 
-        bodyParts.push( this.getLeftArmXCorrSynchronicity(), minConfidence ); 
-        bodyParts.push( this.getRightArmXCorrSynchronicity(), minConfidence  ); 
-        bodyParts.push( this.getLeftLegXCorrSynchronicity(), minConfidence ); 
-        bodyParts.push( this.getRightLegXCorrSynchronicity(), minConfidence ); 
+        bodyParts.push( this.getTorsoXCorrSynchronicity( minConfidence ) ); 
+        bodyParts.push( this.getHeadXCorrSynchronicity( minConfidence ) ); 
+        bodyParts.push( this.getLeftArmXCorrSynchronicity( minConfidence ) ); 
+        bodyParts.push( this.getRightArmXCorrSynchronicity( minConfidence )  ); 
+        bodyParts.push( this.getLeftLegXCorrSynchronicity( minConfidence ) ); 
+        bodyParts.push( this.getRightLegXCorrSynchronicity( minConfidence) ); 
 
         let maxXCorr : number = -100; 
 
@@ -887,35 +900,35 @@ export class Participant {
         else return sum/count;
     }
 
-    getTorsoXCorrSynchronicity() : number
+    getTorsoXCorrSynchronicity(minConfidence : number) : number
     {
 
-        return this.getAverageBodyPartXCorrSynchronicity(PoseIndex.torso);
+        return this.getAverageBodyPartXCorrVelocitySynchronicity(PoseIndex.torso, minConfidence);
     }
 
-    getHeadXCorrSynchronicity() : number
+    getHeadXCorrSynchronicity(minConfidence : number) : number
     {
-        return this.getAverageBodyPartXCorrSynchronicity(PoseIndex.head);
+        return this.getAverageBodyPartXCorrVelocitySynchronicity(PoseIndex.head, minConfidence);
     }
 
-    getLeftArmXCorrSynchronicity() : number
+    getLeftArmXCorrSynchronicity(minConfidence : number) : number
     {
-        return this.getAverageBodyPartXCorrSynchronicity(PoseIndex.leftArm);
+        return this.getAverageBodyPartXCorrVelocitySynchronicity(PoseIndex.leftArm, minConfidence);
     }
 
-    getRightArmXCorrSynchronicity() : number
+    getRightArmXCorrSynchronicity(minConfidence : number) : number
     {
-        return this.getAverageBodyPartXCorrSynchronicity(PoseIndex.rightArm);
+        return this.getAverageBodyPartXCorrVelocitySynchronicity(PoseIndex.rightArm, minConfidence);
     }
 
-    getLeftLegXCorrSynchronicity() : number
+    getLeftLegXCorrSynchronicity(minConfidence : number) : number
     {
-        return this.getAverageBodyPartXCorrSynchronicity(PoseIndex.leftLeg);
+        return this.getAverageBodyPartXCorrVelocitySynchronicity(PoseIndex.leftLeg, minConfidence);
     }
 
-    getRightLegXCorrSynchronicity(): number
+    getRightLegXCorrSynchronicity(minConfidence : number): number
     {
-        return this.getAverageBodyPartXCorrSynchronicity(PoseIndex.rightLeg);
+        return this.getAverageBodyPartXCorrVelocitySynchronicity(PoseIndex.rightLeg, minConfidence);
     }
 
     getPoseMaxDX()
@@ -930,7 +943,7 @@ export class Participant {
 
     getAverageBodyPartWindowedVarianceFromIndex( index: number, minConfidence : number = 0.3 ) : number
     {
-        let maxWindowedVarTestedMaximums = [1, 2, 4, 4, 3, 3 ]; //just from one session -- TODO: find better maxes.
+        let maxWindowedVarTestedMaximums = [10, 10, 10, 10, 10, 10 ]; //just from one session -- TODO: find better maxes.
 
         let winvar = this.getAverageBodyPartWindowedVariance( PoseIndex.bodyPartArray[index], minConfidence );
         winvar = Scale.linear_scale(winvar, 0, maxWindowedVarTestedMaximums[index], 0, 1) ; 
@@ -967,7 +980,7 @@ export class Participant {
 
         for(let i=0; i<PoseIndex.bodyPartArray.length; i++)
         {
-            let winvar = this.getAverageBodyPartWindowedVarianceFromIndex( i, minConfidence );
+            let winvar = this.getAverageBodyPartWindowedVarianceFromIndex( i );
             //let winvar = this.getAverageBodyPartWindowedVariance( PoseIndex.bodyPartArray[i] );
 
             if( winvar > maxWindowedVar )
@@ -980,6 +993,10 @@ export class Participant {
             // }
             // console.log( i + ": " + this.maxVar[i] );
         }
-        return maxWindowedVar; //already scaled 0 to 1
+
+        //update a running average to calm that down dude
+        this.maxVarAvg.update( maxWindowedVar )
+
+        return this.maxVarAvg.top();//this.maxVarAvg.top(); //already scaled 0 to 1
     }
 };

@@ -8,8 +8,8 @@ export class LoadMidiFile {
         this.synths = [];
         this.playing = false;
 
-        let context = Tone.getContext(); 
-        console.log(context.sampleRate); 
+        let context = Tone.getContext();
+        console.log(context.sampleRate);
 
 
     }
@@ -86,7 +86,7 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
      
     constructor()
     {
-        super(); 
+        super();
 
         this.playgroundSampler = new Tone.Sampler({
             urls: {
@@ -117,16 +117,16 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
         }).toDestination();
 
         this.synths.push(this.playgroundSampler);
-        window.players = this.players; 
-        this.myloop = null; 
+        window.players = this.players;
+        this.myloop = null;
 
         const measureLen = Tone.Time("1n").toSeconds();
         this.noteQuarterLen = Tone.Time("4n").toSeconds();
 
-        this.scheduledAhead = measureLen + measureLen; 
-        this.looping = false; 
-        this.startTime = Tone.now(); 
-        this.magneticLoopStarted = 0; 
+        this.scheduledAhead = measureLen + measureLen;
+        this.looping = false;
+        this.startTime = Tone.now();
+        this.magneticLoopStarted = 0;
 
     }
 
@@ -142,16 +142,16 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
     //synchroncityMeasure should be 0-1 ish
     findStartTimeMagnetic( synchronityMeasure, origTime )
     {
-        let curSchedule = this.scheduledAhead + origTime; //loops start playhing in 2 measures 
+        let curSchedule = this.scheduledAhead + origTime; //loops start playhing in 2 measures
 
         let quant = "32nd";
-        let quantMult = 2; 
-        let notesPerLoop = 64; 
+        let quantMult = 2;
+        let notesPerLoop = 64;
 
         if(synchronityMeasure > 0.3)
         {
             quant = "16n";
-            quantMult = 1; 
+            quantMult = 1;
         }
 
         let offset = 0;
@@ -172,54 +172,54 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
             // console.log("synchronityMeasure: "  + synchronityMeasure  + " offset:" + offset  );
         }
 
-        curSchedule = curSchedule + offset; 
+        curSchedule = curSchedule + offset;
 
-        return curSchedule; 
+        return curSchedule;
 
     }
 
     startLoop()
     {
-        this.looping = true; 
+        this.looping = true;
         Tone.Transport.start();
-        this.startTime = Tone.now(); 
+        this.startTime = Tone.now();
     }
 
     stopLoop()
     {
-        this.looping = false; 
+        this.looping = false;
         Tone.Transport.stop();
     }
 
     //also add additional notes for super budy & subtract more... on a scale.
     chooseWhichFileIndexBasedOnIndividualActivity( windowedVarScore )
     {
-        let midiIndex = 0; 
+        let midiIndex = 0;
 
-        console.log("windowedVarScore:" + midiIndex); 
+        // console.log("windowedVarScore:" + midiIndex);
 
         //just to start
         if( windowedVarScore < 0.2 )
         {
-            midiIndex = 0; 
+            midiIndex = 0;
         }
         else if( windowedVarScore < 0.35 )
         {
-            midiIndex = 1; 
+            midiIndex = 1;
         }
         else if( windowedVarScore < 0.5 )
         {
-            midiIndex = 2; 
+            midiIndex = 2;
         }
         else if( windowedVarScore < 0.7 )
         {
-            midiIndex = 3; 
+            midiIndex = 3;
         }
         else
         {
             midiIndex = 4;
         }
-        console.log("windowedVarScore: " + windowedVarScore + " , " + midiIndex); 
+        // console.log("windowedVarScore: " + windowedVarScore + " , " + midiIndex);
 
         return midiIndex;
     }
@@ -227,33 +227,33 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
     createVolumeCurve(  windowedVarScore )
     {
         let vol = 0;
-        if( windowedVarScore < 0.1 )  
-            vol = Scale.linear_scale( windowedVarScore, 0, 1, -60, 30 ); 
-        else if (  windowedVarScore ) 
+        if( windowedVarScore < 0.1 )
+            vol = Scale.linear_scale( windowedVarScore, 0, 1, -60, 30 );
+        else if (  windowedVarScore )
         {
-            vol = Scale.linear_scale( windowedVarScore, 0, 1, -20, 30 ); 
+            vol = Scale.linear_scale( windowedVarScore, 0, 1, -20, 30 );
         }
 
-        return vol; 
+        return vol;
     }
 
 
     magneticPlay( synchronityMeasure, windowedVarScore )
     {
         
-            if ( this.currentMidi.length <= 0 ) 
+            if ( this.currentMidi.length <= 0 )
             {
-                return; 
+                return;
             }
 
             if ( ! this.looping )
             {
-                return; 
+                return;
             }
 
             //need to implement -- if you put a lot of energy in then it lasts longer... !!
             let vol = this.createVolumeCurve(  windowedVarScore );
-            this.playgroundSampler.volume.value = vol; 
+            this.playgroundSampler.volume.value = vol;
 
             //do a volume thing 2?
             if( windowedVarScore < 0.07)
@@ -269,7 +269,7 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
 
                 return;
             }
-            // console.log("secs: " + secs + " tone.now: " + now + " start: " + this.startTime ) ; 
+            // console.log("secs: " + secs + " tone.now: " + now + " start: " + this.startTime ) ;
 
             //also map velocity?
 
@@ -279,40 +279,40 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
                 //schedule all of the events
                 track.notes.forEach((note) => {
 
-                    let humanize = Scale.linear_scale( Math.random(), 0, 1, -0.5, 0.1 ); 
-                    let humanizePitch = Scale.linear_scale( Math.random(), 0, 1, -5, 30 ); 
+                    let humanize = Scale.linear_scale( Math.random(), 0, 1, -0.5, 0.1 );
+                    let humanizePitch = Scale.linear_scale( Math.random(), 0, 1, -5, 30 );
 
                     //TODO make this a sliding scale too
                     if( synchronityMeasure > 0.6 )
                     {
-                        humanize = Scale.linear_scale( Math.random(), 0, 1, -0.05, 0.05 ); 
+                        humanize = Scale.linear_scale( Math.random(), 0, 1, -0.05, 0.05 );
                         humanizePitch = 0;
                     }
 
-                    let pitch = Tone.Frequency(note.name).toMidi() + humanizePitch; 
+                    let pitch = Tone.Frequency(note.name).toMidi() + humanizePitch;
 
                         this.playgroundSampler.triggerAttackRelease(
                         Tone.Frequency(pitch, "midi").toNote(),
                         note.duration,
                         note.time + this.findStartTimeMagnetic( synchronityMeasure, Tone.now() ),
                         note.velocity + humanize);
-                        // console.log("velocity:" +note.velocity); 
+                        // console.log("velocity:" +note.velocity);
                     }
                 );
                     
             });
-            this.startTime = now; 
+            this.startTime = now;
     }
 
     // loop( synchronityMeasure ) //note this doesn't work bc not changing the measure.
     // {
-    //     if (!this.playing || !this.currentMidi) 
+    //     if (!this.playing || !this.currentMidi)
     //     {
-    //         return; 
+    //         return;
     //     }
 
     //     const measureLen = Tone.Time("1n").toSeconds();
-    //     let loopTime = measureLen + measureLen; 
+    //     let loopTime = measureLen + measureLen;
 
     //     this.myloop = new Tone.Loop(time => {
 
@@ -363,3 +363,4 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
     }
 
 }
+
