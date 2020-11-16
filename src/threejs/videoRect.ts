@@ -3,9 +3,11 @@ import {
   Matrix4,
   Mesh,
   MeshBasicMaterial,
+  MeshPhongMaterial,
   PlaneBufferGeometry,
   RGBFormat,
   VideoTexture,
+  Color
 } from 'three';
 import type { CameraVideo } from './cameraVideoElement';
 
@@ -17,12 +19,16 @@ export function videoRect(video: CameraVideo) {
 
   const { width, height } = video.getSize();
   const geometry = new PlaneBufferGeometry(width, height);
-  // const material = new MeshPhongMaterial({
-  //   map: texture,
-  //   transparent: true,
-  //   opacity: 0.9
-  // });
-  const material = new MeshBasicMaterial({ map: texture });
+  const color3 = new Color("rgb(255, 255, 255)");
+
+  // transparent material for video
+  const material = new MeshPhongMaterial({
+    map: texture,
+    transparent: true,
+    opacity: 0.5,
+    color: color3
+  });
+  // const material = new MeshBasicMaterial({ map: texture });
 
   const mesh = new Mesh(geometry, material);
   // z = -1 so lines can be drawn @ 0 and not get covered

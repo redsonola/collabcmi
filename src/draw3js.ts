@@ -47,14 +47,7 @@ export function threeRenderCode({
   const allVideosGroup = new Group();
   scene.add(allVideosGroup);
 
-  let sizes: { id: string, size: Size }[] = [];
-  const scale = (size: Size) => {
-    if (!sizes[0]) return 1;
-    else return sizes[0].size.height / size.height;
-  }
-
-  const left = (i = sizes.length - 1) => sizes.slice(0, i).reduce((sum, { size }) => sum + size.width * scale(size), 0);
-
+  // video groups have a video and a drawn skeleton
   const videoGroups: Group[] = [];
   const findGroup = id => videoGroups.find(g => g.userData.personId === id);
 
@@ -69,35 +62,29 @@ export function threeRenderCode({
         .map(obj => group?.remove(obj));
 
       group.add(videoRect(video));
-      const sizeIndex = sizes.findIndex(({ id }) => id === personId);
-      sizes[sizeIndex] = { id: personId, size };
-      
     } else {
       // add the video if it's not there
       group = new Group();
       group.userData.personId = personId;
       videoGroups.push(group);
-      sizes.push({ id: personId, size });
       allVideosGroup.add(group);
-      group.add(videoRect(video));
-    }
-    group.userData.isVideoGroup = true;
-
-    // const scale = sizes[0][1].height || 0 / size.height;
-    updateSizes();
-    lookAt(scene);
-  }
-
-  function updateSizes() {
-    console.log('updating sizes', { sizes, videoGroups: videoGroups.filter(g => g.userData.isVideoGroup) });
-    sizes.forEach(({ size, id }, i) => {
-      const group = findGroup(id);
-      if (!group) return;
-      let scaleNum = scale(size);
+      const vid = videoRect(video);
+      group.add(vid);  //TODO assign w & h to 1
+      const scaleNum = 1 / size.width;
+      // for (let i = 0; i < videoGroups.length; i++) {
+      //   videoGroups[i].position.x = i+0.5*i;
+      // }
+      //x y z
       group.matrix = new Matrix4().makeScale(scaleNum, scaleNum, scaleNum);
       group.updateMatrix();
-      group.position.x = left(i);
-    });
+    }
+    group.userData.isVideoGroup = true;
+    //in theory, all sizes are scaled to 1 but this doesn't seem to be the case.
+    for (let i = 0; i < videoGroups.length; i++) {
+      videoGroups[i].position.x =  i*(size.width*0.66); //TODO: fix
+      console.log(i);
+    }
+    lookAt(scene);
   }
 
   function animate() {
@@ -121,9 +108,9 @@ export function threeRenderCode({
 
       case "RemoveVideo": {
         allVideosGroup.remove(videoGroups[command.personId]);
-        sizes = sizes.filter(({ id }) => id !== command.personId);
-        Object.values(videoGroups).forEach((vid, i) => vid.position.x = left(i));
-        updateSizes();
+        // sizes = sizes.filter(({ id }) => id !== command.personId);
+        // Object.values(videoGroups).forEach((vid, i) => vid.position.x = left(i));
+        // updateSizes();
         console.warn("TODO: cleanup threejs video objects");
         break;
       }
