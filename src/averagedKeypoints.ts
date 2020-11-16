@@ -369,6 +369,9 @@ export class AverageFilteredKeyPoints
         return this.score[index].top(); 
     } 
 
+    //TODO: how much of the body & also for how long (scale?)
+    //Then -- how fast before the touch? prob just windowedvar @ touch 
+    //Then refine the touch measure so is less crude -- ie now it is just distance btw. keypoints but prob need to look at distance from skeleton/connecting line
     touching( keypointToTest: any, minDistanceTouching: number, sTouch: SkeletonTouch, w:number, h:number, theirW:number, theirH:number, index:number ) : SkeletonTouch
     {
 
