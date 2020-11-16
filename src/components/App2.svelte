@@ -66,6 +66,7 @@
   let windowedVarianceRightArm=0;
   let windowedVarianceLeftLeg=0;
   let windowedVarianceRightLeg=0;
+  let skeletonTouching =0; 
 
 
   let midiFile : LoadMidiFilePlayground;
@@ -102,6 +103,15 @@
     windowedVarianceLeftLeg = participant.getAverageBodyPartWindowedVarianceFromIndex(4);
     windowedVarianceRightLeg=  participant.getAverageBodyPartWindowedVarianceFromIndex(5);
     windowedVarScore = participant.getMaxBodyPartWindowedVariance(); 
+
+    if(participant.touchingFriend())
+    {
+      skeletonTouching = 1; 
+    }
+    else 
+    {
+      skeletonTouching = 0;
+    }
 
 
     try {
@@ -382,7 +392,8 @@
   {#each videoSources as source}
     <input type="button" on:click={() => webcamVideo.setSource(source)} value="{source}" />
   {/each}
-  
+  <br/>
+  <ScoreBar label="skeleton touching:" score={skeletonTouching} />
   <ScoreBar label="match score:" score={matchScore} />
   <ScoreBar label="xcorr score:"score={xCorrScore} />
   <ScoreBar label="combined score:"score={synchScore} />

@@ -7,7 +7,7 @@ import * as XCorr from 'abr-xcorr';
 import * as GetMethods from './getMethods.js';
 import * as math from 'mathjs';
 import type { Keypoint } from '@tensorflow-models/posenet';
-import { AverageFilteredKeyPoints } from './averagedKeypoints';
+import { AverageFilteredKeyPoints, SkeletonTouch } from './averagedKeypoints';
 import * as PoseMatch from './poseMatching';
 import * as Scale from './scale'
 
@@ -222,6 +222,7 @@ export class Participant {
         // else if(sps >= 8) this.windowSize=8;
         // else this.windowSize=4; 
 
+        //not even using this.
         for (let i = 0; i <= 8; i++) {
             this.poseAngles[i].setWindowSize( 12, this.windowSize );
             this.poseAnglesDx[i].setWindowSize( 12, this.windowSize );
@@ -229,8 +230,6 @@ export class Participant {
         this.avgKeyPoints.setWindowSize(this.keyPointsBufferSize, this.windowSize); 
         this.maxXCorrSkeleton.setWindowSize(this.windowSize);
         this.maxVarAvg.setWindowSize(this.windowSize/2, 1);
-
-
     }
 
     updatePoseSimilarity(otherParticipant : any) : void 
@@ -617,38 +616,59 @@ export class Participant {
             &&  sig1X.length == sig2X.length && sig1Y.length == sig2Y.length )
             {
 
-                let xcorr_outX = XCorr.Xcorr( sig1X, sig2X );
-                let xcorr_outY = XCorr.Xcorr( sig1Y, sig2Y );
+                let xcorr_outX;
+                let xcorr_outY;
 
-
-                if( !isNaN(xcorr_outX.xcorrMax)  )
+                try 
                 {
-                    this.xcorrMaxPositionDX[i].update( xcorr_outX.xcorrMax );
-                }
-                else 
+                    xcorr_outX = XCorr.Xcorr( sig1X, sig2X );
+                    xcorr_outY = XCorr.Xcorr( sig1Y, sig2Y );
+                } 
+                catch (ex) 
                 {
-                    this.xcorrMaxPositionDX[i].update(0.0);
-                }
-
-                if( !isNaN(xcorr_outY.xcorrMax)  )
-                {
-                    this.xcorrMaxPositionDY[i].update( xcorr_outY.xcorrMax );
-                }
-                else 
-                {
-                    this.xcorrMaxPositionDY[i].update(0.0);
+                    console.warn(ex);
+                    console.log("sig1X: " + sig1X.length);
+                    console.log("sig2X: " + sig2X.length);
+                    console.log("sig1Y: " + sig1Y.length);
+                    console.log("sig2Y: " + sig2Y.length);
                 }
 
-                this.iMaxPositionsDX[i].update( xcorr_outX.iMax ); 
-                this.iMaxPositionsDY[i].update( xcorr_outY.iMax ); 
-            }
-            else
-            {
-                this.xcorrMaxPositionDY[i].update( -1 );
-                this.xcorrMaxPositionDX[i].update( -1 );
+                if( xcorr_outX ){
 
-                this.iMaxPositionsDX[i].update( 0 ); 
-                this.iMaxPositionsDY[i].update( 0 ); 
+                    if( !isNaN(xcorr_outX.xcorrMax)  )
+                    {
+                        this.xcorrMaxPositionDX[i].update( xcorr_outX.xcorrMax );
+                    }
+                    else 
+                    {
+                        this.xcorrMaxPositionDX[i].update(0.0);
+                    }
+                    this.iMaxPositionsDX[i].update( xcorr_outX.iMax ); 
+
+                }
+
+                if( xcorr_outY ) 
+                {
+
+                    if( !isNaN(xcorr_outY.xcorrMax)  )
+                    {
+                        this.xcorrMaxPositionDY[i].update( xcorr_outY.xcorrMax );
+                    }
+                    else 
+                    {
+                        this.xcorrMaxPositionDY[i].update(0.0);
+                    }
+
+                    this.iMaxPositionsDY[i].update( xcorr_outY.iMax ); 
+                }
+                else
+                {
+                    this.xcorrMaxPositionDY[i].update( -1 );
+                    this.xcorrMaxPositionDX[i].update( -1 );
+
+                    this.iMaxPositionsDX[i].update( 0 ); 
+                    this.iMaxPositionsDY[i].update( 0 ); 
+                }
             }
         }
     }
@@ -1002,4 +1022,24 @@ export class Participant {
 
         return this.maxVarAvg.top();//this.maxVarAvg.top(); //already scaled 0 to 1
     }
+
+
+    touchingFriend() : boolean
+    {
+        let touch = new SkeletonTouch(); 
+        let friendKeypoints = this.friendParticipant.getAvgKeyPoints();
+        let minDistanceTouching = 0.09; //in percent, just a guess.
+ 
+        if( friendKeypoints )
+        {
+            for(let i=0; i<friendKeypoints.length; i++){
+                touch = this.avgKeyPoints.touching( friendKeypoints[i], minDistanceTouching, touch, this.width, this.height, 
+                    this.friendParticipant.getWidth(), this.friendParticipant.getHeight(), i);
+            }
+
+        }
+        return touch.areTouching(); 
+    }
+
+
 };

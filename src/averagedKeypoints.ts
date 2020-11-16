@@ -4,6 +4,46 @@ import * as PoseIndex from './poseConstants.js';
 import * as math from 'mathjs'
 import * as PoseMatch from './poseMatching';
 
+//represents one touch between 2 skeletons
+export class SkeletonTouch
+{
+    touching: boolean; 
+
+    //these are arrays of indices into keypoints
+    myIndicesTouching : number[];
+    theirIndicesTouching : number[]; 
+
+    constructor()
+    {
+        this.touching = false; 
+        this.myIndicesTouching = [];
+        this.theirIndicesTouching = [];  
+    }
+
+    //expecting keypoints for each
+    addTouch(mine:number, theirs:number) : void
+    {
+        this.touching = true; 
+        this.myIndicesTouching.push(mine);
+        this.theirIndicesTouching.push(theirs);
+    }
+
+    areTouching() : boolean
+    {
+        return this.touching; 
+    }
+
+    whereTouchingMine() : number[]
+    {
+        return this.myIndicesTouching;
+    }
+
+    whereTouchingTheirs() : number[]
+    {
+        return this.theirIndicesTouching;
+    }
+}
+
 
 //a class that averages all the pose keypoints and keeps them all handy.
 //try drawing these instead to test
@@ -40,6 +80,9 @@ export class AverageFilteredKeyPoints
 
     windowedVarianceDistance : AveragingFilter[]; //maybe don't take the average for now
 
+    minConfidence : number; 
+    part : string[];
+
     constructor(avgSz : number = 12, avgOutBufferSize : number = 2, width=640, height=480)
     {
         this.stillnessThresh = 0.9; //found via experimentation Oct. 21
@@ -47,6 +90,7 @@ export class AverageFilteredKeyPoints
         this.x = [];
         this.y = []; 
         this.score = [];
+        this.part = []
 
         this.xDx = [];
         this.yDx = [];
@@ -69,11 +113,14 @@ export class AverageFilteredKeyPoints
         this.distanceOutBufferSize = avgSz; //try this, perhaps it is a ratio with this, or need to send in the fps
         this.windowedVarianceDistance = [];
 
+        this.minConfidence = 0.35;
+
         for(let i=0; i<PoseIndex.posePointCount; i++)
         {
             this.x.push(new AveragingFilter(avgSz, avgOutBufferSize));
             this.y.push(new AveragingFilter(avgSz, avgOutBufferSize));
             this.score.push(new AveragingFilter(avgSz, avgOutBufferSize));
+            this.part.push(""); 
 
             this.xDx.push(new Derivative(avgSz, avgOutBufferSize));
             this.yDx.push(new Derivative(avgSz, avgOutBufferSize));
@@ -119,6 +166,11 @@ export class AverageFilteredKeyPoints
         }
     }
 
+    setMinConfidence(score : number) : void
+    {
+        this.minConfidence = score; 
+    }
+
     update( keypoints : any[] ) : void
     {
         if( keypoints == null ) return; 
@@ -131,8 +183,9 @@ export class AverageFilteredKeyPoints
         for(let i=0; i<keypoints.length; i++){
             const keypoint = keypoints[i];
             const { y, x } = keypoint.position;
+            this.part[i] = keypoint.part; //todo: make so I only add this once sigh
 
-            if( keypoint.score > 0.35 )
+            if( keypoint.score > this.minConfidence ) //dear god take in a minConfidence score instead of this hardcoded bs
             {
                 this.x[i].update(x); 
                 this.y[i].update(y);
@@ -149,9 +202,11 @@ export class AverageFilteredKeyPoints
 
                 if( this.x[i].length() > 1 )
                 {
-                    //took longer to do the correct conversion than to just implement my own dist.
-                    let distb4Sqrt : number = this.xDx[i].top()*this.xDx[i].top() + this.yDx[i].top()*this.yDx[i].top(); 
-                    let dist = Math.sqrt(distb4Sqrt); 
+                    // //took longer to do the correct conversion than to just implement my own dist.
+                    // let distb4Sqrt : number = this.xDx[i].top()*this.xDx[i].top() + this.yDx[i].top()*this.yDx[i].top(); 
+                    // let dist = Math.sqrt(distb4Sqrt); 
+
+                    let dist = this.getDist(this.xDx[i].top(), this.yDx[i].top());
 
                     this.distance[i].update( dist );
                     this.windowedVarianceDistance[i].update(math.variance( this.distance[i].getOutputContents() )); 
@@ -176,6 +231,14 @@ export class AverageFilteredKeyPoints
 
         if( avgDy > this.maxDy  )
             this.maxDy = avgDy; 
+    }
+
+    getDist(dx : number, dy : number) : number
+    {
+        let distb4Sqrt : number = (dx*dx) + (dy*dy); 
+        let dist = Math.sqrt(distb4Sqrt); 
+
+        return dist; 
     }
 
     getWindowedVariance(index:number) : number
@@ -219,7 +282,7 @@ export class AverageFilteredKeyPoints
 
         for(let i=0; i<PoseIndex.posePointCount; i++)
         {
-            var keypoint = { position: {y: this.getTopY(i), x: this.getTopX(i)}, score: this.score[i].top() };
+            var keypoint = { position: {y: this.getTopY(i), x: this.getTopX(i)}, score: this.score[i].top(), part:this.part[i] };
             keypoints.push(keypoint);
         }
 
@@ -304,6 +367,65 @@ export class AverageFilteredKeyPoints
     getAvgScore(index) : number
     {
         return this.score[index].top(); 
+    } 
+
+    touching( keypointToTest: any, minDistanceTouching: number, sTouch: SkeletonTouch, w:number, h:number, theirW:number, theirH:number, index:number ) : SkeletonTouch
+    {
+
+        //TODO: ok this should be a passed in value -- but it is passed in via draw3js.ts line 84 
+        let percentXOver = 0.66; 
+
+       if( sTouch === undefined )
+       {
+           sTouch = new SkeletonTouch();
+       }
+        
+        let {y:ty, x:tx } = keypointToTest.position; 
+        let scaledTx = (1-( tx / theirW )) + percentXOver; //move the friend over, since that is the one that will be offset
+        let scaledTy = ty / theirH;
+
+        let keypoints : any = this.top(); 
+
+        let minConfidence = 0.4; //testing new minconfidences.
+        
+
+        for(let i=0; i<keypoints.length; i++){
+            const keypoint = keypoints[i];
+            const { y, x } = keypoint.position;
+            let scaledX = 1-( x / w ); //x is flipped 
+            let scaledY = y / h;
+            const score = keypoint.score; 
+
+            // if(score >= minConfidence && keypointToTest.score >= minConfidence ){
+            //     console.log( keypointToTest.part+ " scaledTx:" + scaledTx );//+ " scaledY:" + scaledY);
+            // }
+
+            let dist = this.getDist(scaledTx-scaledX, scaledTy-scaledY);
+            if( dist < minDistanceTouching  && score >= minConfidence && keypointToTest.score >= minConfidence )
+            {
+                sTouch.addTouch( i, index );
+
+                // console.log( "touching! dist: " + dist + " scaledX:" + scaledX + " scaledY:" + scaledY + 
+                // " scaledTx:" + scaledTx + " scaledTy:" + scaledTy + " my index: " + keypoint.part + " their index: " + keypointToTest.part ); 
+
+            //     console.log( "touching! dist: " + dist + " my score:" + score + " their score:" + keypointToTest.score + 
+            //     " my index: " + keypoint.part + " their index: " + keypointToTest.part ); 
+
+            //    console.log( "scaledX:" + scaledX + " scaledY:" + scaledY + 
+            //     " scaledTx:" + scaledTx + " scaledTy:" + scaledTy + " my index: " + keypoint.part + " their index: " + keypointToTest.part ); 
+
+ 
+            }
+            // else
+            // {
+            //     console.log( "NOT TOUCHING! dist: " + dist + " scaledX:" + scaledX + " scaledY:" + scaledY + 
+            //     " scaledTx:" + scaledTx + " scaledTy:" + scaledTy + " my index: " + keypoint.part + " their index: " + keypointToTest.part ); 
+
+            // }
+        }
+
+        return sTouch; 
+
     }
 
 }

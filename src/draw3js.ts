@@ -81,8 +81,7 @@ export function threeRenderCode({
     group.userData.isVideoGroup = true;
     //in theory, all sizes are scaled to 1 but this doesn't seem to be the case.
     for (let i = 0; i < videoGroups.length; i++) {
-      videoGroups[i].position.x =  i*(size.width*0.66); //TODO: fix
-      console.log(i);
+      videoGroups[i].position.x =  i*(size.width*0.66); //TODO: fix, send the 0.66 to participant, gah gah terrrrrible
     }
     lookAt(scene);
   }
