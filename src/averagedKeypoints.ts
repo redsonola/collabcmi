@@ -10,38 +10,84 @@ export class SkeletonTouch
     touching: boolean; 
 
     //these are arrays of indices into keypoints
-    myIndicesTouching : number[];
-    theirIndicesTouching : number[]; 
+
+    indicesTouching : Array<Array<number>>;
+
+    startedTouching : number; 
 
     constructor()
     {
         this.touching = false; 
-        this.myIndicesTouching = [];
-        this.theirIndicesTouching = [];  
+        this.indicesTouching = [];
+        this.startedTouching = 0; 
+    }
+
+    reset()
+    {
+        this.startedTouching = 0; 
+        this.indicesTouching = [];
     }
 
     //expecting keypoints for each
     addTouch(mine:number, theirs:number) : void
     {
-        this.touching = true; 
-        this.myIndicesTouching.push(mine);
-        this.theirIndicesTouching.push(theirs);
+        let index = this.indexOf(mine, theirs); 
+        if( index === -1 )
+        {
+            this.indicesTouching.push( [mine, theirs] );
+            if(this.startedTouching === 0)
+            {
+                this.startedTouching = performance.now();
+            }
+        }
+        // console.log("touching!"); 
+        // console.log(this.indicesTouching); 
+    }
+
+    indexOf(mine:number, theirs:number) : number
+    {
+        let tuple  : Array<number>; 
+        tuple = [mine, theirs];
+        const isInArray = (element) => element[0] === mine && element[1] === theirs;
+        return this.indicesTouching.findIndex( isInArray );
+    }
+
+    //set to not touching
+    removeTouch(mine:number, theirs:number)  : void
+    {
+        let index = this.indexOf(mine, theirs); 
+        if( index !== -1 )
+            this.indicesTouching.splice(index, 1);
     }
 
     areTouching() : boolean
     {
+        this.touching = this.indicesTouching.length > 0;
+        if( !this.touching )
+        {
+            this.startedTouching = 0; 
+        }
         return this.touching; 
     }
 
-    whereTouchingMine() : number[]
+    howLong()
     {
-        return this.myIndicesTouching;
+        if(this.touching)
+            return (performance.now() - this.startedTouching ) / 1000.0; //just return seconds for now 
+        else return 0; 
     }
 
-    whereTouchingTheirs() : number[]
+    whereTouching() : any[]
     {
-        return this.theirIndicesTouching;
+        return this.indicesTouching;
     }
+
+    //percent of total skeleton touching, diregarding confidence
+    howMuchTouching() : number
+    {
+        return this.indicesTouching.length / PoseIndex.posePointCount;
+    }
+
 }
 
 
@@ -419,12 +465,14 @@ export class AverageFilteredKeyPoints
 
  
             }
-            // else
-            // {
-            //     console.log( "NOT TOUCHING! dist: " + dist + " scaledX:" + scaledX + " scaledY:" + scaledY + 
-            //     " scaledTx:" + scaledTx + " scaledTy:" + scaledTy + " my index: " + keypoint.part + " their index: " + keypointToTest.part ); 
+            else
+            {
+                sTouch.removeTouch( i, index );
 
-            // }
+                // console.log( "NOT TOUCHING! dist: " + dist + " scaledX:" + scaledX + " scaledY:" + scaledY + 
+                // " scaledTx:" + scaledTx + " scaledTy:" + scaledTy + " my index: " + keypoint.part + " their index: " + keypointToTest.part ); 
+
+            }
         }
 
         return sTouch; 

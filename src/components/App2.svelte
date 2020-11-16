@@ -66,7 +66,10 @@
   let windowedVarianceRightArm=0;
   let windowedVarianceLeftLeg=0;
   let windowedVarianceRightLeg=0;
+
   let skeletonTouching =0; 
+  let howLongTouch = 0; 
+  let howMuchTouch = 0; 
 
 
   let midiFile : LoadMidiFilePlayground;
@@ -102,9 +105,10 @@
     windowedVarianceRightArm = participant.getAverageBodyPartWindowedVarianceFromIndex(3);
     windowedVarianceLeftLeg = participant.getAverageBodyPartWindowedVarianceFromIndex(4);
     windowedVarianceRightLeg=  participant.getAverageBodyPartWindowedVarianceFromIndex(5);
+    
     windowedVarScore = participant.getMaxBodyPartWindowedVariance(); 
 
-    if(participant.touchingFriend())
+    if(participant.updateTouchingFriend())
     {
       skeletonTouching = 1; 
     }
@@ -112,6 +116,8 @@
     {
       skeletonTouching = 0;
     }
+    howLongTouch = participant.howLongTouching(); 
+    howMuchTouch = participant.howMuchTouching(); ; 
 
 
     try {
@@ -393,7 +399,10 @@
     <input type="button" on:click={() => webcamVideo.setSource(source)} value="{source}" />
   {/each}
   <br/>
+
   <ScoreBar label="skeleton touching:" score={skeletonTouching} />
+  <ScoreBar label="how long touching:" score={howLongTouch} />
+  <ScoreBar label="how much touching:" score={howMuchTouch} />
   <ScoreBar label="match score:" score={matchScore} />
   <ScoreBar label="xcorr score:"score={xCorrScore} />
   <ScoreBar label="combined score:"score={synchScore} />

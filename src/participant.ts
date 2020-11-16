@@ -87,6 +87,7 @@ export class Participant {
     maxXCorrSkeleton : AveragingFilter;
     maxVarAvg  : AveragingFilter;
 
+    touch : SkeletonTouch =  new SkeletonTouch(); 
 
 
     constructor() {
@@ -1024,21 +1025,30 @@ export class Participant {
     }
 
 
-    touchingFriend() : boolean
+    updateTouchingFriend() : boolean
     {
-        let touch = new SkeletonTouch(); 
         let friendKeypoints = this.friendParticipant.getAvgKeyPoints();
         let minDistanceTouching = 0.09; //in percent, just a guess.
  
         if( friendKeypoints )
         {
             for(let i=0; i<friendKeypoints.length; i++){
-                touch = this.avgKeyPoints.touching( friendKeypoints[i], minDistanceTouching, touch, this.width, this.height, 
+                this.touch = this.avgKeyPoints.touching( friendKeypoints[i], minDistanceTouching, this.touch, this.width, this.height, 
                     this.friendParticipant.getWidth(), this.friendParticipant.getHeight(), i);
             }
 
         }
-        return touch.areTouching(); 
+        return this.touch.areTouching(); 
+    }
+
+    howLongTouching() : number
+    {
+        return this.touch.howLong(); 
+    }
+
+    howMuchTouching() : number
+    {
+        return this.touch.howMuchTouching(); 
     }
 
 
