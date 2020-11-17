@@ -605,9 +605,8 @@ export class Participant {
 
         for (let i: number = 0; i < this.xcorrMaxPositionDX.length; i++) {
 
-            if(!(myArrayX.length < this.windowSize || otherArrayX.length < this.windowSize ||
-                myArrayY.length < this.windowSize || otherArrayY.length < this.windowSize))
-            {
+            if(!(myArrayX[i].length < this.windowSize || otherArrayX[i].length < this.windowSize ||
+                myArrayY[i].length < this.windowSize || otherArrayY[i].length < this.windowSize))
               
 
                 const sig1X = Buffer.from( myArrayX[i] );
