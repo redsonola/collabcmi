@@ -603,38 +603,26 @@ export class Participant {
             myArrayY.push(meY[i].getOutputContents(sz));
         }
 
-
-
         for (let i: number = 0; i < this.xcorrMaxPositionDX.length; i++) {
 
-            const sig1X = Buffer.from( myArrayX[i] );
-            const sig2X = Buffer.from( otherArrayX[i] );
-
-            const sig1Y = Buffer.from( myArrayY[i] );
-            const sig2Y = Buffer.from( otherArrayY[i] );
-
-            if(this.getAvgScore(i) >= this.minConfidenceScore && otherParticipant.getAvgScore(i) >= this.minConfidenceScore
-            &&  sig1X.length == sig2X.length && sig1Y.length == sig2Y.length )
+            if(!(myArrayX.length < this.windowSize || otherArrayX.length < this.windowSize ||
+                myArrayY.length < this.windowSize || otherArrayY.length < this.windowSize))
             {
+              
 
-                let xcorr_outX;
-                let xcorr_outY;
+                const sig1X = Buffer.from( myArrayX[i] );
+                const sig2X = Buffer.from( otherArrayX[i] );
 
-                try 
+                const sig1Y = Buffer.from( myArrayY[i] );
+                const sig2Y = Buffer.from( otherArrayY[i] );
+
+                if(this.getAvgScore(i) >= this.minConfidenceScore && otherParticipant.getAvgScore(i) >= this.minConfidenceScore
+                &&  sig1X.length == sig2X.length && sig1Y.length == sig2Y.length )
                 {
-                    xcorr_outX = XCorr.Xcorr( sig1X, sig2X );
-                    xcorr_outY = XCorr.Xcorr( sig1Y, sig2Y );
-                } 
-                catch (ex) 
-                {
-                    console.warn(ex);
-                    console.log("sig1X: " + sig1X.length);
-                    console.log("sig2X: " + sig2X.length);
-                    console.log("sig1Y: " + sig1Y.length);
-                    console.log("sig2Y: " + sig2Y.length);
-                }
 
-                if( xcorr_outX ){
+                    let xcorr_outX = XCorr.Xcorr( sig1X, sig2X );
+                    let xcorr_outY = XCorr.Xcorr( sig1Y, sig2Y );
+
 
                     if( !isNaN(xcorr_outX.xcorrMax)  )
                     {
@@ -644,12 +632,6 @@ export class Participant {
                     {
                         this.xcorrMaxPositionDX[i].update(0.0);
                     }
-                    this.iMaxPositionsDX[i].update( xcorr_outX.iMax ); 
-
-                }
-
-                if( xcorr_outY ) 
-                {
 
                     if( !isNaN(xcorr_outY.xcorrMax)  )
                     {
@@ -660,6 +642,7 @@ export class Participant {
                         this.xcorrMaxPositionDY[i].update(0.0);
                     }
 
+                    this.iMaxPositionsDX[i].update( xcorr_outX.iMax ); 
                     this.iMaxPositionsDY[i].update( xcorr_outY.iMax ); 
                 }
                 else
@@ -673,6 +656,107 @@ export class Participant {
             }
         }
     }
+    // xCorrDistance( otherParticipant: Participant ): void {
+
+    //     this.minConfidenceScore = 0.35;
+
+    //     let otherX: AveragingFilter[] = otherParticipant.getCurDX();
+    //     let meX: AveragingFilter[] = this.getCurDX();
+
+    //     let otherY: AveragingFilter[] = otherParticipant.getCurDY();
+    //     let meY: AveragingFilter[] = this.getCurDY();
+
+    //     let otherArrayX: number[][] = [];
+    //     let myArrayX: number[][] = [];
+
+    //     let otherArrayY: number[][] = [];
+    //     let myArrayY: number[][] = [];
+
+    //     let sz = math.min(otherX[0].length(), meX[0].length()); //take the lowest sampling rate as the window for comparison
+    //     //log sz here
+
+    //     if( sz < this.windowSize ) return; //TODO: probably send window size from the other participant... maybe
+    //     sz = this.windowSize; 
+
+    //     for (let i = 0; i < PoseIndex.posePointCount; i++) {
+
+    //         otherArrayX.push(otherX[i].getOutputContents(sz));
+    //         myArrayX.push(meX[i].getOutputContents(sz));
+
+    //         otherArrayY.push(otherY[i].getOutputContents(sz));
+    //         myArrayY.push(meY[i].getOutputContents(sz));
+    //     }
+
+
+
+    //     for (let i: number = 0; i < this.xcorrMaxPositionDX.length; i++) {
+
+    //         const sig1X = Buffer.from( myArrayX[i] );
+    //         const sig2X = Buffer.from( otherArrayX[i] );
+
+    //         const sig1Y = Buffer.from( myArrayY[i] );
+    //         const sig2Y = Buffer.from( otherArrayY[i] );
+
+    //         if(this.getAvgScore(i) >= this.minConfidenceScore && otherParticipant.getAvgScore(i) >= this.minConfidenceScore
+    //         &&  sig1X.length == sig2X.length && sig1Y.length == sig2Y.length )
+    //         {
+
+    //             let xcorr_outX;
+    //             let xcorr_outY;
+
+    //             try 
+    //             {
+    //                 xcorr_outX = XCorr.Xcorr( sig1X, sig2X );
+    //                 xcorr_outY = XCorr.Xcorr( sig1Y, sig2Y );
+    //             } 
+    //             catch (ex) 
+    //             {
+    //                 console.warn(ex);
+    //                 console.log("sig1X: " + sig1X.length);
+    //                 console.log("sig2X: " + sig2X.length);
+    //                 console.log("sig1Y: " + sig1Y.length);
+    //                 console.log("sig2Y: " + sig2Y.length);
+    //             }
+
+    //             if( xcorr_outX ){
+
+    //                 if( !isNaN(xcorr_outX.xcorrMax)  )
+    //                 {
+    //                     this.xcorrMaxPositionDX[i].update( xcorr_outX.xcorrMax );
+    //                 }
+    //                 else 
+    //                 {
+    //                     this.xcorrMaxPositionDX[i].update(0.0);
+    //                 }
+    //                 this.iMaxPositionsDX[i].update( xcorr_outX.iMax ); 
+
+    //             }
+
+    //             if( xcorr_outY ) 
+    //             {
+
+    //                 if( !isNaN(xcorr_outY.xcorrMax)  )
+    //                 {
+    //                     this.xcorrMaxPositionDY[i].update( xcorr_outY.xcorrMax );
+    //                 }
+    //                 else 
+    //                 {
+    //                     this.xcorrMaxPositionDY[i].update(0.0);
+    //                 }
+
+    //                 this.iMaxPositionsDY[i].update( xcorr_outY.iMax ); 
+    //             }
+    //             else
+    //             {
+    //                 this.xcorrMaxPositionDY[i].update( -1 );
+    //                 this.xcorrMaxPositionDX[i].update( -1 );
+
+    //                 this.iMaxPositionsDX[i].update( 0 ); 
+    //                 this.iMaxPositionsDY[i].update( 0 ); 
+    //             }
+    //         }
+    //     }
+    // }
 
     //this returns the cross-correlation between this participant and some friend participant for each keypose. Only have dyadic interactions now.
     //using the dx & dy of the points currently & this works much better than the body angles.
