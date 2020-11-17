@@ -607,8 +607,7 @@ export class Participant {
 
             if(!(myArrayX[i].length < this.windowSize || otherArrayX[i].length < this.windowSize ||
                 myArrayY[i].length < this.windowSize || otherArrayY[i].length < this.windowSize))
-              
-
+            {
                 const sig1X = Buffer.from( myArrayX[i] );
                 const sig2X = Buffer.from( otherArrayX[i] );
 
