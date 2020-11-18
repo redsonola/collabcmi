@@ -16,7 +16,7 @@
   import type { Keypoint, Pose } from '@tensorflow-models/posenet';
   import ScoreBar from './scoreBar.svelte';
   import * as Scale from '../scale'
-  import { LoadMidiFilePlayground } from '../midiConversion'
+  import { LoadMidiFilePlayground, MainVolume } from '../midiConversion'
   import { FPSTracker } from '../fpsMeasure'
   
   const webcamVideo = videoSubscription();
@@ -73,6 +73,8 @@
 
 
   let midiFile : LoadMidiFilePlayground;
+  let mainVolume : MainVolume; 
+
 
   let three: ThreeRenderer;
   $: if (canvas) {
@@ -207,7 +209,8 @@
   async function init (suppliedId?: string) {
     let stopped = false;
 
-      midiFile = new LoadMidiFilePlayground(); 
+      mainVolume = new MainVolume()
+      midiFile = new LoadMidiFilePlayground(mainVolume); 
       await midiFile.parseAllFiles(); 
       midiFile.startLoop(); 
 
@@ -377,6 +380,10 @@
       });
     }
   });
+
+  export function onChangeVolumeSlider( e ) {
+      mainVolume.set( parseFloat( e.currentTarget.value ) );
+    }
 </script>
 
 <style>
@@ -385,7 +392,31 @@
     top: 0;
     left: 0;
   }
+
+  .slider1 {
+  -webkit-appearance: none;  /* Override default CSS styles */
+  appearance: none;
+  width: 75%; /* Full-width */
+  height: 10px; /* Specified height */
+  background: #d3d3d3; /* Grey background */
+  outline: none; /* Remove outline */
+  opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+  -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+  transition: opacity .2s;
+  align-self:center; 
+}
+
+.valueSliders {
+    position: relative;
+    width:100%;
+    top: 40px;
+    left: 0; 
+  }
 </style>
+<div class="valueSliders">
+<label for="mainVolume">Volume:</label>
+<input type="range" min="0" max="1" class="slider1" id="mainVolume" step="0.01" value="0" on:input={onChangeVolumeSlider}><br/><br/>
+</div>
 
 <DebugPanel messages={messages} myId={myId} peerConnections={peerConnections}>
   <!--
