@@ -1,4 +1,4 @@
-import { Matrix4, Quaternion, Vector3, Group, DirectionalLight, Scene, Color, PlaneBufferGeometry, Mesh, MeshPhongMaterial } from 'three';
+import { Matrix4, Quaternion, Vector3, Group, DirectionalLight, Scene, Color, PlaneBufferGeometry, Mesh, MeshPhongMaterial, Box3 } from 'three';
 
 import { videoRect } from './threejs/videoRect';
 import { createJoints, createSkeleton } from './threejs/brentDrawSkeleton';
@@ -8,6 +8,8 @@ import type { CameraVideo } from './threejs/cameraVideoElement';
 import type { PosenetSetup } from './threejs/posenet';
 import type { Pose } from '@tensorflow-models/posenet';
 import type { Size } from './components/PoseMessages';
+
+export const videoOverlapAmount = 0.66; 
 
 export interface PoseVideo {
   video: CameraVideo;
@@ -54,36 +56,34 @@ export function threeRenderCode({
   const videos: Mesh<PlaneBufferGeometry, MeshPhongMaterial>[] = [];
   const addVideo = (video: CameraVideo, personId: string) => {
     let group: Group | undefined = findGroup(personId);
-    const size = video.getSize();
     if (group) {
       // replace video if it exists
       group.children
         .filter(obj => obj.userData.isVideo)
         .map(obj => group?.remove(obj));
 
-      group.add(videoRect(video));
     } else {
       // add the video if it's not there
       group = new Group();
       group.userData.personId = personId;
+      group.userData.isVideoGroup = true;
       videoGroups.push(group);
       allVideosGroup.add(group);
-      const vid = videoRect(video);
-      group.add(vid);  //TODO assign w & h to 1
-      const scaleNum = 1 / size.width;
-      // for (let i = 0; i < videoGroups.length; i++) {
-      //   videoGroups[i].position.x = i+0.5*i;
-      // }
-      //x y z
-      group.matrix = new Matrix4().makeScale(scaleNum, scaleNum, scaleNum);
-      group.updateMatrix();
     }
-    group.userData.isVideoGroup = true;
-    //in theory, all sizes are scaled to 1 but this doesn't seem to be the case.
+
+    const vid = videoRect(video);
+    const scaleNum = 1 / video.getSize().width;
+    vid.applyMatrix4(new Matrix4().makeScale(scaleNum, scaleNum, 1))
+
+    group.add(vid);
     for (let i = 0; i < videoGroups.length; i++) {
-      videoGroups[i].position.x =  i*(size.width*0.66); //TODO: fix, send the 0.66 to participant, gah gah terrrrrible
+      videoGroups[i].position.x = videoOverlapAmount*i + 0.5;
+      videoGroups[i].position.y = 0.5; 
     }
-    lookAt(scene);
+    lookAt(new Box3(
+      new Vector3(0, -0.5, 0),
+      new Vector3(videoGroups.length, 1, 0),
+    ));
   }
 
   function animate() {
@@ -107,9 +107,6 @@ export function threeRenderCode({
 
       case "RemoveVideo": {
         allVideosGroup.remove(videoGroups[command.personId]);
-        // sizes = sizes.filter(({ id }) => id !== command.personId);
-        // Object.values(videoGroups).forEach((vid, i) => vid.position.x = left(i));
-        // updateSizes();
         console.warn("TODO: cleanup threejs video objects");
         break;
       }
@@ -142,10 +139,11 @@ export function threeRenderCode({
 
         // the skeleton just uses the coordinates straight from posenet.
         // the matrix below flips & moves it into position.
+        const scale = 1 / size.width;
         const posenetToVideoCoords = new Matrix4().compose(
-          new Vector3(size.width * 0.5, size.height * 0.5, 0),
+          new Vector3(size.width * scale * 0.5, size.height * scale * 0.5, 0),
           new Quaternion(),
-          new Vector3(-1, -1, 1)
+          new Vector3(-scale, -scale, 1)
         );
         groupOfStuffToRender.applyMatrix4(posenetToVideoCoords);
 

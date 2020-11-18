@@ -1,4 +1,4 @@
-import { OrthographicCamera, Vector3, WebGLRenderer, Geometry, Box3 } from 'three';
+import { OrthographicCamera, Vector3, WebGLRenderer, Geometry, Box3, Object3D } from 'three';
 
 export function cameraSizeRectangle(x, y, width, height) {
   return new Geometry().setFromPoints([
@@ -56,8 +56,13 @@ export function createOrthographicCamera(canvas, _width, _height) {
      * fill=false makes it fit the object to the canvas
      * true makes it fill the canvas, possibly cutting some off
      */
-    lookAt(obj, fill = false) {
-      const boundingBox = new Box3().setFromObject(obj)
+    lookAt(obj: Object3D | Box3, fill = false) {
+      let boundingBox: Box3;
+      if (obj instanceof Box3) {
+        boundingBox = obj;
+      } else {
+        boundingBox = new Box3().setFromObject(obj);
+      }
 
       const size = boundingBox.getSize(new Vector3());
 

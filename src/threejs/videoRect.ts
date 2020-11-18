@@ -4,6 +4,7 @@ import {
   Mesh,
   MeshBasicMaterial,
   MeshPhongMaterial,
+  MeshNormalMaterial, 
   PlaneBufferGeometry,
   RGBFormat,
   VideoTexture,
@@ -22,11 +23,11 @@ export function videoRect(video: CameraVideo) {
   const color3 = new Color("rgb(255, 255, 255)");
 
   // transparent material for video
-  const material = new MeshPhongMaterial({
+  const material = new MeshBasicMaterial({
     map: texture,
     transparent: true,
-    opacity: 0.5,
-    color: color3
+    opacity: 0.75,
+    // color: color3
   });
   // const material = new MeshBasicMaterial({ map: texture });
 
