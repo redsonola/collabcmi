@@ -2,7 +2,8 @@
 
 Using nvm as a package manager. 
 
-If on Windows, use: https://github.com/coreybutler/nvm-windows
+If on Windows, use (& follow instructions here): https://github.com/coreybutler/nvm-windows
+Apparently: https://chocolatey.org is the Windows version of homebrew.
 
 First Install nvm (node version manager)
 
@@ -48,7 +49,7 @@ if you run
 
 ./scripts/deploy.sh
 
-It will deploy to spacebetween.courtney-brown.net. 
+It will deploy to spacebetween.courtney-brown.net. You'll need an aws key to deploy, so just let me when you're ready to do that.
 
 Probably we should (will) get a separate web space, tho, for this project, since I am using that for my audiovisual instrument. But -- if you wanted to test something actually on the internet instead of localhost/network.
 
