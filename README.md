@@ -1,6 +1,9 @@
 # collabcmi
 
 Using nvm as a package manager. 
+(Windows)
+https://github.com/coreybutler/nvm-windows
+
 First Install nvm (node version manager)
 
 https://github.com/nvm-sh/nvm#install--update-script
