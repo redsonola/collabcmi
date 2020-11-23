@@ -49,9 +49,9 @@ if you run
 
 ./scripts/deploy.sh
 
-It will deploy to spacebetween.courtney-brown.net. You'll need an aws key to deploy, so just let me when you're ready to do that.
+It will deploy to spacebetween.courtney-brown.net. You'll need an aws key to deploy, so just let me when you're ready to do that. 
 
-Probably we should (will) get a separate web space, tho, for this project, since I am using that for my audiovisual instrument. But -- if you wanted to test something actually on the internet instead of localhost/network.
+Probably we should (well, we will) get a separate web space / aws acct, tho, for this project, since I am using that for my audiovisual instrument. But -- if you wanted to test something actually on the internet instead of localhost/network.
 
 
 
