@@ -297,7 +297,7 @@
         case 'CallAnswered': {
           theirVideoUnsubscribe = videoSubscription(event.mediaStream).subscribe(async video => {
             if (video) {
-              three.dispatch({ type: 'AddVideo', personId: event.theirId, video });
+              three.dispatch({ type: 'AddVideo', personId: event.theirId, video});
               setPeerConnection(event.theirId, 'media', true);
             }
           });

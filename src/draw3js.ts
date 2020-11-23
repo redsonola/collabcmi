@@ -46,7 +46,7 @@ export function threeRenderCode({
 
   let running = true;
 
-  const allVideosGroup = new Group();
+  const allVideosGroup = new Group(); //TODO: kill videoGroups & only use AllVideoGroups -- good times.
   scene.add(allVideosGroup);
 
   // video groups have a video and a drawn skeleton
@@ -54,6 +54,7 @@ export function threeRenderCode({
   const findGroup = id => videoGroups.find(g => g.userData.personId === id);
 
   const videos: Mesh<PlaneBufferGeometry, MeshPhongMaterial>[] = [];
+                                                          //TODO this only works for dyads. Find another solution.
   const addVideo = (video: CameraVideo, personId: string) => {
     let group: Group | undefined = findGroup(personId);
     if (group) {
@@ -68,7 +69,11 @@ export function threeRenderCode({
       group.userData.personId = personId;
       group.userData.isVideoGroup = true;
       videoGroups.push(group);
-      allVideosGroup.add(group);
+      // if(!isCallAnswered)
+      //   videoGroups.push(group);
+      // else videoGroups.unshift(group);
+       videoGroups.sort( ( a, b ) => a.userData.personId > b.userData.personId ? -1 : 0 );
+      allVideosGroup.add(group); //add from start? - can this be removed?
     }
 
     const vid = videoRect(video);
