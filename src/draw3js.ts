@@ -8,6 +8,7 @@ import type { CameraVideo } from './threejs/cameraVideoElement';
 import type { PosenetSetup } from './threejs/posenet';
 import type { Pose } from '@tensorflow-models/posenet';
 import type { Size } from './components/PoseMessages';
+import { orderParticipantID } from './participant'
 
 export const videoOverlapAmount = 0.66; 
 
@@ -72,7 +73,7 @@ export function threeRenderCode({
       // if(!isCallAnswered)
       //   videoGroups.push(group);
       // else videoGroups.unshift(group);
-       videoGroups.sort( ( a, b ) => a.userData.personId > b.userData.personId ? -1 : 0 );
+       videoGroups.sort( ( a, b ) => orderParticipantID( a.userData.personId, b.userData.personId ) );
       allVideosGroup.add(group); //add from start? - can this be removed?
     }
 

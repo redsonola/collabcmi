@@ -32,6 +32,7 @@
     const newUrl = new URL(window.location.href);
     newUrl.searchParams.set('myid', id);
     history.replaceState(null, document.title, newUrl.toString());
+    participant.setParticipantID(myId); 
     // pushState(new URL(window.location.href).searchParams.set('myid', ))
   }
   const querystringCallId = new URL(window.location.href).searchParams.get('callid');
@@ -194,6 +195,9 @@
       peerIds = peerIds.filter(id => id !== theirId);
       updatePeerData(theirId, () => false);
     } else {
+      //set friend peerID 
+      friendParticipant.setParticipantID(theirId); //for the dyad arrangement set the ID
+
       peerIds = peerIds.includes(theirId)
         ? peerIds
         : [...peerIds, theirId];

@@ -82,7 +82,7 @@ export class SkeletonTouch
         return this.indicesTouching;
     }
 
-    //percent of total skeleton touching, diregarding confidence
+    //percent of total skeleton touching, disregarding confidence at the moment
     howMuchTouching() : number
     {
         return this.indicesTouching.length / PoseIndex.posePointCount;
@@ -418,7 +418,8 @@ export class AverageFilteredKeyPoints
     //TODO: how much of the body & also for how long (scale?)
     //Then -- how fast before the touch? prob just windowedvar @ touch 
     //Then refine the touch measure so is less crude -- ie now it is just distance btw. keypoints but prob need to look at distance from skeleton/connecting line
-    touching( keypointToTest: any, minDistanceTouching: number, sTouch: SkeletonTouch, w:number, h:number, theirW:number, theirH:number, index:number ) : SkeletonTouch
+    touching( keypointToTest: any, minDistanceTouching: number, sTouch: SkeletonTouch, w:number, h:number, 
+        theirW:number, theirH:number, index:number, iAmSecond: boolean=false ) : SkeletonTouch
     {
 
         //TODO: ok this should be a passed in value -- but it is passed in via draw3js.ts line 84 
@@ -428,9 +429,13 @@ export class AverageFilteredKeyPoints
        {
            sTouch = new SkeletonTouch();
        }
-        
+       
         let {y:ty, x:tx } = keypointToTest.position; 
-        let scaledTx = (1-( tx / theirW )) + percentXOver; //move the friend over, since that is the one that will be offset
+        let scaledTx = 1-( tx / theirW );
+        if(!iAmSecond)
+        {
+            scaledTx -= percentXOver; //move the friend over, since that is the one that will be offset
+        }
         let scaledTy = ty / theirH;
 
         let keypoints : any = this.top(); 
@@ -442,6 +447,11 @@ export class AverageFilteredKeyPoints
             const keypoint = keypoints[i];
             const { y, x } = keypoint.position;
             let scaledX = 1-( x / w ); //x is flipped 
+            if(iAmSecond)
+            {
+                scaledX -= percentXOver;
+            }
+
             let scaledY = y / h;
             const score = keypoint.score; 
 

@@ -18,11 +18,16 @@ import * as Scale from './scale'
 
 */
 
+export function orderParticipantID( id1 : string, id2: string )
+{
+    return id1 > id2 ? -1 : 0 
+}
 
 //TODO: refactor such that otherParticipant is a pointer...... YIKES
 
 export class Participant {
 
+    participantID : string = "";
     friendParticipant : any; //starting this process, but it is not complete
 
     windowSize: number;
@@ -184,6 +189,11 @@ export class Participant {
     isFriendPartcipantNull()
     {
         return this.friendParticipant === null; 
+    }
+    //where it is on the screen in relation to other videos.
+    setParticipantID(id: string)
+    {
+        this.participantID = id;
     }
 
     addKeypoint(keypoints: Keypoint[]): void {
@@ -1107,16 +1117,24 @@ export class Participant {
     }
 
 
+    getParticipantID() : string
+    {
+        return this.participantID;
+    }
+
     updateTouchingFriend() : boolean
     {
         let friendKeypoints = this.friendParticipant.getAvgKeyPoints();
         let minDistanceTouching = 0.09; //in percent, just a guess.
+
+        //TODO: refactor so I only do this once.
+        let iAmSecond = orderParticipantID( this.participantID, this.friendParticipant.getParticipantID() ) === -1;
  
         if( friendKeypoints )
         {
             for(let i=0; i<friendKeypoints.length; i++){
                 this.touch = this.avgKeyPoints.touching( friendKeypoints[i], minDistanceTouching, this.touch, this.width, this.height, 
-                    this.friendParticipant.getWidth(), this.friendParticipant.getHeight(), i);
+                    this.friendParticipant.getWidth(), this.friendParticipant.getHeight(), i, iAmSecond);
             }
 
         }
