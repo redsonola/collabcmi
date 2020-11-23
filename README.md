@@ -1,8 +1,8 @@
 # collabcmi
 
 Using nvm as a package manager. 
-(Windows)
-https://github.com/coreybutler/nvm-windows
+
+If on Windows, use: https://github.com/coreybutler/nvm-windows
 
 First Install nvm (node version manager)
 
@@ -13,15 +13,18 @@ nvm install 15.1.0
 Install mkcert
 eg. on OS X -- brew install mkcert
 If you have homebrew, which I recommend. 
+
 For windows, instructions here:
 https://github.com/FiloSottile/mkcert
 
 Then, on the command-line:
+
 npm install
 
 npm run mkcert
 
 Then, to run/build:
+
 npm run start
 
 Main js file is: '/components/App2.svelte'. 
