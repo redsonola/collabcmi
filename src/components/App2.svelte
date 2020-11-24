@@ -18,6 +18,7 @@
   import * as Scale from '../scale'
   import { LoadMidiFilePlayground, MainVolume } from '../midiConversion'
   import { FPSTracker } from '../fpsMeasure'
+  import { SonifierWithTuba } from '../xcorrSonify'
   
   const webcamVideo = videoSubscription();
   const videoSources = [
@@ -75,6 +76,7 @@
 
   let midiFile : LoadMidiFilePlayground;
   let mainVolume : MainVolume; 
+  let tubaSonfier : SonifierWithTuba;
 
 
   let three: ThreeRenderer;
@@ -214,9 +216,14 @@
     let stopped = false;
 
       mainVolume = new MainVolume()
+
+      //this is from my audiovisual project
       midiFile = new LoadMidiFilePlayground(mainVolume); 
       await midiFile.parseAllFiles(); 
       midiFile.startLoop(); 
+
+      //this is the new code
+      tubaSonfier = new SonifierWithTuba(participant, mainVolume); 
 
     // const posenet = await initPosenet(webcamVideo);
     // const webcamVideo = await makeVideoElement();
