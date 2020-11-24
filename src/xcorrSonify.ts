@@ -53,7 +53,8 @@ export class SonifierWithTuba {
         //set up the signal chain for the fx/synthesis
         this.convolver1 = new Tone.Convolver("./fan_sounds/cng_fan1.wav");
         this.convolver2 =  new Tone.Convolver("./fan_sounds/fan4.wav") 
-        this.tubaSampler.chain(this.convolver1, this.convolver2, this.masterCompressor);
+        // this.tubaSampler.chain(this.convolver1, this.convolver2, this.masterCompressor);
+        this.tubaSampler.connect(this.masterCompressor);
         this.masterCompressor.connect(mainVolume.getVolume());
 
         // //set up the samplers
@@ -103,11 +104,11 @@ export class SonifierWithTuba {
         return sampler; 
     }
 
-    connectSamplers(sampler, convolver1, convolver2, compressor, masterCompressor)
-    {
-        sampler.volume.rampTo(-15);
-        sampler.chain(convolver1, convolver2, compressor, this.masterCompressor);
-    }
+    // connectSamplers(sampler, convolver1, convolver2, compressor, masterCompressor)
+    // {
+    //     sampler.volume.rampTo(-15);
+    //     sampler.chain(convolver1, convolver2, compressor, this.masterCompressor);
+    // }
 
     triggerAttack()
     {
@@ -117,10 +118,12 @@ export class SonifierWithTuba {
             this.triggerRelease();
         }
 
+        //note -- it could be not done releasing when I start the next note.
+
         let keyOfCPitchClass4 = [ 72, 74, 76, 77, 79, 81, 83, 84 ]; // try higher notes
         let randNote = Math.random();
         let index = Math.floor( Scale.linear_scale( randNote, 0, 1, 0, keyOfCPitchClass4.length ) );
-        this.playingNote = keyOfCPitchClass4[index];
+        this.playingNote = keyOfCPitchClass4[index]-24;
         let velocity = 120;
         this.tubaSampler.triggerAttack(Tone.Frequency(this.playingNote, "midi").toNote(), Tone.now(), velocity);
     }
@@ -132,6 +135,7 @@ export class SonifierWithTuba {
         else
         {
             this.tubaSampler.triggerRelease(Tone.Frequency(this.playingNote, "midi").toNote(), Tone.now());
+            //this.tubaSampler.releaseAll(); 
             this.playingNote = -1; //nothing is playing
         }
 
