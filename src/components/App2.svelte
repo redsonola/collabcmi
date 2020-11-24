@@ -113,13 +113,22 @@
     
     windowedVarScore = participant.getMaxBodyPartWindowedVariance(); 
 
-    if(participant.updateTouchingFriend())
+    participant.updateTouchingFriend();
+    if(participant.areTouching())
     {
       skeletonTouching = 1; 
     }
     else 
     {
       skeletonTouching = 0;
+    }
+    if( participant.justStartedTouching() )
+    {
+      tubaSonfier.triggerAttack(); 
+    }
+    else if ( participant.justStoppedTouching() )
+    {
+      tubaSonfier.triggerRelease(); 
     }
     howLongTouch = participant.howLongTouching(); 
     howMuchTouch = participant.howMuchTouching(); ; 

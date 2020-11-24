@@ -9,7 +9,7 @@
 
 import * as Tone from "tone";
 import { AveragingFilter } from "./averagingFilterV2"; //this starts initialized. 
-import * as scale from "./scale"
+import * as Scale from "./scale"
 import type { Participant } from "./participant"
 import * as PoseIndex from "./poseConstants"
 import type { MainVolume } from "./midiConversion.js";
@@ -41,6 +41,8 @@ export class SonifierWithTuba {
     masterCompressor : Tone.Compressor;
     convolver1 : Tone.Convolver;
     convolver2 : Tone.Convolver;
+    samplersLoaded : boolean = false; 
+    playingNote : number = -1;
 
     constructor( p : Participant, mainVolume : MainVolume ) {
 
@@ -80,17 +82,19 @@ export class SonifierWithTuba {
         let sampler : Tone.Sampler; 
 
         sampler = new Tone.Sampler({
-            "E0": "028_Tuba_E0_Normal.wav",	
-            "G0": "031_Tuba_G0_Normal.wav",
-            "C1": "036_Tuba_C1_Normal.wav",
-            "Eb1": "039_Tuba_Eb1_Normal.wav",
+            // "G0": "031_Tuba_G0_Normal.wav",
+            // "C1": "036_Tuba_C1_Normal.wav",
+            // "Eb1": "039_Tuba_Eb1_Normal.wav",
             "F1": "041_Tuba_F1_Normal.wav",
             "A1": "045_Tuba_A1_Normal.wav",
             "C2": "048_Tuba_C2_Normal.wav",
             "E2": "052_Tuba_E2_Normal.wav",	
             "G2": "055_Tuba_G2_Normal.wav",
             "A2": "057_Tuba_A2_Normal.wav",
-            "Eb3": "063_Tuba_Eb3_Normal.wav"
+            "Eb3": "063_Tuba_Eb3_Normal.wav",
+            "Db3" : "061_Tuba_Db3_Normal.aif",
+            "C3" : "060_Tuba_C3_Normal.aif",
+            "D3" : "062_Tuba_D3_Normal.aif"
         },
         {
             baseUrl: "./Tuba_samples/Tuba_Long/Normal/"
@@ -105,22 +109,43 @@ export class SonifierWithTuba {
         sampler.chain(convolver1, convolver2, compressor, this.masterCompressor);
     }
 
-    areSamplersLoaded() : boolean
+    triggerAttack()
     {
-        // if(this.samplersLoaded) return true; //prob put this somewhere else
+        //for now pick a random note in key of C --> maybe put in melody, like in a midi file whatever.
+        if( this.playingNote !== -1)
+        {
+            this.triggerRelease();
+        }
 
-        // let loaded : boolean = true; 
-        // let i = 0; 
-        // while( i<this.tubaSamplers.length && loaded )
-        // {
-        //     loaded = loaded && this.tubaSamplers[i].loaded;
-        //     i++;
-        // }
-
-        // this.samplersLoaded = loaded;
-        // return loaded; 
-        return true; 
+        let keyOfCPitchClass4 = [ 72, 74, 76, 77, 79, 81, 83, 84 ]; // try higher notes
+        let randNote = Math.random();
+        let index = Math.floor( Scale.linear_scale( randNote, 0, 1, 0, keyOfCPitchClass4.length ) );
+        this.playingNote = keyOfCPitchClass4[index];
+        let velocity = 120;
+        this.tubaSampler.triggerAttack(Tone.Frequency(this.playingNote, "midi").toNote(), Tone.now(), velocity);
     }
+
+    triggerRelease()
+    {
+        if( this.playingNote === -1)
+            return; //do nothing if there is no playing note
+        else
+        {
+            this.tubaSampler.triggerRelease(Tone.Frequency(this.playingNote, "midi").toNote(), Tone.now());
+            this.playingNote = -1; //nothing is playing
+        }
+
+    }
+
+
+    //check if loaded. if already loaded return true w.o checking.
+    //I don't think I really need to do this anymore since now I am only using 1 sampler, not 5
+    // areSamplersLoaded() : boolean
+    // {
+    //     if(this.samplersLoaded) return true; //prob put this somewhere else
+    //     this.samplersLoaded = this.tubaSampler.loaded; 
+    //     return this.samplersLoaded;
+    // }
 
     //TODO: fix
     // export const bodyPartArray = [head, torso, leftArm, rightArm, leftLeg, rightLeg];

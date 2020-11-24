@@ -1122,7 +1122,7 @@ export class Participant {
         return this.participantID;
     }
 
-    updateTouchingFriend() : boolean
+    updateTouchingFriend() : void
     {
         let friendKeypoints = this.friendParticipant.getAvgKeyPoints();
         let minDistanceTouching = 0.09; //in percent, just a guess.
@@ -1138,7 +1138,22 @@ export class Participant {
             }
 
         }
+        this.touch.updateTouching(); 
+    }
+
+    areTouching() : boolean
+    {
         return this.touch.areTouching(); 
+    }
+
+    justStartedTouching() : boolean
+    {
+        return this.touch.justStartedTouching(); 
+    }
+
+    justStoppedTouching() : boolean
+    {
+        return this.touch.justStoppedTouching(); 
     }
 
     howLongTouching() : number

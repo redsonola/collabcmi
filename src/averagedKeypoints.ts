@@ -7,7 +7,8 @@ import * as PoseMatch from './poseMatching';
 //represents one touch between 2 skeletons
 export class SkeletonTouch
 {
-    touching: boolean; 
+    touching : boolean; 
+    prevTouching : boolean = false;//touching before last update?
 
     //these are arrays of indices into keypoints
 
@@ -60,14 +61,29 @@ export class SkeletonTouch
             this.indicesTouching.splice(index, 1);
     }
 
-    areTouching() : boolean
+    updateTouching() : void
     {
+        this.prevTouching = this.touching; 
         this.touching = this.indicesTouching.length > 0;
         if( !this.touching )
         {
             this.startedTouching = 0; 
         }
+    }
+
+    areTouching() : boolean
+    {
         return this.touching; 
+    }
+
+    justStartedTouching() : boolean
+    {
+        return ( !this.prevTouching && this.touching ); 
+    }
+
+    justStoppedTouching() : boolean
+    {
+        return(  this.prevTouching && !this.touching );
     }
 
     howLong()
