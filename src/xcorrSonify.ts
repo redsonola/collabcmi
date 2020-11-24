@@ -54,7 +54,7 @@ export class SonifierWithTuba {
         this.convolver1 = new Tone.Convolver("./fan_sounds/cng_fan1.wav");
         this.convolver2 =  new Tone.Convolver("./fan_sounds/fan4.wav") 
         // this.tubaSampler.chain(this.convolver1, this.convolver2, this.masterCompressor);
-        this.tubaSampler.connect(this.masterCompressor);
+        this.tubaSampler.chain(this.convolver1, this.masterCompressor);
         this.masterCompressor.connect(mainVolume.getVolume());
 
         // //set up the samplers
@@ -92,10 +92,9 @@ export class SonifierWithTuba {
             "E2": "052_Tuba_E2_Normal.wav",	
             "G2": "055_Tuba_G2_Normal.wav",
             "A2": "057_Tuba_A2_Normal.wav",
+            "C3" : "060_Tuba_C3_Normal.wav",
+            "D3" : "062_Tuba_D3_Normal.wav",
             "Eb3": "063_Tuba_Eb3_Normal.wav",
-            "Db3" : "061_Tuba_Db3_Normal.aif",
-            "C3" : "060_Tuba_C3_Normal.aif",
-            "D3" : "062_Tuba_D3_Normal.aif"
         },
         {
             baseUrl: "./Tuba_samples/Tuba_Long/Normal/"
@@ -112,6 +111,12 @@ export class SonifierWithTuba {
 
     triggerAttack()
     {
+        // if(!this.tubaSampler.loaded)
+        // {
+        //     console.log("Sampler not loaded!");
+        //     return; 
+        // }
+
         //for now pick a random note in key of C --> maybe put in melody, like in a midi file whatever.
         if( this.playingNote !== -1)
         {
@@ -119,13 +124,22 @@ export class SonifierWithTuba {
         }
 
         //note -- it could be not done releasing when I start the next note.
-
-        let keyOfCPitchClass4 = [ 72, 74, 76, 77, 79, 81, 83, 84 ]; // try higher notes
-        let randNote = Math.random();
-        let index = Math.floor( Scale.linear_scale( randNote, 0, 1, 0, keyOfCPitchClass4.length ) );
-        this.playingNote = keyOfCPitchClass4[index]-24;
-        let velocity = 120;
-        this.tubaSampler.triggerAttack(Tone.Frequency(this.playingNote, "midi").toNote(), Tone.now(), velocity);
+        //there is an error with the triggerAttack method in here. 
+        //using try/catch to carry on but looking into it & also will do more sound design
+        try
+        {
+            let keyOfCPitchClass4 = [ 72, 74, 76, 77, 79, 81, 83, 84 ]; // try higher notes
+            let randNote = Math.random();
+            let index = Math.floor( Scale.linear_scale( randNote, 0, 1, 0, keyOfCPitchClass4.length ) );
+            this.playingNote = keyOfCPitchClass4[index]-24;
+            let velocity = 120;
+            this.tubaSampler.triggerAttack(Tone.Frequency(this.playingNote, "midi").toNote(), Tone.now(), velocity);
+        }
+        catch(e)
+        {
+            console.log(e);
+            console.log( this.playingNote );
+        }
     }
 
     triggerRelease()
