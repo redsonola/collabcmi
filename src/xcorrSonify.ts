@@ -44,6 +44,9 @@ export class SonifierWithTuba {
     samplersLoaded : boolean = false; 
     playingNote : number = -1;
 
+    vibrato : Tone.Vibrato; 
+    feedbackDelay : Tone.FeedbackDelay; 
+
     constructor( p : Participant, mainVolume : MainVolume ) {
 
         this.participant = p; 
@@ -54,8 +57,13 @@ export class SonifierWithTuba {
         this.convolver1 = new Tone.Convolver("./fan_sounds/cng_fan1.wav");
         this.convolver2 =  new Tone.Convolver("./fan_sounds/fan4.wav") 
         // this.tubaSampler.chain(this.convolver1, this.convolver2, this.masterCompressor);
-        this.tubaSampler.chain(this.convolver1, this.masterCompressor);
+        this.vibrato = new Tone.Vibrato(0, 1); 
+        this.feedbackDelay = new Tone.FeedbackDelay("4n", 0.25);
+
+        this.tubaSampler.chain(this.convolver1, this.vibrato, this.feedbackDelay, this.masterCompressor);
         this.masterCompressor.connect(mainVolume.getVolume());
+        this.tubaSampler.release = 0.25; 
+        this.tubaSampler.curve = "exponential"; 
 
         // //set up the samplers
         // for(let i=0; i<PoseIndex.bodyPartArray.length; i++)
@@ -142,13 +150,19 @@ export class SonifierWithTuba {
         }
     }
 
+    setVibrato(freq: number, depth : number )
+    {
+        this.vibrato.frequency.value = freq; 
+        this.vibrato.depth.value = depth; 
+    }
+
     triggerRelease()
     {
         if( this.playingNote === -1)
             return; //do nothing if there is no playing note
         else
         {
-            this.tubaSampler.triggerRelease(Tone.Frequency(this.playingNote, "midi").toNote(), Tone.now());
+            this.tubaSampler.triggerRelease(Tone.Frequency(this.playingNote, "midi").toNote());
             //this.tubaSampler.releaseAll(); 
             this.playingNote = -1; //nothing is playing
         }

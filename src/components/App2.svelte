@@ -131,7 +131,20 @@
       tubaSonfier.triggerRelease(); 
     }
     howLongTouch = participant.howLongTouching(); 
-    howMuchTouch = participant.howMuchTouching(); ; 
+    howMuchTouch = participant.howMuchTouching();
+    
+    let freq = 0;
+    if(howLongTouch >= 2)
+    {
+      freq = Scale.linear_scale(howLongTouch, 2, 10, 0, 7);
+    }
+
+    let depth = 0; 
+    if(howLongTouch >= 2)
+    {
+      depth = Scale.linear_scale(howLongTouch, 2, 10, 0, 0.3);
+    }
+    tubaSonfier.setVibrato(freq, depth);
 
 
     try {
@@ -177,7 +190,8 @@
     } catch (ex) {
       console.warn(ex);
     }
-    midiFile.magneticPlay( synchScore, windowedVarScore ); //commented out for testing
+    //this for the other project
+    // midiFile.magneticPlay( synchScore, windowedVarScore ); //commented out for testing
 
   }
 
