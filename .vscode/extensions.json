@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "eamodio.gitlens",
+    "svelte.svelte-vscode",
+    "christian-kohler.npm-intellisense",
+    "bierner.docs-view"
+  ]
+}
