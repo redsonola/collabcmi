@@ -10,6 +10,8 @@ import type { Keypoint } from '@tensorflow-models/posenet';
 import { AverageFilteredKeyPoints, SkeletonTouch } from './averagedKeypoints';
 import * as PoseMatch from './poseMatching';
 import * as Scale from './scale'
+import  {SkeletionIntersection} from './skeletonIntersection'
+import type { AnyARecord } from 'dns';
 
 
 /* TODO:
@@ -94,7 +96,7 @@ export class Participant {
     maxVarAvg  : AveragingFilter;
 
     touch : SkeletonTouch =  new SkeletonTouch(); 
-
+    intersection : SkeletionIntersection;; 
 
     constructor() {
         this.windowSize = 16; //should test different window sizes.
@@ -180,11 +182,19 @@ export class Participant {
         }
 
         this.setPoseSamplesRate(4); //ok just set to start with
+
+        this.intersection = new SkeletionIntersection(this);
     }
 
     addFriendParticipant( p : Participant )
     {
         this.friendParticipant = p; 
+        this.intersection.setFriend(p.getSkeletonIntersection()); 
+    }
+
+    getSkeletonIntersection()
+    {
+        return this.intersection; 
     }
 
     isFriendPartcipantNull()
@@ -1128,13 +1138,15 @@ export class Participant {
         let friendKeypoints = this.friendParticipant.getAvgKeyPoints();
         let minDistanceTouching = 0.09; //in percent, just a guess.
 
+        this.intersection.update(); //TODO only update when have friend
+
         //TODO: refactor so I only do this once.
         let iAmSecond = orderParticipantID( this.participantID, this.friendParticipant.getParticipantID() ) === -1;
  
         if( friendKeypoints )
         {
             for(let i=0; i<friendKeypoints.length; i++){
-                this.touch = this.avgKeyPoints.touching( friendKeypoints[i], minDistanceTouching, this.touch, this.width, this.height, 
+                this.touch = this.touching( friendKeypoints[i], minDistanceTouching, this.touch, this.width, this.height, 
                     this.friendParticipant.getWidth(), this.friendParticipant.getHeight(), i, iAmSecond);
             }
 
@@ -1166,6 +1178,83 @@ export class Participant {
     {
         return this.touch.howMuchTouching(); 
     }
+
+    //moved from avg keypoints... prob need to refactor this shit.
+    //TODO: how much of the body & also for how long (scale?)
+    //Then -- how fast before the touch? prob just windowedvar @ touch 
+    //Then refine the touch measure so is less crude -- ie now it is just distance btw. keypoints but prob need to look at distance from skeleton/connecting line
+    touching( keypointToTest: any, minDistanceTouching: number, sTouch: SkeletonTouch, w:number, h:number, 
+        theirW:number, theirH:number, index:number, iAmSecond: boolean=false ) : SkeletonTouch
+    {
+
+        //TODO: ok this should be a passed in value -- but it is passed in via draw3js.ts line 84 
+        let percentXOver = 0.66; 
+
+       if( sTouch === undefined )
+       {
+           sTouch = new SkeletonTouch();
+       }
+       
+        let {y:ty, x:tx } = keypointToTest.position; 
+        let scaledTx = 1-( tx / theirW );
+        if(!iAmSecond)
+        {
+            scaledTx -= percentXOver; //move the friend over, since that is the one that will be offset
+        }
+        let scaledTy = ty / theirH;
+
+        let keypoints : any = this.avgKeyPoints.top(); 
+
+        let minConfidence = 0.4; //testing new minconfidences.
+        
+
+        for(let i=0; i<keypoints.length; i++){
+            const keypoint = keypoints[i];
+            const { y, x } = keypoint.position;
+            let scaledX = 1-( x / w ); //x is flipped 
+            if(iAmSecond)
+            {
+                scaledX -= percentXOver;
+            }
+
+            let scaledY = y / h;
+            const score = keypoint.score; 
+
+            // if(score >= minConfidence && keypointToTest.score >= minConfidence ){
+            //     console.log( keypointToTest.part+ " scaledTx:" + scaledTx );//+ " scaledY:" + scaledY);
+            // }
+
+            let dist = this.avgKeyPoints.getDist(scaledTx-scaledX, scaledTy-scaledY); //yikes what is wrong with me
+            if(( dist < minDistanceTouching  && score >= minConfidence && keypointToTest.score >= minConfidence )
+            || (this.intersection.touching()) )
+            {
+                sTouch.addTouch( i, index );
+
+                // console.log( "touching! dist: " + dist + " scaledX:" + scaledX + " scaledY:" + scaledY + 
+                // " scaledTx:" + scaledTx + " scaledTy:" + scaledTy + " my index: " + keypoint.part + " their index: " + keypointToTest.part ); 
+
+            //     console.log( "touching! dist: " + dist + " my score:" + score + " their score:" + keypointToTest.score + 
+            //     " my index: " + keypoint.part + " their index: " + keypointToTest.part ); 
+
+            //    console.log( "scaledX:" + scaledX + " scaledY:" + scaledY + 
+            //     " scaledTx:" + scaledTx + " scaledTy:" + scaledTy + " my index: " + keypoint.part + " their index: " + keypointToTest.part ); 
+
+ 
+            }
+            else
+            {
+                sTouch.removeTouch( i, index );
+
+                // console.log( "NOT TOUCHING! dist: " + dist + " scaledX:" + scaledX + " scaledY:" + scaledY + 
+                // " scaledTx:" + scaledTx + " scaledTy:" + scaledTy + " my index: " + keypoint.part + " their index: " + keypointToTest.part ); 
+
+            }
+        }
+
+        return sTouch; 
+
+    }
+
 
 
 };
