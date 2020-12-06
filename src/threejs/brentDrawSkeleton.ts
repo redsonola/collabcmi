@@ -76,7 +76,7 @@ for (let i =0; i < 15; i++) {
   colors.push(new MeshBasicMaterial({ color: randomColor() }));
 }
 
-function makeLine(points: Vector3[]): THREE.Mesh {
+export function makeLine(points: Vector3[]): THREE.Mesh {
   const shape = new THREE.Shape();
 
   shape.moveTo(points[0].x, points[0].y);

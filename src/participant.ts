@@ -1225,8 +1225,7 @@ export class Participant {
             // }
 
             let dist = this.avgKeyPoints.getDist(scaledTx-scaledX, scaledTy-scaledY); //yikes what is wrong with me
-            if(( dist < minDistanceTouching  && score >= minConfidence && keypointToTest.score >= minConfidence )
-            || (this.intersection.touching()) )
+            if(( dist < minDistanceTouching  && score >= minConfidence && keypointToTest.score >= minConfidence ) )
             {
                 sTouch.addTouch( i, index );
 
@@ -1249,6 +1248,11 @@ export class Participant {
                 // " scaledTx:" + scaledTx + " scaledTy:" + scaledTy + " my index: " + keypoint.part + " their index: " + keypointToTest.part ); 
 
             }
+        }
+
+        if (this.intersection.touching() )
+        {
+            sTouch.addTouch(0, 0); //TODO -- get these values from the skeleton
         }
 
         return sTouch; 

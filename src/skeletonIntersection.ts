@@ -17,26 +17,62 @@ function distance(keypoints: any, poseIndex1 : number, poseIndex2 : number) : nu
     return Math.sqrt(dist); 
 }
 
-class LimbIntersect
+//super class
+class DetectIntersect
+{
+    minConfidence : number; 
+    constructor(minConfidence : number)
+    {
+        this.minConfidence = minConfidence;
+    }
+
+    getVectors() : THREE.Vector3[]
+    {
+        let v : THREE.Vector3[] = [];
+        return v;
+    }
+
+    getScore() : number
+    {
+        return 0;
+    }
+
+    update( keypoints: any) : void
+    {
+
+    }
+
+
+
+}
+
+
+
+export class LimbIntersect extends DetectIntersect
 {
     limbLine : THREE.Line3; 
     keypoints : any[]; 
     index1 : number; 
     index2 : number;
-    minConfidence : number
 
     constructor(index1_ : number, index2_ : number, minConfidence_ : number = 0.4)
     {
+        super(minConfidence_);
         this.limbLine = new THREE.Line3(); 
         this.index1 = index1_;
         this.index2 = index2_;
         this.keypoints = []; 
 
-        this.minConfidence = minConfidence_;
+        
     }
     setLine(limb : THREE.Line3)
     {
         this.limbLine = limb; 
+    }
+
+    getVectors() : THREE.Vector3[]
+    {
+        return [this.limbLine.start, this.limbLine.end]; 
     }
 
     getScore() : number
@@ -143,24 +179,30 @@ class LimbIntersect
 
 }
 
-class TorsoIntersect
+class BodyPartIntersect extends DetectIntersect
 {
-    limbs : LimbIntersect[]; //lol
-    minConfidence : number; 
 
-    constructor(minConfidence_ : number = 0.4)
+    limbs : LimbIntersect[]; //lol
+
+    constructor(confidence : number)
     {
-        this.minConfidence = minConfidence_; 
-        this.limbs = 
-        [
-            new  LimbIntersect( PoseIndex.leftShoulder, PoseIndex.rightShoulder, this.minConfidence ),
-            new  LimbIntersect( PoseIndex.leftShoulder, PoseIndex.leftHip, this.minConfidence ),
-            new  LimbIntersect( PoseIndex.leftHip, PoseIndex.rightHip, this.minConfidence ),
-            new  LimbIntersect( PoseIndex.rightHip, PoseIndex.rightShoulder, this.minConfidence )
-        ];
+        super(confidence);
+        this.limbs = [];
+
     }
 
-    update(keypoints)
+    getVectorsFromLimbs( limbs_ : LimbIntersect[] ) : THREE.Vector3[]
+    {
+        let vectors : THREE.Vector3[] = []; 
+
+        for( let i=0; i<limbs_.length; i++ )
+        {
+            vectors = vectors.concat( limbs_[i].getVectors() );
+        }
+        return vectors;
+    }
+
+    update(keypoints : any[]) : void
     {
         for(let i=0; i<this.limbs.length; i++)
             this.limbs[i].update(keypoints);
@@ -171,7 +213,12 @@ class TorsoIntersect
         return this.limbs; 
     }
 
-    intersectWithTorso( torso : TorsoIntersect ) : boolean
+    getVectors()
+    {
+        return this.getVectorsFromLimbs( this.limbs );
+    }
+
+    intersects( torso : BodyPartIntersect ) : boolean
     {
         let otherLimbs = torso.getLimbs(); 
         for(let i=0; i<this.limbs.length; i++)
@@ -185,15 +232,39 @@ class TorsoIntersect
         return false;
     }
 
-    intersectWithLimb( limb : LimbIntersect ) : boolean
+    // intersectWithLimb( limb : LimbIntersect ) : boolean
+    // {
+    //     for(let i=0; i<this.limbs.length; i++)
+    //     {
+    //         if(this.limbs[i].intersects(limb))
+    //         return true; 
+    //     }  
+    //     return false;     
+    // }
+}
+
+
+class TorsoIntersect extends BodyPartIntersect
+{
+
+    constructor(minConfidence_ : number = 0.4)
     {
-        for(let i=0; i<this.limbs.length; i++)
-        {
-            if(this.limbs[i].intersects(limb))
-            return true; 
-        }  
-        return false;     
+        super(minConfidence_)
+        this.limbs = 
+        [
+            new  LimbIntersect( PoseIndex.leftShoulder, PoseIndex.rightShoulder, this.minConfidence ),
+            new  LimbIntersect( PoseIndex.leftShoulder, PoseIndex.leftHip, this.minConfidence ),
+            new  LimbIntersect( PoseIndex.leftHip, PoseIndex.rightHip, this.minConfidence ),
+            new  LimbIntersect( PoseIndex.rightHip, PoseIndex.rightShoulder, this.minConfidence )
+        ];
     }
+
+}
+
+//ok do the arms & legs - yes odd inheritance but its hte same tghing
+class ArmsLegs extends TorsoIntersect
+{
+
 }
 
 class HeadBoundary extends LimbIntersect
@@ -214,16 +285,15 @@ class HeadBoundary extends LimbIntersect
     }
 }
 
-class HeadIntersect
+class HeadIntersect extends BodyPartIntersect
 {
     boundaries : HeadBoundary[]; 
-    minConfidence : number;
     sphere : THREE.Sphere; 
     index : number[]; 
 
-    constructor(confidence : number = 0.4)
+    constructor(confidence)
     {
-        this.minConfidence = confidence; 
+        super(confidence);
         this.boundaries = [
             new HeadBoundary(confidence),
             new HeadBoundary(confidence),
@@ -236,7 +306,7 @@ class HeadIntersect
     }
 
     //return max instead of average. need to compensate for ears tho
-    getScore(keypoints : any[]) : number
+    getAvgScore(keypoints : any[]) : number
     {
         let score : number = 0;
         for(let i=0; i<this.index.length; i++)
@@ -257,6 +327,11 @@ class HeadIntersect
         this.boundaries[3].updateBoundary(box.max.x, box.min.y, box.min.x, box.min.y, score  );
     }
 
+    getVectors()
+    {
+        return this.getVectorsFromLimbs( this.boundaries );
+    }
+
     update(keypoints : any[])
     {
         //TODO: deal with confidence later on this.
@@ -270,7 +345,7 @@ class HeadIntersect
         this.sphere.set(headCenter, noseToEarDistance); 
         let box = new THREE.Box3; 
         box = this.sphere.getBoundingBox(box);
-        this.updateBoundaries(box, this.getScore(keypoints)); 
+        this.updateBoundaries(box, this.getAvgScore(keypoints)); 
     }
 
     //lol
@@ -326,8 +401,17 @@ export class SkeletionIntersection
 
     participant : Participant; 
 
+
+    leftArmBuf : THREE.BufferGeometry;
+    rightArmBuf : THREE.BufferGeometry;
+    leftLegBuf : THREE.BufferGeometry;
+    rightLegBuf : THREE.BufferGeometry;
+    headBuf : THREE.BufferGeometry;
+    torsoBuf : THREE.BufferGeometry;
+
     leftArmUpperLine : LimbIntersect; 
     rightArmUpperLine : LimbIntersect; 
+
     leftArmLowerLine : LimbIntersect; 
     rightArmLowerLine : LimbIntersect; 
 
@@ -340,8 +424,9 @@ export class SkeletionIntersection
 
     torso: TorsoIntersect; 
 
-
     limbs : LimbIntersect[]; 
+
+    parts: DetectIntersect[];
 
     friendSkeleton : any = undefined; // I find annoying that neither null or undefined can be assigned to defined type except via | which introduces even more freaking complexity. WTF.
 
@@ -364,6 +449,22 @@ export class SkeletionIntersection
 
         this.limbs = [ this.leftArmUpperLine, this.rightArmUpperLine, this.leftArmLowerLine, this.rightArmLowerLine,
             this.leftLegUpperLine, this.rightLegUpperLine, this.leftLegLowerLine, this.rightLegLowerLine   ];
+        
+        this.parts = [this.head, this.torso, ...this.limbs]; 
+      
+        this.leftArmBuf = new THREE.BufferGeometry();
+        this.rightArmBuf = new THREE.BufferGeometry();
+        this.leftLegBuf = new THREE.BufferGeometry();
+        this.rightLegBuf = new THREE.BufferGeometry();
+        this.headBuf = new THREE.BufferGeometry();
+        this.torsoBuf = new THREE.BufferGeometry();
+    
+    }
+
+    getLines() : THREE.Line3[]
+    {
+        let lines = [];
+        return lines; 
     }
 
     setFriend(friend : SkeletionIntersection)
@@ -371,20 +472,35 @@ export class SkeletionIntersection
         this.friendSkeleton = friend; 
     }
 
-    updateLimbs( keypoints: any ) : void
-    {
-        for(let i=0; i<this.limbs.length; i++)
-        {
-            this.limbs[i].update(keypoints);
-        }
-    }
+    // updateLimbs( keypoints: any ) : void
+    // {
+    //     for(let i=0; i<this.limbs.length; i++)
+    //     {
+    //         this.limbs[i].update(keypoints);
+    //     }
+    // }
+
+    //TODO -- make arms & legs body parts & then just do it one for-loop
+    // updateGeometry()
+    // 
+    //     this.headBuf.setFromPoints( this.head.getVectors() );
+    //     this.torsoBuf.setFromPoints( this.torso.getVectors() );       
+
+    //     this.leftArmBuf.setFromPoints 
+    //     this.rightArmBuf
+    //     this.leftLegBuf
+    //     this.rightLegBuf
+
+    // }
 
     update()
     {
         let keypoints1 = this.participant.getAvgKeyPoints(); 
-        this.head.update(keypoints1); 
-        this.getTorso().update(keypoints1); 
-        this.updateLimbs(keypoints1); 
+        for(let i=0; i<this.parts.length; i++)
+            this.parts[i].update(keypoints1);
+        // this.head.update(keypoints1); 
+        // this.getTorso().update(keypoints1); 
+        // this.updateLimbs(keypoints1); 
     }
 
 
@@ -414,17 +530,36 @@ export class SkeletionIntersection
     {
         return this.limbs; 
     }
+
+    //TODO: return where it is touching
+
     
     touching()
     {
-        //TODO: return out when found
-        let touch : boolean = false;
-
         //check the stuff
-        touch = touch || this.head.intersectsWithHead( this.friendSkeleton.getHead() );
-        touch = touch || this.head.intersectsWithTorso( this.friendSkeleton.getTorso() );
-        touch = touch || this.friendSkeleton.getHead().intersectsWithTorso( this.getTorso() );
-        touch = touch || this.getTorso().intersectWithTorso( this.friendSkeleton.getTorso() ); 
+        if( this.head.intersectsWithHead( this.friendSkeleton.getHead() ) )
+        {
+            console.log("Head to head touch");
+            return true; 
+        }
+
+        if( this.head.intersectsWithTorso( this.friendSkeleton.getTorso() ) )
+        {
+            console.log("Head to torso touch");
+            return true;            
+        }
+
+        if( this.friendSkeleton.getHead().intersectsWithTorso( this.getTorso() ) )
+        {
+            console.log("Torso to head touch");
+            return true;             
+        }
+
+        if( this.getTorso().intersects( this.friendSkeleton.getTorso() ) )
+        {
+            console.log("Torso to torso touch");
+            return true;           
+        }
 
         //check all the limbs against each other 
         let friendLimbs = this.friendSkeleton.getLimbs();
@@ -433,22 +568,43 @@ export class SkeletionIntersection
         for (let i=0; i<this.limbs.length; i++) 
         {
             //head to limbs 
-            touch = touch || this.getHead().intersectsWithLimb( friendLimbs[i] ) ;
-            touch = touch || this.friendSkeleton.getHead().intersectsWithLimb( this.limbs[i] ) ;
+            if( this.getHead().intersectsWithLimb( friendLimbs[i] ) )
+            {
+                console.log("Head to friend limb touch: " + i );
+                return true;               
+            }
 
+            if( this.friendSkeleton.getHead().intersectsWithLimb( this.limbs[i] ) )
+            {
+                console.log("Limb to friend head touch: " + i );
+                return true;  
+            }
 
-            //torso to limbs
-            touch = touch || this.getTorso().intersectWithLimb( friendLimbs[i] );
-            touch = touch || this.friendSkeleton.getTorso().intersectWithLimb( this.limbs[i] );
+            //torso to limbs 
+            if( this.getTorso().intersects( friendLimbs[i] ) )
+            {
+                console.log("Torso to friend limb touch: " + i );
+                return true;               
+            }
+            
+            if( this.friendSkeleton.getTorso().intersectWithLimb( this.limbs[i] ) )
+            {
+                console.log("Limb to torso head touch: " + i );
+                return true;  
+            }
 
             //limbs to limbs
             for( let j=0; j<friendLimbs.length; j++ )
             {
-                touch = touch || this.limbs[i].intersects( friendLimbs[j] );       
+                if( this.limbs[i].intersects( friendLimbs[j] ) )
+                {
+                    console.log("Limb " +i + "to limb head touch: " + j );
+                    return true;  
+                }                
             }
         }
 
-        return touch; 
+        return false; 
     }
 
 }
