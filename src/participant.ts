@@ -1261,7 +1261,7 @@ export class Participant {
         }
 
         this.intersection.setShouldFlipSelf(iAmSecond)
-        if (this.intersection.touching() )
+        if (this.intersection.touching(w, h) )
         {
             sTouch.addTouch(0, 0); //TODO -- get these values from the skeleton
         }

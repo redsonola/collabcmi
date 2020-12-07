@@ -13,8 +13,19 @@ function distance(keypoints: any, poseIndex1 : number, poseIndex2 : number) : nu
     let x2 = keypoints[poseIndex2].position.x;
     let y2 = keypoints[poseIndex2].position.y; 
 
+    return distance2d(x1, y1, x2, y2);
+}
+
+
+function distance2d(x1:number, y1:number, x2:number, y2:number) : number
+{
     let dist = (x2-x1)**2 + (y2-y1)**2; 
     return Math.sqrt(dist); 
+}
+
+function distance2dFromXYVector3( v1 : THREE.Vector3, v2 : THREE.Vector3 )
+{
+    return distance2d( v1.x, v1.y, v2.x, v2.y );
 }
 
 //super class
@@ -69,6 +80,11 @@ export class LimbIntersect extends DetectIntersect
         
     }
 
+    getIndex1() : number
+    {
+        return this.index1;
+    }
+
     setSize(w:number, h:number)
     {
         this.w = w; 
@@ -111,15 +127,44 @@ export class LimbIntersect extends DetectIntersect
     {
         return this.limbLine; 
     }
+
+    setLine3(  l : THREE.Line3, pt1 : THREE.Vector3, pt2 : THREE.Vector3  ) : THREE.Line3
+    {
+        let start : THREE.Vector3 ;
+        let end : THREE.Vector3 ;
+
+        let val1 : number = (pt2.x - pt1.x); 
+        let val2 : number = (pt2.y - pt1.y); 
+
+        if((val1 < 0) || (val2 < 0))
+        {
+            start = pt2; 
+            end = pt1;
+        }
+        else
+        {
+            start = pt1; 
+            end = pt2; 
+        }  
+        l.set(start, end); 
+        return l; 
+    }
+
+    setLimbLine(pt1 : THREE.Vector3, pt2 : THREE.Vector3  )
+    {
+        this.limbLine = this.setLine3( this.limbLine, pt1, pt2 );     
+    }
+
     update( keypoints: any) : void
     {
         this.keypoints = []
         this.keypoints.push(keypoints[this.index1]);
         this.keypoints.push(keypoints[this.index2]);
 
-
-        this.limbLine.set( new THREE.Vector3(keypoints[this.index1].position.x, keypoints[this.index1].position.y, 2), 
-            new THREE.Vector3(keypoints[this.index2].position.x, keypoints[this.index2].position.y, 2) ); 
+        let pt1 : THREE.Vector3 =  new THREE.Vector3(keypoints[this.index1].position.x, keypoints[this.index1].position.y, 2);
+        let pt2 : THREE.Vector3 =  new THREE.Vector3(keypoints[this.index2].position.x, keypoints[this.index2].position.y, 2) ;
+        
+        this.setLimbLine(pt1, pt2);
     }
 
         //modified from : https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
@@ -201,18 +246,83 @@ export class LimbIntersect extends DetectIntersect
         return new THREE.Vector3( scaledX, scaledY, 2 );
     }
 
-    scaleLine(l : THREE.Line3) : THREE.Line3
+    scaleLine(l : THREE.Line3, flip : boolean) : THREE.Line3
     {
-        return new THREE.Line3( this.scaleVector(l.start, this.flip), this.scaleVector(l.end, !this.flip) ); 
+
+        let line : THREE.Line3 = new THREE.Line3();
+        return this.setLine3( line, this.scaleVector(l.start, flip), this.scaleVector(l.end, flip) ); 
     }
 
-    intersects(limb : LimbIntersect) : boolean
+    findDistBetweenPointAndLine( v : THREE.Vector3, aLine : THREE.Line3 ) : number
     {
+        let dist : number;
+
+        let closestPoint = new THREE.Vector3(); 
+        closestPoint = aLine.closestPointToPoint( v, true, closestPoint );
+        dist = distance2dFromXYVector3( v, closestPoint  ); 
+        return dist; 
+    }
+
+    closeEnough(limb : LimbIntersect, whatIsEnough : number)
+    {
+        let myLine = this.scaleLine( this.line(), this.flip ); 
+        let otherLine = this.scaleLine( limb.line(), !this.flip ); 
+
+        //find shortest distance btw 2 end points 
+        let dist : number = this.findDistBetweenPointAndLine( otherLine.start, myLine );
+        dist = Math.min( dist, this.findDistBetweenPointAndLine( otherLine.end, myLine ) ); 
+        dist = Math.min( dist, this.findDistBetweenPointAndLine( myLine.end, otherLine ) ); 
+        dist = Math.min( dist, this.findDistBetweenPointAndLine( myLine.start, otherLine ) ); 
+
+        //find the shortest distance btw each midpoint 
+        let myMidPoint = new THREE.Vector3();
+        myMidPoint = myLine.getCenter(myMidPoint); 
+
+        let otherMidPoint = new THREE.Vector3();
+        otherMidPoint = otherLine.getCenter(otherMidPoint); 
+
+        dist = Math.min( dist, this.findDistBetweenPointAndLine( myMidPoint, otherLine ) ); 
+        dist = Math.min( dist, this.findDistBetweenPointAndLine( otherMidPoint, myLine ) ); 
+
+
+        if(dist <= whatIsEnough)
+        {
+            console.log("touching? " + dist); 
+        }
+
+        return dist <= whatIsEnough; 
+    }
+
+    intersects(limb : LimbIntersect, w:number, h:number) : boolean
+    {
+        this.w = w; 
+        this.h = h; 
+        let myLine = this.scaleLine( this.line(), this.flip ); 
+        let otherLine = this.scaleLine( limb.line(), !this.flip ); 
+        const CLOSE_ENOUGH : number = 0.09;
         let intersect : boolean = false; 
         if( this.getScore() > this.minConfidence && limb.getScore() > this.minConfidence )
         {
-            intersect = this.intersectsLine(this.scaleLine(this.line()), this.scaleLine(limb.line()) );
+            //  intersect = this.intersectsLine(myLine, otherLine);
+            if(!intersect)
+            {
+                intersect = this.closeEnough( limb, CLOSE_ENOUGH ); //from previous experimentation
+            }
         }
+        // if(intersect)
+        // {
+        //     console.log("touch start");
+
+        //     console.log(this.getIndex1() +":"+ myLine.start.x  + "," + myLine.start.y + " | "  
+        //     + myLine.end.x  + "," + myLine.end.y );
+
+        //     console.log(limb.getIndex1() + ": "+otherLine.start.x  + "," + otherLine.start.y + " | "  
+        //     + otherLine.end.x  + "," + otherLine.end.y );
+
+        //     console.log("touch end");
+    
+        // }
+
         return intersect; 
     }
 
@@ -340,7 +450,7 @@ class BodyPartIntersect extends DetectIntersect
         return this.getVectorsFromLimbs( this.limbs );
     }
 
-    intersects( bodypart : BodyPartIntersect ) : boolean
+    intersects( bodypart : BodyPartIntersect, w:number, h:number ) : boolean
     {
         let otherLimbs = bodypart.getLimbs(); 
         for(let i=0; i<this.limbs.length; i++)
@@ -348,7 +458,7 @@ class BodyPartIntersect extends DetectIntersect
             for(let j=0; j<otherLimbs.length; j++)
             {
                 if( this.limbs[i].getScore() > this.minConfidence )
-                    if(this.limbs[i].intersects(otherLimbs[j]))
+                    if(this.limbs[i].intersects(otherLimbs[j], w, h))
                         return true; 
             }
         }
@@ -411,8 +521,10 @@ class HeadBoundary extends LimbIntersect
         this.keypoints.push( { position: {x : x1, y : y1 }, score: score_ } );
         this.keypoints.push( { position: {x : x2, y : y2 }, score: score_ } );
 
-        this.limbLine.set( new THREE.Vector3(x1, y1,2), 
-            new THREE.Vector3(x2,y2,2 ) );
+        let pt1 : THREE.Vector3 =  new THREE.Vector3(x1, y1,2);
+        let pt2 : THREE.Vector3 =  new THREE.Vector3(x2,y2,2 ) ;
+        
+        this.setLimbLine(pt1, pt2);
     }
 }
 
@@ -583,7 +695,7 @@ export class SkeletionIntersection
     //TODO: return where it is touching
 
     
-    touching()
+    touching(w:number, h:number)
     {
 
         // (window as any).headIntersect = this.head.getPositions(); 
@@ -595,14 +707,14 @@ export class SkeletionIntersection
 
         this.friendSkeleton.setShouldFlipSelf( !this.shouldFlipSelf ); 
 
-        let i = 0; 
+        let i = 0; //skipping head for now
         let j; 
         while( !touch && i<this.parts.length )
         {
             j = 0; 
             while( !touch && j<friendParts.length )
             {
-                touch = this.parts[i].intersects( friendParts[j]  ) ;
+                touch = this.parts[i].intersects( friendParts[j], w, h  ) ;
                 j++;
             }
             i++;
