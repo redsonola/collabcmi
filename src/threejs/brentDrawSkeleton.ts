@@ -76,7 +76,7 @@ for (let i =0; i < 15; i++) {
   colors.push(new MeshBasicMaterial({ color: randomColor() }));
 }
 
-export function makeLine(points: Vector3[]): THREE.Mesh {
+function makeLine(points: Vector3[]): THREE.Mesh {
   const shape = new THREE.Shape();
 
   shape.moveTo(points[0].x, points[0].y);
@@ -91,7 +91,6 @@ export function makeLine(points: Vector3[]): THREE.Mesh {
 
   return mesh;
 }
-
 
 export function createSkeleton(pose: Pose, filter = (x: Keypoint) => true): THREE.Group {
   const goodKeypoints = pose.keypoints.filter(filter);

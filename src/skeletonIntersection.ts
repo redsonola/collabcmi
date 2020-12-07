@@ -40,9 +40,7 @@ class DetectIntersect
     update( keypoints: any) : void
     {
 
-    }
-
-
+    }    
 
 }
 
@@ -54,17 +52,34 @@ export class LimbIntersect extends DetectIntersect
     keypoints : any[]; 
     index1 : number; 
     index2 : number;
+    flip : boolean = false; 
+    w : number;
+    h  : number;
 
-    constructor(index1_ : number, index2_ : number, minConfidence_ : number = 0.4)
+    constructor(w:number, h:number, index1_ : number, index2_ : number, minConfidence_ : number = 0.4)
     {
         super(minConfidence_);
         this.limbLine = new THREE.Line3(); 
         this.index1 = index1_;
         this.index2 = index2_;
         this.keypoints = []; 
+        this.w = w;
+        this.h = h;
 
         
     }
+
+    setSize(w:number, h:number)
+    {
+        this.w = w; 
+        this.h = h; 
+    }
+    
+    setFlipSelf(flip : boolean)
+    {
+        this.flip = flip; 
+    }
+
     setLine(limb : THREE.Line3)
     {
         this.limbLine = limb; 
@@ -82,7 +97,10 @@ export class LimbIntersect extends DetectIntersect
         {
             for( let i=0; i<this.keypoints.length; i++ )
             {
-                avg += this.keypoints[i].score; 
+                if( this.keypoints[i].score )
+                {
+                    avg += this.keypoints[i].score; 
+                }
             }
             avg /= this.keypoints.length; 
         }
@@ -100,8 +118,8 @@ export class LimbIntersect extends DetectIntersect
         this.keypoints.push(keypoints[this.index2]);
 
 
-        this.limbLine.set( new THREE.Vector3(keypoints[this.index1].position.x, 0, keypoints[this.index1].position.y), 
-            new THREE.Vector3(keypoints[this.index2].position.x, 0, keypoints[this.index2].position.y, ) ); 
+        this.limbLine.set( new THREE.Vector3(keypoints[this.index1].position.x, keypoints[this.index1].position.y, 2), 
+            new THREE.Vector3(keypoints[this.index2].position.x, keypoints[this.index2].position.y, 2) ); 
     }
 
         //modified from : https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
@@ -167,15 +185,42 @@ export class LimbIntersect extends DetectIntersect
         return false; // Doesn't fall in any of the above cases 
     } 
 
+    scaleVector( v: THREE.Vector3, flip:boolean ) : THREE.Vector3
+    {
+        //TODO: ok this should be a passed in value -- but it is passed in via draw3js.ts line 84 
+        let percentXOver = 0.66; 
+
+        let scaledX = 1-( v.x / this.w ); //x is flipped 
+        if(flip)
+        {
+            scaledX -= percentXOver;
+        }
+
+        let scaledY = v.y / this.h;
+
+        return new THREE.Vector3( scaledX, scaledY, 2 );
+    }
+
+    scaleLine(l : THREE.Line3) : THREE.Line3
+    {
+        return new THREE.Line3( this.scaleVector(l.start, this.flip), this.scaleVector(l.end, !this.flip) ); 
+    }
+
     intersects(limb : LimbIntersect) : boolean
     {
         let intersect : boolean = false; 
-        if( this.getScore() > this.minConfidence && limb.getScore()  > this.minConfidence )
+        if( this.getScore() > this.minConfidence && limb.getScore() > this.minConfidence )
         {
-            intersect = this.intersectsLine(this.line(), limb.line() );
+            intersect = this.intersectsLine(this.scaleLine(this.line()), this.scaleLine(limb.line()) );
         }
         return intersect; 
     }
+
+    toString() : string
+    {
+        return (this.limbLine.start.toString()  + "," + this.limbLine.end.toString() );
+    }
+
 
 }
 
@@ -183,11 +228,36 @@ class BodyPartIntersect extends DetectIntersect
 {
 
     limbs : LimbIntersect[]; //lol
+    geometry : THREE.BufferGeometry;
+    line : THREE.Line; 
+    material : THREE.Material; 
+    name : string;
+    meshMaterial : THREE.MeshBasicMaterial; 
+    // shape : THREE.ShapeBufferGeometry;
+    flip : boolean = false; 
+    w : number;
+    h : number;
 
-    constructor(confidence : number)
+    setFlipSelf(flip : boolean)
+    {
+        this.flip = flip; 
+        for( let i =0; i<this.limbs.length; i++ )
+        {
+            this.limbs[i].setFlipSelf(flip);
+        }
+    }
+
+    constructor(w:number, h:number, name: string, material : THREE.Material, confidence : number)
     {
         super(confidence);
+        this.name =name; 
         this.limbs = [];
+        this.geometry = new THREE.BufferGeometry();
+        this.material = material; 
+        this.line = new THREE.Line( this.geometry, this.material ); 
+        this.meshMaterial =  new THREE.MeshBasicMaterial({ color: 0x0000ff});
+        this.w = w; 
+        this.h = h; 
 
     }
 
@@ -202,10 +272,42 @@ class BodyPartIntersect extends DetectIntersect
         return vectors;
     }
 
+    setSize(w:number, h:number)
+    {
+        this.w = w; 
+        this.h = h; 
+        for(let i=0; i<this.limbs.length; i++)
+        {
+            this.limbs[i].setSize(w,h); 
+        }
+    }
+
+
+//     makeLine(): THREE.Mesh 
+//     {
+//         let points : THREE.Vector3[] = this.getVectors(); 
+//         const shape = new THREE.Shape();
+    
+//         shape.moveTo(points[0].x, points[0].y);
+//         points.forEach(({ x, y }) => {
+//         shape.lineTo(x, y);
+//         });
+//         shape.lineTo(points[0].x, points[0].y);
+    
+//         const geometry = new THREE.ShapeBufferGeometry(shape);
+//         const mesh = new THREE.Mesh(geometry, this.meshMaterial);
+//         mesh.position.z = 1.5;
+    
+//         return mesh;
+//   }
+
     update(keypoints : any[]) : void
     {
-        for(let i=0; i<this.limbs.length; i++)
+        for(let i=0; i<this.limbs.length; i++) 
+        {
             this.limbs[i].update(keypoints);
+        }
+        this.line.geometry.setFromPoints( this.getVectors() ); 
     }
 
     getLimbs() : LimbIntersect[]
@@ -213,65 +315,94 @@ class BodyPartIntersect extends DetectIntersect
         return this.limbs; 
     }
 
+    getPositions() : number[][]
+    {
+        let positions : number[][] = []; 
+        let limbs = this.getLimbs(); 
+
+        for(let i=0; i<limbs.length; i++)
+        {
+            positions.push( [ limbs[i].line().start.x, limbs[i].line().start.y ] );
+            positions.push( [ limbs[i].line().end.x, limbs[i].line().end.y ] );
+        }
+
+        return positions;
+
+    }
+
+    getLine() : THREE.Line
+    {
+        return this.line; 
+    }
+
     getVectors()
     {
         return this.getVectorsFromLimbs( this.limbs );
     }
 
-    intersects( torso : BodyPartIntersect ) : boolean
+    intersects( bodypart : BodyPartIntersect ) : boolean
     {
-        let otherLimbs = torso.getLimbs(); 
+        let otherLimbs = bodypart.getLimbs(); 
         for(let i=0; i<this.limbs.length; i++)
         {
             for(let j=0; j<otherLimbs.length; j++)
             {
-                if(this.limbs[i].intersects(otherLimbs[j]))
-                    return true; 
+                if( this.limbs[i].getScore() > this.minConfidence )
+                    if(this.limbs[i].intersects(otherLimbs[j]))
+                        return true; 
             }
         }
         return false;
     }
 
-    // intersectWithLimb( limb : LimbIntersect ) : boolean
-    // {
-    //     for(let i=0; i<this.limbs.length; i++)
-    //     {
-    //         if(this.limbs[i].intersects(limb))
-    //         return true; 
-    //     }  
-    //     return false;     
-    // }
+    toString()
+    {
+        let str : string = this.name + " ";
+        for(let i=0; i<this.limbs.length; i++)
+        {
+            str += this.limbs[i].toString() + " ";
+        }
+
+    }
 }
 
 
 class TorsoIntersect extends BodyPartIntersect
 {
 
-    constructor(minConfidence_ : number = 0.4)
+    constructor(w:number, h:number,name : string, material : THREE.Material, minConfidence_ : number = 0.4)
     {
-        super(minConfidence_)
+        super(w, h, name, material, minConfidence_)
         this.limbs = 
         [
-            new  LimbIntersect( PoseIndex.leftShoulder, PoseIndex.rightShoulder, this.minConfidence ),
-            new  LimbIntersect( PoseIndex.leftShoulder, PoseIndex.leftHip, this.minConfidence ),
-            new  LimbIntersect( PoseIndex.leftHip, PoseIndex.rightHip, this.minConfidence ),
-            new  LimbIntersect( PoseIndex.rightHip, PoseIndex.rightShoulder, this.minConfidence )
+            new  LimbIntersect( w, h, PoseIndex.leftShoulder, PoseIndex.rightShoulder, this.minConfidence ),
+            new  LimbIntersect( w, h, PoseIndex.leftShoulder, PoseIndex.leftHip, this.minConfidence ),
+            new  LimbIntersect( w, h, PoseIndex.leftHip, PoseIndex.rightHip, this.minConfidence ),
+            new  LimbIntersect( w, h, PoseIndex.rightHip, PoseIndex.rightShoulder, this.minConfidence )
         ];
     }
 
 }
 
 //ok do the arms & legs - yes odd inheritance but its hte same tghing
-class ArmsLegs extends TorsoIntersect
+class ArmsLegsIntersect extends BodyPartIntersect
 {
-
+    constructor(w:number, h:number,name: string, material : THREE.Material, upperIndex1: number, upperIndex2: number, lowerIndex1: number, lowerIndex2: number, minConfidence_ : number = 0.4)
+    {
+        super(w, h, name, material, minConfidence_)
+        this.limbs = 
+        [
+            new  LimbIntersect( w, h, upperIndex1, upperIndex2,  this.minConfidence  ),
+            new  LimbIntersect( w, h, lowerIndex1, lowerIndex2, this.minConfidence )
+        ];
+    }
 }
 
 class HeadBoundary extends LimbIntersect
 {
-    constructor(minConfidence : number = 0.4)
+    constructor(w:number, h:number,minConfidence : number = 0.4)
     {
-        super(0,0, minConfidence); 
+        super(w, h, 0,0, minConfidence); 
     }
 
     updateBoundary( x1 : number, y1 : number, x2 : number, y2 : number, score_ : number ) : void
@@ -280,8 +411,8 @@ class HeadBoundary extends LimbIntersect
         this.keypoints.push( { position: {x : x1, y : y1 }, score: score_ } );
         this.keypoints.push( { position: {x : x2, y : y2 }, score: score_ } );
 
-        this.limbLine.set( new THREE.Vector3(x1, 0, y1), 
-            new THREE.Vector3(x2, 0, y2 ));
+        this.limbLine.set( new THREE.Vector3(x1, y1,2), 
+            new THREE.Vector3(x2,y2,2 ) );
     }
 }
 
@@ -291,15 +422,16 @@ class HeadIntersect extends BodyPartIntersect
     sphere : THREE.Sphere; 
     index : number[]; 
 
-    constructor(confidence)
+    constructor(w:number, h:number,name: string, material : THREE.Material, confidence)
     {
-        super(confidence);
+        super(w,h,name, material, confidence);
         this.boundaries = [
-            new HeadBoundary(confidence),
-            new HeadBoundary(confidence),
-            new HeadBoundary(confidence),
-            new HeadBoundary(confidence)
+            new HeadBoundary(w,h,confidence),
+            new HeadBoundary(w,h,confidence),
+            new HeadBoundary(w,h,confidence),
+            new HeadBoundary(w,h,confidence)
         ];
+        this.limbs = this.boundaries; 
         this.sphere = new THREE.Sphere(); 
 
         this.index = [PoseIndex.nose, PoseIndex.leftEar, PoseIndex.rightEar, PoseIndex.leftEye, PoseIndex.rightEye];
@@ -311,15 +443,16 @@ class HeadIntersect extends BodyPartIntersect
         let score : number = 0;
         for(let i=0; i<this.index.length; i++)
         {
-            score = Math.max(score, keypoints[this.index[i]].score);
+            if( keypoints[this.index[i]].score )
+                score = Math.max(score, keypoints[this.index[i]].score);
         }
         return score; 
     }
 
     updateBoundaries(box : THREE.Box3, score : number)
     {
-        let leftTop = box.min; 
-        let rightBottom = box.max; 
+        // let leftTop = box.min; 
+        // let rightBottom = box.max; 
 
         this.boundaries[0].updateBoundary(box.min.x, box.min.y, box.min.x, box.max.y, score  );
         this.boundaries[1].updateBoundary(box.min.x, box.max.y , box.max.x, box.max.y, score  );
@@ -346,6 +479,7 @@ class HeadIntersect extends BodyPartIntersect
         let box = new THREE.Box3; 
         box = this.sphere.getBoundingBox(box);
         this.updateBoundaries(box, this.getAvgScore(keypoints)); 
+        this.line.geometry.setFromPoints( this.getVectors() ); 
     }
 
     //lol
@@ -353,47 +487,7 @@ class HeadIntersect extends BodyPartIntersect
     {
         return this.boundaries; 
     }
-
-    intersectsWithLimb( limb : LimbIntersect ) : boolean
-    {
-        for(let i=0; i<this.boundaries.length; i++)
-        {
-            return this.boundaries[i].intersects(limb);
-        }
-        return false; 
-    }
-
-    //todo create an abstract class and refactor 
-    intersectsWithTorso( torso : TorsoIntersect ) : boolean
-    {
-        let otherLimbs = torso.getLimbs(); 
-        for(let i=0; i<this.boundaries.length; i++)
-        {
-            for(let j=0; j<otherLimbs.length; j++)
-            {
-                if(this.boundaries[i].intersects(otherLimbs[j]))
-                    return true; 
-            }
-        }
-        return false;
-    }
-
-    intersectsWithHead( head : HeadIntersect ) : boolean
-    {
-        let otherLimbs = head.getLimbs(); 
-        for(let i=0; i<this.boundaries.length; i++)
-        {
-            for(let j=0; j<otherLimbs.length; j++)
-            {
-                if(this.boundaries[i].intersects(otherLimbs[j]))
-                    return true; 
-            }
-        }
-        return false;
-    }
 }
-
-
 
 export class SkeletionIntersection
 {
@@ -401,134 +495,89 @@ export class SkeletionIntersection
 
     participant : Participant; 
 
-
-    leftArmBuf : THREE.BufferGeometry;
-    rightArmBuf : THREE.BufferGeometry;
-    leftLegBuf : THREE.BufferGeometry;
-    rightLegBuf : THREE.BufferGeometry;
-    headBuf : THREE.BufferGeometry;
-    torsoBuf : THREE.BufferGeometry;
-
-    leftArmUpperLine : LimbIntersect; 
-    rightArmUpperLine : LimbIntersect; 
-
-    leftArmLowerLine : LimbIntersect; 
-    rightArmLowerLine : LimbIntersect; 
-
-    leftLegUpperLine : LimbIntersect; 
-    rightLegUpperLine : LimbIntersect; 
-    leftLegLowerLine : LimbIntersect; 
-    rightLegLowerLine : LimbIntersect; 
-
     head: HeadIntersect; 
 
-    torso: TorsoIntersect; 
+    torso: TorsoIntersect;
+    
+    leftArm : ArmsLegsIntersect; 
+    rightArm : ArmsLegsIntersect;
+    leftLeg : ArmsLegsIntersect; 
+    rightLeg: ArmsLegsIntersect;
+    parts: BodyPartIntersect[];
 
-    limbs : LimbIntersect[]; 
+    shouldFlipSelf : boolean = false; 
 
-    parts: DetectIntersect[];
 
     friendSkeleton : any = undefined; // I find annoying that neither null or undefined can be assigned to defined type except via | which introduces even more freaking complexity. WTF.
 
-    constructor( participant_ : Participant, minConfidence : number = 0.4 )
+    material : THREE.Material
+
+    constructor(participant_ : Participant, minConfidence : number = 0.4,  w : number = 1, h:number = 1  )
     {
         this.participant = participant_; 
 
-        this.torso = new TorsoIntersect(minConfidence); 
-        this.head = new HeadIntersect(minConfidence);
+        this.material = new THREE.LineBasicMaterial({
+            color: 0x0000ff
+        }); 
 
-        this.leftArmUpperLine = new LimbIntersect(PoseIndex.leftShoulder, PoseIndex.leftElbow, minConfidence); 
-        this.rightArmUpperLine = new  LimbIntersect(PoseIndex.leftElbow, PoseIndex.leftWrist, minConfidence); 
-        this.leftArmLowerLine = new  LimbIntersect(PoseIndex.rightShoulder, PoseIndex.rightElbow, minConfidence); 
-        this.rightArmLowerLine = new  LimbIntersect(PoseIndex.rightElbow, PoseIndex.rightWrist, minConfidence); 
-    
-        this.leftLegUpperLine = new  LimbIntersect( PoseIndex.leftHip, PoseIndex.leftKnee, minConfidence ); 
-        this.rightLegUpperLine = new  LimbIntersect( PoseIndex.rightHip, PoseIndex.rightKnee, minConfidence ); 
-        this.leftLegLowerLine = new  LimbIntersect( PoseIndex.leftKnee, PoseIndex.leftAnkle, minConfidence ); 
-        this.rightLegLowerLine = new  LimbIntersect( PoseIndex.rightKnee, PoseIndex.rightAnkle, minConfidence ); 
+        this.torso = new TorsoIntersect(w, h, "torso", this.material, minConfidence); 
+        this.head = new HeadIntersect(w, h, "head", this.material, minConfidence);
 
-        this.limbs = [ this.leftArmUpperLine, this.rightArmUpperLine, this.leftArmLowerLine, this.rightArmLowerLine,
-            this.leftLegUpperLine, this.rightLegUpperLine, this.leftLegLowerLine, this.rightLegLowerLine   ];
-        
-        this.parts = [this.head, this.torso, ...this.limbs]; 
-      
-        this.leftArmBuf = new THREE.BufferGeometry();
-        this.rightArmBuf = new THREE.BufferGeometry();
-        this.leftLegBuf = new THREE.BufferGeometry();
-        this.rightLegBuf = new THREE.BufferGeometry();
-        this.headBuf = new THREE.BufferGeometry();
-        this.torsoBuf = new THREE.BufferGeometry();
-    
+        this.leftArm = new ArmsLegsIntersect(w, h, "leftArm",this.material, PoseIndex.leftShoulder, PoseIndex.leftElbow, PoseIndex.rightShoulder, PoseIndex.rightElbow, minConfidence);
+        this.rightArm = new  ArmsLegsIntersect(w, h, "rightArm",this.material, PoseIndex.leftElbow, PoseIndex.leftWrist, PoseIndex.rightElbow, PoseIndex.rightWrist, minConfidence); 
+        this.leftLeg = new  ArmsLegsIntersect( w, h, "leftLeg",this.material, PoseIndex.leftHip, PoseIndex.leftKnee, PoseIndex.leftKnee, PoseIndex.leftAnkle, minConfidence ); 
+        this.rightLeg = new  ArmsLegsIntersect( w, h, "rightLeg",this.material, PoseIndex.rightHip, PoseIndex.rightKnee, PoseIndex.rightKnee, PoseIndex.rightAnkle, minConfidence ); 
+
+        this.parts = [this.head, this.torso, this.leftArm, this.rightArm, this.leftLeg, this.rightLeg];    
     }
 
-    getLines() : THREE.Line3[]
+    setShouldFlipSelf(should : boolean)
     {
-        let lines = [];
+        this.shouldFlipSelf = should; 
+        for( let i=0; i<this.parts.length; i++ )
+        {
+            this.parts[i].setFlipSelf(should); 
+        }
+    }
+
+    setSize(w:number, h:number)
+    {
+
+        for(let i=0; i<this.parts.length; i++)
+        {
+            this.parts[i].setSize(w,h); 
+        }
+    }
+
+    getLines() : THREE.Line[]
+    {
+        let lines : THREE.Line[] = [];
+        for( let i=0; i<this.parts.length; i++ )
+        {
+            lines.push( this.parts[i].getLine() );
+        }
         return lines; 
     }
 
     setFriend(friend : SkeletionIntersection)
     {
         this.friendSkeleton = friend; 
+
     }
-
-    // updateLimbs( keypoints: any ) : void
-    // {
-    //     for(let i=0; i<this.limbs.length; i++)
-    //     {
-    //         this.limbs[i].update(keypoints);
-    //     }
-    // }
-
-    //TODO -- make arms & legs body parts & then just do it one for-loop
-    // updateGeometry()
-    // 
-    //     this.headBuf.setFromPoints( this.head.getVectors() );
-    //     this.torsoBuf.setFromPoints( this.torso.getVectors() );       
-
-    //     this.leftArmBuf.setFromPoints 
-    //     this.rightArmBuf
-    //     this.leftLegBuf
-    //     this.rightLegBuf
-
-    // }
 
     update()
     {
         let keypoints1 = this.participant.getAvgKeyPoints(); 
         for(let i=0; i<this.parts.length; i++)
+        {
             this.parts[i].update(keypoints1);
-        // this.head.update(keypoints1); 
-        // this.getTorso().update(keypoints1); 
-        // this.updateLimbs(keypoints1); 
+            // console.log( this.parts[i] ); 
+        }
     }
 
-
-
-    // intersectsBox( line : THREE.Line3, box : THREE.Box3 ) : boolean
-    // {
-    //     let intersect = false; 
-    //     intersect = this.intersectsLine( line, new THREE.Line3( box.min, new THREE.Vector3( box.max.x, 0, box.min.y ) ) );
-    //     intersect = intersect || this.intersectsLine( line, new THREE.Line3( box.min, new THREE.Vector3( box.min.x, 0, box.max.y ) ) );
-    //     intersect = intersect || this.intersectsLine( line, new THREE.Line3( new THREE.Vector3( box.min.x, 0, box.max.y ), box.max ) );
-    //     intersect = intersect || this.intersectsLine( line, new THREE.Line3( new THREE.Vector3( box.max.x, 0, box.min.y ), box.max ) );
-
-    //     return intersect; 
-    // }
-
-    getHead() : HeadIntersect
+    getBodyPartIntersections() : BodyPartIntersect[]
     {
-        return this.head;
-    }
-
-    getTorso() : TorsoIntersect
-    {
-        return this.torso; 
-    }
-
-    getLimbs() : LimbIntersect[]
-    {
-        return this.limbs; 
+        return this.parts; 
     }
 
     //TODO: return where it is touching
@@ -536,75 +585,36 @@ export class SkeletionIntersection
     
     touching()
     {
-        //check the stuff
-        if( this.head.intersectsWithHead( this.friendSkeleton.getHead() ) )
+
+        // (window as any).headIntersect = this.head.getPositions(); 
+
+        let touch : boolean = false; 
+
+        let friendParts = this.friendSkeleton.getBodyPartIntersections() ;
+        // (window as any).friendHeadIntersect = friendParts[0].getPositions(); 
+
+        this.friendSkeleton.setShouldFlipSelf( !this.shouldFlipSelf ); 
+
+        let i = 0; 
+        let j; 
+        while( !touch && i<this.parts.length )
         {
-            console.log("Head to head touch");
-            return true; 
+            j = 0; 
+            while( !touch && j<friendParts.length )
+            {
+                touch = this.parts[i].intersects( friendParts[j]  ) ;
+                j++;
+            }
+            i++;
         }
 
-        if( this.head.intersectsWithTorso( this.friendSkeleton.getTorso() ) )
-        {
-            console.log("Head to torso touch");
-            return true;            
+        if( touch ){
+            i--; 
+            j--; 
         }
-
-        if( this.friendSkeleton.getHead().intersectsWithTorso( this.getTorso() ) )
-        {
-            console.log("Torso to head touch");
-            return true;             
-        }
-
-        if( this.getTorso().intersects( this.friendSkeleton.getTorso() ) )
-        {
-            console.log("Torso to torso touch");
-            return true;           
-        }
-
-        //check all the limbs against each other 
-        let friendLimbs = this.friendSkeleton.getLimbs();
-        console.assert( friendLimbs.length == this.limbs.length ); //assume limb length is the same.......
-
-        for (let i=0; i<this.limbs.length; i++) 
-        {
-            //head to limbs 
-            if( this.getHead().intersectsWithLimb( friendLimbs[i] ) )
-            {
-                console.log("Head to friend limb touch: " + i );
-                return true;               
-            }
-
-            if( this.friendSkeleton.getHead().intersectsWithLimb( this.limbs[i] ) )
-            {
-                console.log("Limb to friend head touch: " + i );
-                return true;  
-            }
-
-            //torso to limbs 
-            if( this.getTorso().intersects( friendLimbs[i] ) )
-            {
-                console.log("Torso to friend limb touch: " + i );
-                return true;               
-            }
-            
-            if( this.friendSkeleton.getTorso().intersectWithLimb( this.limbs[i] ) )
-            {
-                console.log("Limb to torso head touch: " + i );
-                return true;  
-            }
-
-            //limbs to limbs
-            for( let j=0; j<friendLimbs.length; j++ )
-            {
-                if( this.limbs[i].intersects( friendLimbs[j] ) )
-                {
-                    console.log("Limb " +i + "to limb head touch: " + j );
-                    return true;  
-                }                
-            }
-        }
-
-        return false; 
+        //     console.log("Touching! "+i+ " with " + j);
+        // } else console.log( "Not touching!!");
+        return touch; 
     }
 
 }

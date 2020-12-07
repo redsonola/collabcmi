@@ -412,6 +412,7 @@ export class Participant {
         this.width=w;
         this.height = h;
         this.avgKeyPoints.setSize(w, h); 
+        this.intersection.setSize(w, h); 
     }
 
     getHeight()
@@ -1133,25 +1134,32 @@ export class Participant {
         return this.participantID;
     }
 
+    isParticipant(id : string) : boolean
+    {
+        return this.participantID === id;
+    }
+
+    //TODO: update everything in one method & just have that as the outside thingy!
     updateTouchingFriend() : void
     {
-        let friendKeypoints = this.friendParticipant.getAvgKeyPoints();
-        let minDistanceTouching = 0.09; //in percent, just a guess.
-
         this.intersection.update(); //TODO only update when have friend
 
-        //TODO: refactor so I only do this once.
-        let iAmSecond = orderParticipantID( this.participantID, this.friendParticipant.getParticipantID() ) === -1;
+        if( this.friendParticipant ) {
+            //TODO: refactor so I only do this once.
+            let iAmSecond = orderParticipantID( this.participantID, this.friendParticipant.getParticipantID() ) === -1;
  
-        if( friendKeypoints )
-        {
-            for(let i=0; i<friendKeypoints.length; i++){
-                this.touch = this.touching( friendKeypoints[i], minDistanceTouching, this.touch, this.width, this.height, 
-                    this.friendParticipant.getWidth(), this.friendParticipant.getHeight(), i, iAmSecond);
-            }
+            let friendKeypoints = this.friendParticipant.getAvgKeyPoints();
+            let minDistanceTouching = 0.09; //in percent, just a guess.
+            if( friendKeypoints )
+            {
+                for(let i=0; i<friendKeypoints.length; i++){
+                    this.touch = this.touching( friendKeypoints[i], minDistanceTouching, this.touch, this.width, this.height, 
+                        this.friendParticipant.getWidth(), this.friendParticipant.getHeight(), i, iAmSecond);
+                }
 
+            }
+            this.touch.updateTouching(); 
         }
-        this.touch.updateTouching(); 
     }
 
     areTouching() : boolean
@@ -1178,6 +1186,8 @@ export class Participant {
     {
         return this.touch.howMuchTouching(); 
     }
+
+
 
     //moved from avg keypoints... prob need to refactor this shit.
     //TODO: how much of the body & also for how long (scale?)
@@ -1250,6 +1260,7 @@ export class Participant {
             }
         }
 
+        this.intersection.setShouldFlipSelf(iAmSecond)
         if (this.intersection.touching() )
         {
             sTouch.addTouch(0, 0); //TODO -- get these values from the skeleton

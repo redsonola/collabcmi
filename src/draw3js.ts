@@ -1,4 +1,4 @@
-import { Matrix4, Quaternion, Vector3, Group, DirectionalLight, Scene, Color, PlaneBufferGeometry, Mesh, MeshPhongMaterial, Box3 } from 'three';
+import { Matrix4, Quaternion, Vector3, Group, DirectionalLight, Scene, Color, PlaneBufferGeometry, Mesh, MeshPhongMaterial, Box3, Line } from 'three';
 
 import { videoRect } from './threejs/videoRect';
 import { createJoints, createSkeleton } from './threejs/brentDrawSkeleton';
@@ -9,6 +9,7 @@ import type { PosenetSetup } from './threejs/posenet';
 import type { Pose } from '@tensorflow-models/posenet';
 import type { Size } from './components/PoseMessages';
 import { orderParticipantID } from './participant'
+import type { SkeletionIntersection } from './skeletonIntersection';
 
 export const videoOverlapAmount = 0.66; 
 
@@ -116,9 +117,9 @@ export function threeRenderCode({
         console.warn("TODO: cleanup threejs video objects");
         break;
       }
-      
+
       case "UpdatePose": {
-        const { personId, targetVideoId, size, pose } = command;
+        const { personId, targetVideoId, size, pose, skeletonIntersect } = command;
         const videoGroup = findGroup(targetVideoId);
         if (!videoGroup) return;
 
@@ -158,6 +159,13 @@ export function threeRenderCode({
         }
         videoGroup.add(groupOfStuffToRender);
 
+        //add the skeleton intersection lines to be drawn
+        const skeletonLines : Line[] = skeletonIntersect.getLines(); 
+        for(let i=0; i<skeletonLines.length; i++)
+        {
+          videoGroup.add( skeletonLines[i] )
+        }
+
         break;
       }
     }
@@ -192,6 +200,7 @@ export interface UpdatePose {
   personId: string;
   targetVideoId: string; // which video to draw the pose on
   pose: Pose;
+  skeletonIntersect : SkeletionIntersection;
   size: { width: number, height: number };
 }
 

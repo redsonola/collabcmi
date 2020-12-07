@@ -19,6 +19,7 @@
   import { LoadMidiFilePlayground, MainVolume } from '../midiConversion'
   import { FPSTracker } from '../fpsMeasure'
   import { SonifierWithTuba } from '../xcorrSonify'
+import { SkeletionIntersection } from '../skeletonIntersection';
   
   const webcamVideo = videoSubscription();
   const videoSources = [
@@ -91,11 +92,23 @@
   }
 
   function keypointsUpdated (particiantId: string, pose: Pose, size: Size) {
+    let thisparticipant : Participant; 
+
+    if( participant.isParticipant(particiantId) )
+    {
+      thisparticipant = participant; 
+    } 
+    else
+    { 
+      thisparticipant = friendParticipant; 
+    }
+
     three?.dispatch({
       type: 'UpdatePose',
       targetVideoId: particiantId,
       personId: particiantId,
       pose,
+      skeletonIntersect: thisparticipant.getSkeletonIntersection(),
       size
     })
 
@@ -114,6 +127,8 @@
     windowedVarScore = participant.getMaxBodyPartWindowedVariance(); 
 
     participant.updateTouchingFriend();
+    friendParticipant.updateTouchingFriend();
+
     if(participant.areTouching())
     {
       skeletonTouching = 1; 
