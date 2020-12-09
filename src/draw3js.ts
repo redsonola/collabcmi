@@ -87,6 +87,7 @@ export function threeRenderCode({
       videoGroups[i].position.x = videoOverlapAmount*i + 0.5;
       videoGroups[i].position.y = 0.5; 
     }
+
     lookAt(new Box3(
       new Vector3(0, -0.5, 0),
       new Vector3(videoGroups.length, 1, 0),

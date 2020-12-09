@@ -1260,6 +1260,7 @@ export class Participant {
             }
         }
 
+        //TODO: this does not return where the touch was. could do that.
         this.intersection.setShouldFlipSelf(iAmSecond)
         if (this.intersection.touching(w, h) )
         {

@@ -13,6 +13,7 @@ import * as Scale from "./scale"
 import type { Participant } from "./participant"
 import * as PoseIndex from "./poseConstants"
 import type { MainVolume } from "./midiConversion.js";
+import type { Time } from "tone/build/esm/core/type/Units";
 
 export class SonifierWithTuba {
 
@@ -28,9 +29,6 @@ export class SonifierWithTuba {
     // convolver1s : Tone.Convolver[] =[];
     // convolver2s : Tone.Convolver[] = [];
     // compressors : Tone.Compressor[] = [];
-
-
-
 
     // avgFilter : AveragingFilter[] = [];
 
@@ -91,9 +89,6 @@ export class SonifierWithTuba {
         let sampler : Tone.Sampler; 
 
         sampler = new Tone.Sampler({
-            // "G0": "031_Tuba_G0_Normal.wav",
-            // "C1": "036_Tuba_C1_Normal.wav",
-            // "Eb1": "039_Tuba_Eb1_Normal.wav",
             "F1": "041_Tuba_F1_Normal.wav",
             "A1": "045_Tuba_A1_Normal.wav",
             "C2": "048_Tuba_C2_Normal.wav",
@@ -111,20 +106,8 @@ export class SonifierWithTuba {
         return sampler; 
     }
 
-    // connectSamplers(sampler, convolver1, convolver2, compressor, masterCompressor)
-    // {
-    //     sampler.volume.rampTo(-15);
-    //     sampler.chain(convolver1, convolver2, compressor, this.masterCompressor);
-    // }
-
     triggerAttack()
     {
-        // if(!this.tubaSampler.loaded)
-        // {
-        //     console.log("Sampler not loaded!");
-        //     return; 
-        // }
-
         //for now pick a random note in key of C --> maybe put in melody, like in a midi file whatever.
         if( this.playingNote !== -1)
         {
@@ -169,127 +152,70 @@ export class SonifierWithTuba {
 
     }
 
+}
 
-    //check if loaded. if already loaded return true w.o checking.
-    //I don't think I really need to do this anymore since now I am only using 1 sampler, not 5
-    // areSamplersLoaded() : boolean
-    // {
-    //     if(this.samplersLoaded) return true; //prob put this somewhere else
-    //     this.samplersLoaded = this.tubaSampler.loaded; 
-    //     return this.samplersLoaded;
-    // }
-
-    //TODO: fix
-    // export const bodyPartArray = [head, torso, leftArm, rightArm, leftLeg, rightLeg];
-    createTubaNotes()
+export class TransportTime
+{
+    bars : number =0; 
+    beats : number=0; 
+    sixteenths : number=0;
+    quantize : boolean; 
+    constructor( quantize : boolean = true )
     {
-        // this.tubaNoteArray.push( ["A4", "C4", "B3", "A4", "F4", "G5", "C5"] ); //head
-        // this.tubaNoteArray.push( ["A0", "C0", "B0", "A0", "F0", "G1"] ); //torso
-        // this.tubaNoteArray.push( ["B2", "F3", "G3", "E3", "D3", "E2"] ); //leftArm
-        // this.tubaNoteArray.push( ["A3", "D3", "F2", "A3", "F3", "D3"] ); //rightArm
-        // this.tubaNoteArray.push( ["B3", "F4", "G4", "E4", "D4", "E3"] );//leftLeg
-        // this.tubaNoteArray.push( ["A3", "C3", "B2", "A3", "F3", "G3"] ); //rightleg
+        this.quantize = quantize;
     }
 
-    play() : void {
-        // if (!this.areSamplersLoaded()) {
-        //     console.log("not loaded");
-        //     return;
-        // }
-
-        // (window as any).participant = this.participant; 
-
-        // if(this.participant != null)
-        // {
-        //     if(!this.participant.isFriendPartcipantNull() && this.participant.getXCorrLength() > 0 && this.participant.getDistXCorrMaxLength() > 0 )
-        //     {
-        //         //TODO: put a fade in when participant xcorr isn't 0
-
-        //         // console.log("friend participant is not null");
-
-        //         let elapsed : number = Date.now() - this.lastCheckTime;
-
-        //         let matchScore = scale.linear_scale(this.participant.getMatchScore(),0, 0.25, 0, 1, true); //this on my measurements shows greatest variation btw high & low
-        //         Tone.Destination.volume.rampTo(40*matchScore); 
-
-               
-        //         for(let i=0; i<PoseIndex.bodyPartArray.length; i++)
-        //         {
-               
-        //             // xCorr = scale.exp_scale(this.participant.getAverageBodyPartXCorrSynchronicity(PoseIndex.bodyPartArray[i]), -1, 1, 0, 1) ; //needs to be adjusted
-        //             let xCorr = matchScore * scale.exp_scale(this.participant.getAverageBodyPartXCorrVelocitySynchronicity(PoseIndex.bodyPartArray[i]), -1, 1, 0, 1); //needs to be adjusted
-
-        //             if(xCorr < this.xCorrMin)
-        //                 this.xCorrMin = xCorr;
-        //             else if(xCorr > this.xCorrMax )
-        //                 this.xCorrMax = xCorr; 
-
-
-        //             (window as any).xCorrMin = this.xCorrMin; 
-        //             (window as any).xCorrMax = this.xCorrMax; 
-
-
-        //             //for now don't change the volume
-        //             this.changeVolume(xCorr, i);
-        //         }
-
-        //         if (elapsed > 250) {
-        //             for(let i=0; i<PoseIndex.bodyPartArray.length; i++)
-        //             {
-        //                 //TODO: stagger note onsets... create some kind of rhythm... thingy? maybe that changes with movement as well?
-                    
-        //                 //set the volume for each part
-                             
-        //                 //create staggered attacks --note: could also create more attacks with higher match values
-        //                 //for now random
-        //                 let when : number = Math.random() * 0.7; 
-
-        //                 this.tubaSamplers[i].triggerAttackRelease(this.tubaNoteArray[i][this.noteIndex], "8n", Tone.now() + when);
-        //                 this.noteIndex++;
-        //                 if (this.noteIndex > this.tubaNoteArray[i].length - 1)
-        //                     this.noteIndex = 0;
-        //             }
-        //             this.lastCheckTime = Date.now();
-        //         }
-        //     }
-        // }
-    }
-
-    ///TODO
-    playSampler(index : number) : void
+    setPosition(timeStr : string) : void
     {
-        
+        let barsIndex : number = timeStr.indexOf(":"); 
+        this.bars = parseFloat(timeStr.substring(0, barsIndex-1));
+
+        let beatStr = timeStr.substring(barsIndex+1, timeStr.length-1);
+        let beatIndex : number = beatStr.indexOf(":"); 
+        this.beats =  parseFloat(beatStr.substring(0, beatIndex-1));
+
+        let str16th = beatStr.substring(beatIndex+1, timeStr.length-1);
+        this.sixteenths = parseFloat(str16th);
+
+        if(this.quantize)
+        {
+            this.sixteenths = Math.round( this.sixteenths ); 
+        }
     }
 
-    changeVolume(volumeMod : number, index : number) : void {
+    getPosition() : string
+    {
+        return this.bars.toString() + ":" + this.beats.toString() + ":" + this.sixteenths.toString();
+    }
 
-        // //-20 to 100
-        // let lowVol : number = -50;
-        // let hiVol : number = 30;
+    set( bars : number, beats : number, sixteenths : number )
+    {
+        this.bars = bars;
+        this.beats = beats; 
+        this.sixteenths = sixteenths; 
+    }
+}
 
-        // //for match value
-        // // let volModMin = 0; 
-        // // let volModMax = 1; 
+export class MusicSequencerLoop
+{
+    onsets : TransportTime[]; 
 
-        // //for velocity matching
-        // // let volModMin = 0.003; 
-        // // let volModMax = 0.3; 
+    constructor()
+    {
+       this.onsets = []; 
+    }
 
-        // //velocity + posematch
-        // let volModMin = 0; 
-        // let volModMax = 0.1; 
+    //Tone.transport.scheduleRepeat
 
-        // let vol : number = scale.linear_scale(volumeMod, volModMin, volModMax, lowVol, hiVol);
-        // //clamp lower volumes to zero bc they are close to noise
-        // if(vol < -35) vol = -100;
-        // if(vol > 5) vol = 5;
-        // //this.avgFilter[index].update(vol); //try exp. scale for now 
-        // //var newVol : number = this.avgFilter[index].top();
+    //Tone.Transport.position
 
-        //  console.log("vol " + vol.toString());
-
-
-        // this.tubaSamplers[index].volume.rampTo(vol);       
+    //record an onset
+    onset()
+    {
+        let on : TransportTime = new TransportTime(); 
+        let timeStr : Time = Tone.Transport.position;
+        on.setPosition( timeStr.toString() ); 
+        this.onsets.push(on); 
     }
 
 
