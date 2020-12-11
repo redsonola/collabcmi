@@ -285,10 +285,10 @@ export class LimbIntersect extends DetectIntersect
         dist = Math.min( dist, this.findDistBetweenPointAndLine( otherMidPoint, myLine ) ); 
 
 
-        if(dist <= whatIsEnough)
-        {
-            console.log("touching? " + dist); 
-        }
+        // if(dist <= whatIsEnough)
+        // {
+        //     console.log("touching? " + dist); 
+        // }
 
         return dist <= whatIsEnough; 
     }

@@ -43,7 +43,9 @@ export class SonifierWithTuba {
     playingNote : number = -1;
 
     vibrato : Tone.Vibrato; 
-    feedbackDelay : Tone.FeedbackDelay; 
+    // feedbackDelay : Tone.FeedbackDelay; 
+
+    testSynth : Tone.Synth; 
 
     constructor( p : Participant, mainVolume : MainVolume ) {
 
@@ -56,12 +58,17 @@ export class SonifierWithTuba {
         this.convolver2 =  new Tone.Convolver("./fan_sounds/fan4.wav") 
         // this.tubaSampler.chain(this.convolver1, this.convolver2, this.masterCompressor);
         this.vibrato = new Tone.Vibrato(0, 1); 
-        this.feedbackDelay = new Tone.FeedbackDelay("4n", 0.25);
+        // this.feedbackDelay = new Tone.FeedbackDelay("32", 0.25);
 
-        this.tubaSampler.chain(this.convolver1, this.vibrato, this.feedbackDelay, this.masterCompressor);
+        // this.tubaSampler.chain(this.convolver1, this.vibrato, this.feedbackDelay, this.masterCompressor);
+        this.tubaSampler.chain(this.convolver1, this.vibrato, this.masterCompressor);
+
         this.masterCompressor.connect(mainVolume.getVolume());
         this.tubaSampler.release = 0.25; 
         this.tubaSampler.curve = "exponential"; 
+
+        this.testSynth = new Tone.Synth().connect(mainVolume.getVolume());
+
 
         // //set up the samplers
         // for(let i=0; i<PoseIndex.bodyPartArray.length; i++)
@@ -106,6 +113,38 @@ export class SonifierWithTuba {
         return sampler; 
     }
 
+    triggerAttackRelease(pitch : number = -1) : number
+    {
+
+        //note -- it could be not done releasing when I start the next note.
+        //there is an error with the triggerAttack method in here. 
+        //using try/catch to carry on but looking into it & also will do more sound design
+        try
+        {
+            if( pitch !== -1 )
+            {
+                this.playingNote = pitch; 
+            }
+            else
+            {
+                let keyOfCPitchClass4 = [ 72, 74, 76, 77, 79, 81, 83, 84 ]; // try higher notes
+                let randNote = Math.random();
+                let index = Math.floor( Scale.linear_scale( randNote, 0, 1, 0, keyOfCPitchClass4.length ) );
+                this.playingNote = keyOfCPitchClass4[index]-24;
+            }
+            let velocity = 120;
+            // this.tubaSampler.triggerAttackRelease(Tone.Frequency(this.playingNote, "midi").toNote(), "16n", Tone.now(), velocity);
+            this.testSynth.triggerAttackRelease(Tone.Frequency(this.playingNote, "midi").toNote(), "16n");
+        }
+        catch(e)
+        {
+            console.log(e);
+            console.log( this.playingNote );
+        }
+
+        return this.playingNote
+    }
+
     triggerAttack()
     {
         //for now pick a random note in key of C --> maybe put in melody, like in a midi file whatever.
@@ -122,7 +161,7 @@ export class SonifierWithTuba {
             let keyOfCPitchClass4 = [ 72, 74, 76, 77, 79, 81, 83, 84 ]; // try higher notes
             let randNote = Math.random();
             let index = Math.floor( Scale.linear_scale( randNote, 0, 1, 0, keyOfCPitchClass4.length ) );
-            this.playingNote = keyOfCPitchClass4[index]-24;
+            this.playingNote = keyOfCPitchClass4[index];
             let velocity = 120;
             this.tubaSampler.triggerAttack(Tone.Frequency(this.playingNote, "midi").toNote(), Tone.now(), velocity);
         }
@@ -168,15 +207,21 @@ export class TransportTime
     setPosition(timeStr : string) : void
     {
         let barsIndex : number = timeStr.indexOf(":"); 
-        this.bars = parseFloat(timeStr.substring(0, barsIndex-1));
+        this.bars = parseFloat(timeStr.substring(0, barsIndex));
+
 
         let beatStr = timeStr.substring(barsIndex+1, timeStr.length-1);
         let beatIndex : number = beatStr.indexOf(":"); 
-        this.beats =  parseFloat(beatStr.substring(0, beatIndex-1));
+        this.beats =  parseFloat(beatStr.substring(0, beatIndex));
 
         let str16th = beatStr.substring(beatIndex+1, timeStr.length-1);
         this.sixteenths = parseFloat(str16th);
 
+        // console.log(timeStr);
+        // console.log(beatStr); 
+        // console.log(beatStr.substring(0, beatIndex)); 
+
+        //could quantize to the 32nd
         if(this.quantize)
         {
             this.sixteenths = Math.round( this.sixteenths ); 
@@ -194,29 +239,241 @@ export class TransportTime
         this.beats = beats; 
         this.sixteenths = sixteenths; 
     }
+
+    sameBeat(time : TransportTime)
+    {
+        return ( this.beats === time.beats && this.sixteenths === time.sixteenths );
+    }
+}
+
+class PitchOnset extends TransportTime
+{
+    pitch : number; 
+    constructor(time : TransportTime)
+    {
+        super(); 
+        this.pitch = -1; 
+        this.bars = time.bars;
+        this.beats = time.beats; 
+        this.sixteenths = time.sixteenths; 
+    }
+    hasPitch()
+    {
+        return this.pitch !== -1; 
+    }
 }
 
 export class MusicSequencerLoop
 {
-    onsets : TransportTime[]; 
+    onsets : PitchOnset[]; 
+    tuba : SonifierWithTuba; 
+    bar : number; //what is the starting bar of the recording?
 
-    constructor()
+    //todo: take in an instrument (?)
+    constructor(tuba : SonifierWithTuba)
     {
        this.onsets = []; 
+       this.tuba = tuba; 
+       this.bar = -1; 
     }
-
-    //Tone.transport.scheduleRepeat
-
-    //Tone.Transport.position
 
     //record an onset
     onset()
     {
         let on : TransportTime = new TransportTime(); 
-        let timeStr : Time = Tone.Transport.position;
-        on.setPosition( timeStr.toString() ); 
-        this.onsets.push(on); 
+        on.setPosition( Tone.Transport.position.toString() ); 
+
+        //don't add repeats.
+        // if( !this.isRepeatedBeat(on) ) {
+        //     this.onsets.push(new PitchOnset(on));
+        // }
+        this.onsets.push(new PitchOnset(on));
+        if(this.bar === -1)
+        {
+            this.bar = on.bars; 
+        }
     }
 
+    isRepeatedBeat( on : TransportTime )
+    {
+        let repeatedIndex = this.onsets.findIndex( (element) => { element.sameBeat(on); } );
+        return (repeatedIndex !== -1); 
+    }
+
+    getBarNumber()
+    {
+        return this.bar; 
+    }
+
+    play( now : TransportTime)
+    {
+        this.onsets.forEach( (onset) => {  
+            if( onset.sameBeat(now)  )
+            {
+                if(!onset.hasPitch())
+                {
+                    let pitch = this.tuba.triggerAttackRelease();
+                    onset.pitch = pitch; 
+                }
+                else
+                {
+                    this.tuba.triggerAttackRelease(onset.pitch);
+                }
+            }
+         } );
+    }
+
+    //number of onsets
+    length()
+    {
+        return this.onsets.length; 
+    }
+}
+
+export class TouchPhrasesEachBar
+{
+    bars : MusicSequencerLoop[]; 
+    tuba : SonifierWithTuba;
+    curRecordingBar : MusicSequencerLoop; 
+    MAX_BARS : number = 5;
+    MAX_TIME_ALIVE : number = 10
+    lastBar : number = 0; //the last bar we were on 
+
+
+    constructor(tuba : SonifierWithTuba)
+    {
+        this.bars = []; 
+        this.tuba = tuba; 
+        this.curRecordingBar = new MusicSequencerLoop(this.tuba); 
+    }
+
+    updateBars(now : TransportTime)
+    {
+        if( now.bars <= this.lastBar )
+        {
+            return;  //just get out if we don't need to update the bar
+        }
+        else
+        {
+            this.lastBar = now.bars; 
+        }
+
+        if( this.curRecordingBar.length() > 0 )
+        {
+            this.bars.push(this.curRecordingBar); 
+            this.curRecordingBar = new MusicSequencerLoop(this.tuba);
+        }
+
+        //trim based on the length
+        if( this.bars.length > this.MAX_BARS )
+        {
+            this.bars.shift();  
+        }
+
+        //trim based on length of bars alive
+        for( let i= this.bars.length-1; i>=0; i--  )
+        {
+            if(now.bars - this.bars[i].getBarNumber() >= this.MAX_TIME_ALIVE )
+            {
+                this.bars.splice(i, 1); 
+            }
+        }
+    }
+
+    getNow() : TransportTime
+    {
+
+        let now : TransportTime = new TransportTime(); 
+        now.setPosition( Tone.Transport.position.toString() ); 
+        // console.log( now.getPosition() ); 
+        return now; 
+    }
+
+    update(touch : boolean) : void
+    {
+        this.updateBars( this.getNow() );
+
+        if(touch)
+        {
+            this.curRecordingBar.onset(); 
+        }
+
+    }
+
+    play()
+    {
+        let now : TransportTime = this.getNow();
+        this.bars.forEach((bar) => {
+            bar.play(now); 
+        });
+    }
 
 }
+
+//     magneticPlay( synchronityMeasure, windowedVarScore )
+//     {
+        
+//             if ( this.currentMidi.length <= 0 ) 
+//             {
+//                 return; 
+//             }
+
+//             if ( ! this.looping )
+//             {
+//                 return; 
+//             }
+
+//             //need to implement -- if you put a lot of energy in then it lasts longer... !!
+//             let vol = this.createVolumeCurve(  windowedVarScore );
+//             this.playgroundSampler.volume.value = vol; 
+
+//             //do a volume thing 2?
+//             if( windowedVarScore < 0.07)
+//             {
+//                 return;
+//             }
+
+//             let now = Tone.now();
+
+//             let secs = now-this.startTime ;
+//             if(  ( secs) <  this.scheduledAhead )
+//             {
+
+//                 return;
+//             }
+//             // console.log("secs: " + secs + " tone.now: " + now + " start: " + this.startTime ) ; 
+
+//             //also map velocity?
+
+//             let midiIndex = this.chooseWhichFileIndexBasedOnIndividualActivity( windowedVarScore );
+//             this.currentMidi[midiIndex].tracks.forEach((track) => {
+
+//                 //schedule all of the events
+//                 track.notes.forEach((note) => {
+
+//                     let humanize = Scale.linear_scale( Math.random(), 0, 1, -0.5, 0.1 ); 
+//                     let humanizePitch = Scale.linear_scale( Math.random(), 0, 1, -5, 30 ); 
+
+//                     //TODO make this a sliding scale too
+//                     if( synchronityMeasure > 0.6 )
+//                     {
+//                         humanize = Scale.linear_scale( Math.random(), 0, 1, -0.05, 0.05 ); 
+//                         humanizePitch = 0;
+//                     }
+
+//                     let pitch = Tone.Frequency(note.name).toMidi() + humanizePitch; 
+
+//                         this.playgroundSampler.triggerAttackRelease(
+//                         Tone.Frequency(pitch, "midi").toNote(),
+//                         note.duration,
+//                         note.time + this.findStartTimeMagnetic( synchronityMeasure, Tone.now() ),
+//                         note.velocity + humanize);
+//                         // console.log("velocity:" +note.velocity); 
+//                     }
+//                 );
+                    
+//             });
+//             this.startTime = now; 
+//     }
+
+// }

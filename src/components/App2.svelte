@@ -18,7 +18,7 @@
   import * as Scale from '../scale'
   import { LoadMidiFilePlayground, MainVolume } from '../midiConversion'
   import { FPSTracker } from '../fpsMeasure'
-  import { SonifierWithTuba } from '../xcorrSonify'
+  import { SonifierWithTuba, TouchPhrasesEachBar } from '../xcorrSonify'
 import { SkeletionIntersection } from '../skeletonIntersection';
   
   const webcamVideo = videoSubscription();
@@ -78,6 +78,7 @@ import { SkeletionIntersection } from '../skeletonIntersection';
   let midiFile : LoadMidiFilePlayground;
   let mainVolume : MainVolume; 
   let tubaSonfier : SonifierWithTuba;
+  let touchMusicalPhrases : TouchPhrasesEachBar; 
 
 
   let three: ThreeRenderer;
@@ -137,14 +138,16 @@ import { SkeletionIntersection } from '../skeletonIntersection';
     {
       skeletonTouching = 0;
     }
-    if( participant.justStartedTouching() )
+    let justStartedTouching : boolean = participant.justStartedTouching();
+    touchMusicalPhrases.update(justStartedTouching); 
+    if( justStartedTouching )
     {
-      tubaSonfier.triggerAttack(); 
+      tubaSonfier.triggerAttackRelease(); 
     }
-    else if ( participant.justStoppedTouching() )
-    {
-      tubaSonfier.triggerRelease(); 
-    }
+    // else if ( participant.justStoppedTouching() )
+    // {
+    //   tubaSonfier.triggerRelease(); 
+    // }
     howLongTouch = participant.howLongTouching(); 
     howMuchTouch = participant.howMuchTouching();
     
@@ -261,7 +264,8 @@ import { SkeletionIntersection } from '../skeletonIntersection';
       midiFile.startLoop(); 
 
       //this is the new code
-      tubaSonfier = new SonifierWithTuba(participant, mainVolume); 
+      tubaSonfier = new SonifierWithTuba(participant, mainVolume);
+      touchMusicalPhrases = new TouchPhrasesEachBar(tubaSonfier); 
 
     // const posenet = await initPosenet(webcamVideo);
     // const webcamVideo = await makeVideoElement();
@@ -389,6 +393,14 @@ import { SkeletionIntersection } from '../skeletonIntersection';
 
     goLoop(async () => {
       if (stopped) return goLoop.STOP_LOOP;
+      await sleep();
+      if(touchMusicalPhrases){ 
+        touchMusicalPhrases.play(); 
+      }
+    });
+
+    goLoop(async () => {
+      if (stopped) return goLoop.STOP_LOOP;
       if (!myId || !posenet) return sleep();
       fpsTracker.refreshLoop();
 
@@ -397,6 +409,7 @@ import { SkeletionIntersection } from '../skeletonIntersection';
       participant.setSize(size.width, size.height);
       participant.addKeypoint(pose.keypoints);
       keypointsUpdated(myId, pose, size);
+
       
       // send to peers w/ data connections
       peerIds
