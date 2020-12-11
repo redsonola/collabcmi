@@ -397,7 +397,6 @@ export class TouchPhrasesEachBar
         {
             this.curRecordingBar.onset(); 
         }
-
     }
 
     play()
