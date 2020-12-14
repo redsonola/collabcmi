@@ -246,7 +246,11 @@ export function createMessagingPeer<T>(mySuppliedId: string | undefined, serverP
             console.error(command);
             throw new Error(`Data connection for ${command.theirId} does not exist.`);
           }
-          connection.send(command.message);
+          if (connection.open) {
+            connection.send(command.message);
+          } else {
+            console.log('connection not open, but tried to send:', connection, command);
+          }
           break;
         }
 

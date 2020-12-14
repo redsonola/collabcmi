@@ -374,7 +374,7 @@
 
     goLoop(async () => {
       if (stopped) return goLoop.STOP_LOOP;
-      if (!myId || !posenet) return sleep();
+      if (!myId || !posenet) return sleep(100);
       fpsTracker.refreshLoop();
 
       const pose = await posenet.getPose();
