@@ -36,6 +36,7 @@ export class SonifierWithTuba {
 
     participant : Participant;
     tubaSampler : Tone.Sampler; 
+    tubeSampler2 :  Tone.Sampler; 
     masterCompressor : Tone.Compressor;
     convolver1 : Tone.Convolver;
     convolver2 : Tone.Convolver;
@@ -43,32 +44,51 @@ export class SonifierWithTuba {
     playingNote : number = -1;
 
     vibrato : Tone.Vibrato; 
-    // feedbackDelay : Tone.FeedbackDelay; 
+    feedbackDelay : Tone.FeedbackDelay; 
 
     testSynth : Tone.Synth; 
+
+    ampEnv : Tone.AmplitudeEnvelope;
+    ampEnv2 : Tone.AmplitudeEnvelope;
+
 
     constructor( p : Participant, mainVolume : MainVolume ) {
 
         this.participant = p; 
         this.tubaSampler = this.loadTubaSampler();
+        this.tubeSampler2 = this.loadTubaSampler();
         this.masterCompressor = new Tone.Compressor(-5, 1);
+
+        this.ampEnv = new Tone.AmplitudeEnvelope({
+                attack: 0.1,
+                decay: 0.2,
+                sustain: 1.0,
+                release: 0.8
+            });
+
+        this.ampEnv2  = new Tone.AmplitudeEnvelope({
+            attack: 0.1,
+            decay: 0.2,
+            sustain: 1.0,
+            release: 0.8
+        });
 
         //set up the signal chain for the fx/synthesis
         this.convolver1 = new Tone.Convolver("./fan_sounds/cng_fan1.wav");
         this.convolver2 =  new Tone.Convolver("./fan_sounds/fan4.wav") 
         // this.tubaSampler.chain(this.convolver1, this.convolver2, this.masterCompressor);
         this.vibrato = new Tone.Vibrato(0, 1); 
-        // this.feedbackDelay = new Tone.FeedbackDelay("32", 0.25);
+        this.feedbackDelay = new Tone.FeedbackDelay("8n", 0.25);
 
         // this.tubaSampler.chain(this.convolver1, this.vibrato, this.feedbackDelay, this.masterCompressor);
-        this.tubaSampler.chain(this.convolver1, this.vibrato, this.masterCompressor);
+        this.tubaSampler.chain(this.convolver1, this.vibrato, this.ampEnv, this.masterCompressor);
+        this.tubeSampler2.chain(this.ampEnv2, this.masterCompressor);
 
         this.masterCompressor.connect(mainVolume.getVolume());
-        this.tubaSampler.release = 0.25; 
-        this.tubaSampler.curve = "exponential"; 
+        // this.tubaSampler.release = 0.25; 
+        // this.tubaSampler.curve = "exponential"; 
 
         this.testSynth = new Tone.Synth().connect(mainVolume.getVolume());
-
 
         // //set up the samplers
         // for(let i=0; i<PoseIndex.bodyPartArray.length; i++)
@@ -132,9 +152,19 @@ export class SonifierWithTuba {
                 let index = Math.floor( Scale.linear_scale( randNote, 0, 1, 0, keyOfCPitchClass4.length ) );
                 this.playingNote = keyOfCPitchClass4[index]-24;
             }
-            let velocity = 120;
-            // this.tubaSampler.triggerAttackRelease(Tone.Frequency(this.playingNote, "midi").toNote(), "16n", Tone.now(), velocity);
-            this.testSynth.triggerAttackRelease(Tone.Frequency(this.playingNote, "midi").toNote(), "16n");
+
+            //TODO: an array of different 'tuba' sounds
+            if( Math.random() > 0.5 )
+            {
+                this.tubaSampler.triggerAttackRelease(Tone.Frequency(this.playingNote, "midi").toNote(), "16n");
+                this.ampEnv.triggerAttackRelease("16n");
+            }
+            else 
+            {
+                this.tubeSampler2.triggerAttackRelease(Tone.Frequency(this.playingNote, "midi").toNote(), "16n");
+                this.ampEnv2.triggerAttackRelease("16n");
+            }
+           // this.testSynth.triggerAttackRelease(Tone.Frequency(this.playingNote, "midi").toNote(), "16n");
         }
         catch(e)
         {
