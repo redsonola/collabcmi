@@ -153,7 +153,7 @@ import { SkeletionIntersection } from '../skeletonIntersection';
     howLongTouch = participant.howLongTouching(); 
     howMuchTouch = participant.howMuchTouching();
     tubaSonfier.setVibrato(howLongTouch);
-
+    //midiFile.magneticPlay( 1, windowedVarScore ); ugh. need to work on this more.
 
     try {
       // participant.xCorrPositions( friendParticipant ); //update xcorr for position
@@ -198,8 +198,7 @@ import { SkeletionIntersection } from '../skeletonIntersection';
     } catch (ex) {
       console.warn(ex);
     }
-    //this for the other project
-    // midiFile.magneticPlay( synchScore, windowedVarScore ); //commented out for testing
+
 
   }
 

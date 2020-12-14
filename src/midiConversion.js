@@ -135,7 +135,6 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
             "D#3" : "Metal Surface Soft-09.wav",
             "F#3" : "Metal Tube 2-08.wav",
             "G3" : "Metal Tube 2-05.wav",
-            "A3" : "Seesaw-09.wav",
             "A#3" : "Stairs Hits Various-04.wav",
             "B3" : "Stairs Hits Various-05.wav",
             "E4" : "Steps-04.wav",
@@ -159,7 +158,7 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
         const measureLen = Tone.Time("1n").toSeconds();
         this.noteQuarterLen = Tone.Time("4n").toSeconds();
 
-        this.scheduledAhead = measureLen + measureLen; 
+        this.scheduledAhead = measureLen; 
         this.looping = false; 
         this.startTime = Tone.now(); 
         this.magneticLoopStarted = 0; 
@@ -168,11 +167,11 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
 
     parseAllFiles()
     {
-        this.parseFile('./perc_midi/most_thin.mid');
-        this.parseFile('./perc_midi/mostThinBaseSoFar.mid');
-        this.parseFile('./perc_midi/thinned_out_base.mid');
-        this.parseFile('./perc_midi/base_sound.mid');
-        this.parseFile('./perc_midi/base_w_more.mid');
+        this.parseFile('./collab_perc_midi/milongaPatternSparser.mid');
+        this.parseFile('./collab_perc_midi/milongaPatternBase.mid');
+        this.parseFile('./collab_perc_midi/milongaPatternBaseBusier.mid');
+        this.parseFile('./collab_perc_midi/milongaPatternBaseBusiest2.mid');
+        this.parseFile('./collab_perc_midi/milongaPatternBaseBusiest3.mid');
     }
 
     //synchroncityMeasure should be 0-1 ish
@@ -245,19 +244,19 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
         {
             midiIndex = 1; 
         }
-        else if( windowedVarScore < 0.5 )
+        else //if( windowedVarScore < 0.5 )
         {
             midiIndex = 2; 
         }
-        else if( windowedVarScore < 0.7 )
-        {
-            midiIndex = 3; 
-        }
-        else
-        {
-            midiIndex = 4;
-        }
-        // console.log("windowedVarScore: " + windowedVarScore + " , " + midiIndex); 
+        // else if( windowedVarScore < 0.7 )
+        // {
+        //     midiIndex = 3; 
+        // }
+        // else
+        // {
+        //     midiIndex = 4;
+        // }
+        console.log("windowedVarScore: " + windowedVarScore + " , " + midiIndex); 
 
         return midiIndex;
     }
@@ -266,16 +265,17 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
     {
         let vol = 0;
         if( windowedVarScore < 0.1 )  
-            vol = Scale.linear_scale( windowedVarScore, 0, 1, -60, 30 ); 
+            vol = Scale.linear_scale( windowedVarScore, 0, 1, -60, 0 ); 
         else if (  windowedVarScore ) 
         {
-            vol = Scale.linear_scale( windowedVarScore, 0, 1, -20, 30 ); 
+            vol = Scale.linear_scale( windowedVarScore, 0, 1, -20, 0 ); 
         }
 
         return vol; 
     }
 
 
+    //ok, I took out the magnetic part
     magneticPlay( synchronityMeasure, windowedVarScore )
     {
         
@@ -294,10 +294,10 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
             this.playgroundSampler.volume.value = vol; 
 
             //do a volume thing 2?
-            if( windowedVarScore < 0.07)
-            {
-                return;
-            }
+            // if( windowedVarScore < 0.07)
+            // {
+            //     return;
+            // }
 
             let now = Tone.now();
 
@@ -318,47 +318,27 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
                 track.notes.forEach((note) => {
 
                     let humanize = Scale.linear_scale( Math.random(), 0, 1, -0.5, 0.1 ); 
-                    let humanizePitch = Scale.linear_scale( Math.random(), 0, 1, -5, 30 ); 
+                    let humanizePitch = Math.round(Scale.linear_scale( Math.random(), 0, 1, -5, 5 )); 
 
                     //TODO make this a sliding scale too
-                    if( synchronityMeasure > 0.6 )
-                    {
-                        humanize = Scale.linear_scale( Math.random(), 0, 1, -0.05, 0.05 ); 
-                        humanizePitch = 0;
-                    }
+                    // if( synchronityMeasure > 0.6 )
+                    // {
+                    //     humanize = Scale.linear_scale( Math.random(), 0, 1, -0.05, 0.05 ); 
+                    //     humanizePitch = 0;
+                    // }
 
                     let pitch = Tone.Frequency(note.name).toMidi() + humanizePitch; 
 
-                        this.playgroundSampler.triggerAttackRelease(
-                        Tone.Frequency(pitch, "midi").toNote(),
+                    this.playgroundSampler.triggerAttackRelease(
+                        Tone.Frequency(pitch-12, "midi").toNote(),
                         note.duration,
-                        note.time + this.findStartTimeMagnetic( synchronityMeasure, Tone.now() ),
+                        note.time + this.findStartTimeMagnetic( synchronityMeasure, now ), //don't do magnetic
                         note.velocity + humanize);
-                        // console.log("velocity:" +note.velocity); 
-                    }
-                );
+                });
                     
             });
             this.startTime = now; 
     }
-
-    // loop( synchronityMeasure ) //note this doesn't work bc not changing the measure.
-    // {
-    //     if (!this.playing || !this.currentMidi) 
-    //     {
-    //         return; 
-    //     }
-
-    //     const measureLen = Tone.Time("1n").toSeconds();
-    //     let loopTime = measureLen + measureLen; 
-
-    //     this.myloop = new Tone.Loop(time => {
-
-    //         this.magneticPlay( synchronityMeasure, time );
-
-    //     }, loopTime).start(Tone.now() + this.scheduledAhead);
-    //     Tone.Transport.start();
-    // }
 
     play() {
         if (this.playing && this.currentMidi) {

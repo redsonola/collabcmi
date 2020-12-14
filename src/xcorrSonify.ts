@@ -294,14 +294,15 @@ export class SonifierWithTuba {
             }
 
             //TODO: an array of different 'tuba' sounds
+            let humanize = Scale.linear_scale( Math.random(), 0, 1, 0.4, 1 ); 
             if( Math.random() > 0.5 )
             {
-                this.tubaSampler.triggerAttackRelease(Tone.Frequency(this.playingNote, "midi").toNote(), "8n");
+                this.tubaSampler.triggerAttackRelease(Tone.Frequency(this.playingNote, "midi").toNote(), "8n", Tone.now(), humanize);
                 this.ampEnv.triggerAttackRelease("16n");
             }
             else 
             {
-                this.tubeSampler2.triggerAttackRelease(Tone.Frequency(this.playingNote, "midi").toNote(), "8n");
+                this.tubeSampler2.triggerAttackRelease(Tone.Frequency(this.playingNote, "midi").toNote(), "8n", Tone.now(), humanize);
                 this.ampEnv2.triggerAttackRelease("16n");
             }
            // this.testSynth.triggerAttackRelease(Tone.Frequency(this.playingNote, "midi").toNote(), "16n");
@@ -402,7 +403,7 @@ export class SonifierWithTuba {
             this.longPlayingNote[this.curLongTubaIndex] = -1; //nothing is playing
             this.lastAttackTime[this.curLongTubaIndex] = -1;
 
-            console.log("release triggered")
+            // console.log("release triggered")
         }
     }
 
