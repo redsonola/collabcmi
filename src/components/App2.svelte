@@ -139,30 +139,20 @@ import { SkeletionIntersection } from '../skeletonIntersection';
       skeletonTouching = 0;
     }
     let justStartedTouching : boolean = participant.justStartedTouching();
-    touchMusicalPhrases.update(justStartedTouching); 
+    touchMusicalPhrases.update(justStartedTouching);
+    tubaSonfier.update();  
     if( justStartedTouching )
     {
-      tubaSonfier.triggerAttackRelease(); 
+      //tubaSonfier.triggerAttackRelease(); 
+      tubaSonfier.triggerAttack(); 
     }
-    // else if ( participant.justStoppedTouching() )
-    // {
-    //   tubaSonfier.triggerRelease(); 
-    // }
+    else if ( participant.justStoppedTouching() )
+    {
+      tubaSonfier.triggerRelease(); 
+    }
     howLongTouch = participant.howLongTouching(); 
     howMuchTouch = participant.howMuchTouching();
-    
-    let freq = 0;
-    if(howLongTouch >= 2)
-    {
-      freq = Scale.linear_scale(howLongTouch, 2, 10, 0, 7);
-    }
-
-    let depth = 0; 
-    if(howLongTouch >= 2)
-    {
-      depth = Scale.linear_scale(howLongTouch, 2, 10, 0, 0.3);
-    }
-    tubaSonfier.setVibrato(freq, depth);
+    tubaSonfier.setVibrato(howLongTouch);
 
 
     try {
