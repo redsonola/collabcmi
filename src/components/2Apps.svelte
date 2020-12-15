@@ -22,18 +22,23 @@
 
 <style>
   .appSide {
-    width: 49%;
+    width: calc(50vw - 10px);
+    outline-width: 3px;
+    margin: 5px;
+    padding: 5px;
+    outline-style: double;
     box-sizing: border-box;
     display: inline-block;
     position: relative;
   }
   
   .left {
-    background: aliceblue;
+    margin-right: 0;
+    outline-color: orchid;
   }
 
   .right {
-    background: deeppink;
+    outline-color: plum;
   }
 </style>
 
