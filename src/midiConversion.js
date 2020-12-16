@@ -116,7 +116,9 @@ export class LoadMidiFile {
 
 }
 
-//this is the main backbone of the beats implemetnted.
+//https://www.musicradar.com/news/drums/1000-free-drum-samples
+//got the drum samples from there.
+//ok this is just a drum kit
 export class LoadMidiFilePlayground extends LoadMidiFile {
 
      
@@ -126,29 +128,30 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
 
         this.playgroundSampler = new Tone.Sampler({
             urls: {
-            "C2" : "Metal Surface-08.mp3",
-            "A#2" : "Chain Shake-08.wav",
-            "B2" : "Chain Shake Soft-05.wav",
-            "C3" : "Metal Surface-08.wav",
-            "C#3" : "Metal Surface-05.wav",
-            "D3" : "Metal Surface Soft-08.wav",
-            "D#3" : "Metal Surface Soft-09.wav",
-            "F#3" : "Metal Tube 2-08.wav",
-            "G3" : "Metal Tube 2-05.wav",
-            "A#3" : "Stairs Hits Various-04.wav",
-            "B3" : "Stairs Hits Various-05.wav",
-            "E4" : "Steps-04.wav",
-            "F4" : "Steps-05.wav",
-            "G#3" : "Seesaw-04.wav",
-            "A4" : "Trash Bin 2-05.wav",
-            "A#4" : "Wood Hand Palm-04.wav",
-            "C4" : "Stairs Palm Hit-08.wav",
-            "D#4" : "Stairs Palm Hit 2-08.wav",
-            "G#4" : "Trash Bin 2-08.wav",
-            "E5" : "Wood Knock 2-08.wav"
+            "G2" : "CYCdh_K2room_Kick-01.wav",
+            "A2" : "CYCdh_K2room_Kick-02.wav",
+            "B2" : "CYCdh_K2room_Kick-03.wav",
+            "C3" : "CYCdh_K2room_Kick-04.wav",
+            "D3" : "CYCdh_K2room_Kick-05.wav",
+            "E3" : "CYCdh_K2room_Kick-06.wav",
+
+            "F3" : "CYCdh_K2room_SdSt-07.wav",
+            "G3" : "CYCdh_K2room_SdSt-06.wav",
+            "A3" : "CYCdh_K2room_SdSt-05.wav",
+            "B3" : "CYCdh_K2room_SdSt-04.wav",
+            "C4" : "CYCdh_K2room_SdSt-03.wav",
+            "C#4" : "CYCdh_K2room_SdSt-01.wav",
+
+            "D4" : "CYCdh_K2room_ClHat-01.wav",
+            "E4" : "CYCdh_K2room_ClHat-02.wav",
+            "F4" : "CYCdh_K2room_ClHat-03.wav",
+            "G4" : "CYCdh_K2room_ClHat-04.wav",
+            "A4" : "CYCdh_K2room_ClHat-05.wav",
+            "B4" : "CYCdh_K2room_ClHat-06.wav",
+            "C5" : "CYCdh_K2room_ClHat-07.wav",
         },
         // release : 1,
-        baseUrl : "./audio_samples/playground_samples/"
+        baseUrl : "./audio_samples/Kit_2_Acoustic_room/"
         }).connect(mainVolume.getVolume());
 
         this.synths.push(this.playgroundSampler);
@@ -318,7 +321,7 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
                 track.notes.forEach((note) => {
 
                     let humanize = Scale.linear_scale( Math.random(), 0, 1, -0.5, 0.1 ); 
-                    let humanizePitch = Math.round(Scale.linear_scale( Math.random(), 0, 1, -5, 5 )); 
+                    let humanizePitch = Math.round(Scale.linear_scale( Math.random(), 0, 1, -1, 3 )); 
 
                     //TODO make this a sliding scale too
                     // if( synchronityMeasure > 0.6 )
@@ -328,12 +331,15 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
                     // }
 
                     let pitch = Tone.Frequency(note.name).toMidi() + humanizePitch; 
+                    console.log("pitch :" + pitch);
+
 
                     this.playgroundSampler.triggerAttackRelease(
-                        Tone.Frequency(pitch-12, "midi").toNote(),
+                        Tone.Frequency(pitch, "midi").toNote(),
                         note.duration,
                         note.time + this.findStartTimeMagnetic( synchronityMeasure, now ), //don't do magnetic
                         note.velocity + humanize);
+
                 });
                     
             });

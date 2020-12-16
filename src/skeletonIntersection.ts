@@ -263,6 +263,8 @@ export class LimbIntersect extends DetectIntersect
         return dist; 
     }
 
+    
+
     closeEnough(limb : LimbIntersect, whatIsEnough : number)
     {
         let myLine = this.scaleLine( this.line(), this.flip ); 
@@ -274,7 +276,8 @@ export class LimbIntersect extends DetectIntersect
         dist = Math.min( dist, this.findDistBetweenPointAndLine( myLine.end, otherLine ) ); 
         dist = Math.min( dist, this.findDistBetweenPointAndLine( myLine.start, otherLine ) ); 
 
-        //find the shortest distance btw each midpoint 
+        //find the shortest distance btw each midpoint
+         
         let myMidPoint = new THREE.Vector3();
         myMidPoint = myLine.getCenter(myMidPoint); 
 
@@ -284,11 +287,9 @@ export class LimbIntersect extends DetectIntersect
         dist = Math.min( dist, this.findDistBetweenPointAndLine( myMidPoint, otherLine ) ); 
         dist = Math.min( dist, this.findDistBetweenPointAndLine( otherMidPoint, myLine ) ); 
 
+        //find quarters
+        // let myLine2
 
-        // if(dist <= whatIsEnough)
-        // {
-        //     console.log("touching? " + dist); 
-        // }
 
         return dist <= whatIsEnough; 
     }
