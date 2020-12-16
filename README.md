@@ -3,13 +3,14 @@
 Using nvm as a package manager. 
 
 If on Windows, use (& follow instructions here): https://github.com/coreybutler/nvm-windows
+Update: apparently better to just use from nodejs website:https://nodejs.org/en/
 Apparently: https://chocolatey.org is the Windows version of homebrew.
 
 First Install nvm (node version manager)
 
 https://github.com/nvm-sh/nvm#install--update-script
 
-nvm install 15.1.0
+nvm install 15.1.0 //only on OS X. It should come with windows install.
 
 Install mkcert
 eg. on OS X -- brew install mkcert
