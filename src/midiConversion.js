@@ -229,6 +229,11 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
         Tone.Transport.stop();
     }
 
+    reset()
+    {
+        this.looping = true; 
+        this.startTime = Tone.now(); 
+    }
 
 
     //also add additional notes for super budy & subtract more... on a scale.
@@ -241,25 +246,25 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
         //just to start
         if( windowedVarScore < 0.2 )
         {
-            midiIndex = 0; 
+            midiIndex = 1; 
         }
         else if( windowedVarScore < 0.35 )
         {
-            midiIndex = 1; 
-        }
-        else //if( windowedVarScore < 0.5 )
-        {
             midiIndex = 2; 
         }
-        // else if( windowedVarScore < 0.7 )
-        // {
-        //     midiIndex = 3; 
-        // }
+        else if( windowedVarScore < 0.5 )
+        {
+            midiIndex = 3; 
+        }
+        else 
+        {
+            midiIndex = 4; 
+        }
         // else
         // {
         //     midiIndex = 4;
         // }
-        console.log("windowedVarScore: " + windowedVarScore + " , " + midiIndex); 
+        //console.log("windowedVarScore: " + windowedVarScore + " , " + midiIndex); 
 
         return midiIndex;
     }
@@ -267,11 +272,11 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
     createVolumeCurve(  windowedVarScore )
     {
         let vol = 0;
-        if( windowedVarScore < 0.1 )  
+        if( windowedVarScore < 0.05 )  
             vol = Scale.linear_scale( windowedVarScore, 0, 1, -60, 0 ); 
         else if (  windowedVarScore ) 
         {
-            vol = Scale.linear_scale( windowedVarScore, 0, 1, -20, 0 ); 
+            vol = Scale.linear_scale( windowedVarScore, 0, 1, -15, 0 ); 
         }
 
         return vol; 
@@ -293,8 +298,9 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
             }
 
             //need to implement -- if you put a lot of energy in then it lasts longer... !!
-            let vol = this.createVolumeCurve(  windowedVarScore );
-            this.playgroundSampler.volume.value = vol; 
+            //DISABLED for now
+            let vol = this.createVolumeCurve( windowedVarScore );
+           this.playgroundSampler.volume.value = vol; 
 
             //do a volume thing 2?
             // if( windowedVarScore < 0.07)
@@ -344,6 +350,11 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
                     
             });
             this.startTime = now; 
+    }
+
+    isPlaying()
+    {
+        return this.playing;
     }
 
     play() {

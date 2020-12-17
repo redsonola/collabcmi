@@ -287,8 +287,7 @@ export class LimbIntersect extends DetectIntersect
         dist = Math.min( dist, this.findDistBetweenPointAndLine( myMidPoint, otherLine ) ); 
         dist = Math.min( dist, this.findDistBetweenPointAndLine( otherMidPoint, myLine ) ); 
 
-        //find quarters
-        // let myLine2
+        //TODO: find quarters & others in loop.
 
 
         return dist <= whatIsEnough; 

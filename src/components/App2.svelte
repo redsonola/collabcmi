@@ -139,7 +139,7 @@ import { SkeletionIntersection } from '../skeletonIntersection';
       skeletonTouching = 0;
     }
     let justStartedTouching : boolean = participant.justStartedTouching();
-    touchMusicalPhrases.update(justStartedTouching);
+    touchMusicalPhrases.update(justStartedTouching, windowedVarScore);
     tubaSonfier.update();  
     if( justStartedTouching )
     {
@@ -254,7 +254,7 @@ import { SkeletionIntersection } from '../skeletonIntersection';
 
       //this is the new code
       tubaSonfier = new SonifierWithTuba(participant, mainVolume);
-      touchMusicalPhrases = new TouchPhrasesEachBar(tubaSonfier); 
+      touchMusicalPhrases = new TouchPhrasesEachBar(tubaSonfier, midiFile); 
 
     // const posenet = await initPosenet(webcamVideo);
     // const webcamVideo = await makeVideoElement();

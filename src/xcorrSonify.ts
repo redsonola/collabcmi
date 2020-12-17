@@ -12,7 +12,7 @@ import { AveragingFilter } from "./averagingFilterV2"; //this starts initialized
 import * as Scale from "./scale"
 import type { Participant } from "./participant"
 import * as PoseIndex from "./poseConstants"
-import type { MainVolume } from "./midiConversion.js";
+import type { LoadMidiFilePlayground, MainVolume } from "./midiConversion.js";
 import type { Time } from "tone/build/esm/core/type/Units";
 
 export class TransportTime
@@ -269,8 +269,6 @@ export class SonifierWithTuba {
                 this.triggerAttack(curPitch); 
             }
         }
-
-
     }
 
     triggerAttackRelease(pitch : number = -1) : number
@@ -470,9 +468,10 @@ export class MusicSequencerLoop
         return this.bar; 
     }
 
-    play( now : TransportTime)
+    play( now : TransportTime) : boolean
     {
         //number notes at the same time
+        let played = false; 
         this.onsets.forEach( (onset) => {  
             if( onset.sameBeat(now)  )
             {
@@ -485,8 +484,10 @@ export class MusicSequencerLoop
                 {
                     this.tuba.triggerAttackRelease(onset.pitch);
                 }
+                played = true;
             }
          } );
+         return played; 
     }
 
     //number of onsets
@@ -501,16 +502,23 @@ export class TouchPhrasesEachBar
     bars : MusicSequencerLoop[]; 
     tuba : SonifierWithTuba;
     curRecordingBar : MusicSequencerLoop; 
-    MAX_BARS : number = 5;
-    MAX_TIME_ALIVE : number = 10
+    MAX_BARS : number = 10;
+    MAX_TIME_ALIVE : number = 20; //should max time alive also be controlled by win var? 5 to 25?
+    curPlayingBars : number = 10; 
     lastBar : number = 0; //the last bar we were on 
 
+    percSoundFile : LoadMidiFilePlayground;
+    windowedvar : number; 
 
-    constructor(tuba : SonifierWithTuba)
+
+    constructor(tuba : SonifierWithTuba, percLoop : LoadMidiFilePlayground)
     {
         this.bars = []; 
         this.tuba = tuba; 
         this.curRecordingBar = new MusicSequencerLoop(this.tuba); 
+
+        this.percSoundFile = percLoop;
+        this.windowedvar = 0; 
     }
 
     updateBars(now : TransportTime)
@@ -544,6 +552,8 @@ export class TouchPhrasesEachBar
                 this.bars.splice(i, 1); 
             }
         }
+        //perhaps always relate the midi file to the bars?
+        this.percSoundFile.setPlaying( this.bars.length > 0 );
     }
 
     getNow() : TransportTime
@@ -555,14 +565,19 @@ export class TouchPhrasesEachBar
         return now; 
     }
 
-    update(touch : boolean) : void
+    update(touch : boolean, windowedVarScore : number) : void
     {
+        //temp fix I need propogate windowedVar stuff from other project.
+        this.windowedvar = Scale.linear_scale(windowedVarScore, 0, 0.6, 0, 1); 
+        this.curPlayingBars = Scale.linear_scale( this.windowedvar, 0, 1, 5, this.MAX_BARS );
+
         this.updateBars( this.getNow() );
 
         if(touch)
         {
             this.curRecordingBar.onset(); 
         }
+
     }
 
     play()
@@ -570,14 +585,30 @@ export class TouchPhrasesEachBar
         let now : TransportTime = this.getNow();
         let numberOfOnsets = 0;
         let MAX_ONSETS = 2; 
-        this.bars.forEach((bar) => {
+        let played : boolean = false; 
+        for( let i=0; i<this.curPlayingBars && i<this.bars.length; i++ )
+        {
+            played = played || this.bars[i].play(now); 
+        }
+        // this.bars.forEach((bar) => {
             // if( numberOfOnsets < MAX_ONSETS )
             // {
             //     if( bar.play(now) )
             //     { numberOfOnsets++; }
             // }
-            bar.play(now) ;
-        });
+        //});
+
+        if( played )
+        {
+            if(!this.percSoundFile.isPlaying())
+            {
+                this.percSoundFile.reset(); 
+                this.percSoundFile.setPlaying(true); 
+            }
+
+            //calling play with 100% match &  windowedVar
+            this.percSoundFile.magneticPlay( 1, this.windowedvar ); 
+        }
     }
 
 }
