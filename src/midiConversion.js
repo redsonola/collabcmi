@@ -246,15 +246,20 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
         //just to start
         if( windowedVarScore < 0.2 )
         {
+            midiIndex = 0; 
+        }
+        else if( windowedVarScore < 0.4 )
+        {
             midiIndex = 1; 
         }
-        else if( windowedVarScore < 0.35 )
+        else if( windowedVarScore < 0.6 )
         {
             midiIndex = 2; 
         }
-        else if( windowedVarScore < 0.5 )
+        else if( windowedVarScore < 0.8 )
         {
             midiIndex = 3; 
+
         }
         else 
         {
@@ -271,13 +276,14 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
 
     createVolumeCurve(  windowedVarScore )
     {
-        let vol = 0;
-        if( windowedVarScore < 0.05 )  
-            vol = Scale.linear_scale( windowedVarScore, 0, 1, -60, 0 ); 
-        else if (  windowedVarScore ) 
-        {
+        let vol = -5;
+        // if( windowedVarScore < 0.05 )  
+        //     vol = Scale.linear_scale( windowedVarScore, 0, 1, -60, 0 ); 
+        // else 
+        // if (  windowedVarScore ) 
+        // {
             vol = Scale.linear_scale( windowedVarScore, 0, 1, -15, 0 ); 
-        }
+        // }
 
         return vol; 
     }
@@ -299,8 +305,10 @@ export class LoadMidiFilePlayground extends LoadMidiFile {
 
             //need to implement -- if you put a lot of energy in then it lasts longer... !!
             //DISABLED for now
-            let vol = this.createVolumeCurve( windowedVarScore );
-           this.playgroundSampler.volume.value = vol; 
+            // let vol = this.createVolumeCurve( windowedVarScore );
+        //    this.playgroundSampler.volume.value = vol; 
+           this.playgroundSampler.volume.value = -3; 
+
 
             //do a volume thing 2?
             // if( windowedVarScore < 0.07)

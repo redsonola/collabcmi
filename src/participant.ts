@@ -7,10 +7,11 @@ import * as XCorr from 'abr-xcorr';
 import * as GetMethods from './getMethods.js';
 import * as math from 'mathjs';
 import type { Keypoint } from '@tensorflow-models/posenet';
-import { AverageFilteredKeyPoints, SkeletonTouch } from './averagedKeypoints';
+import { AverageFilteredKeyPoints } from './averagedKeypoints';
 import * as PoseMatch from './poseMatching';
 import * as Scale from './scale'
-import  {SkeletionIntersection} from './skeletonIntersection'
+import  { SkeletionIntersection } from './skeletonIntersection'
+import { SkeletonTouch } from './SkeletonTouch'
 import type { AnyARecord } from 'dns';
 
 
@@ -322,7 +323,7 @@ export class Participant {
         return this.poseAngles;
     }
 
-    getCurAnglesDx(): AveragingFilter[] {
+    getCurAnglesDx(): Derivative[] {
         return this.poseAnglesDx;
     }
 
@@ -341,22 +342,22 @@ export class Participant {
         return array;
     }
 
-    getCurDX() : AveragingFilter[]
+    getCurDX() : Derivative[]
     {
         return this.avgKeyPoints.getDXBuffer();
     }
 
-    getCurDY() : AveragingFilter[]
+    getCurDY() : Derivative[]
     {
         return this.avgKeyPoints.getDYBuffer();
     }
 
-    getScaledCurDX() : AveragingFilter[]
+    getScaledCurDX() : Derivative[]
     {
         return this.avgKeyPoints.getScaledDXBuffer();
     }
 
-    getScaledCurDY() : AveragingFilter[]
+    getScaledCurDY() : Derivative[]
     {
         return this.avgKeyPoints.getScaledDYBuffer();
     }
@@ -598,11 +599,11 @@ export class Participant {
 
         this.minConfidenceScore = 0.35;
 
-        let otherX: AveragingFilter[] = otherParticipant.getCurDX();
-        let meX: AveragingFilter[] = this.getCurDX();
+        let otherX: Derivative[] = otherParticipant.getCurDX();
+        let meX: Derivative[] = this.getCurDX();
 
-        let otherY: AveragingFilter[] = otherParticipant.getCurDY();
-        let meY: AveragingFilter[] = this.getCurDY();
+        let otherY: Derivative[] = otherParticipant.getCurDY();
+        let meY: Derivative[] = this.getCurDY();
 
         let otherArrayX: number[][] = [];
         let myArrayX: number[][] = [];
@@ -676,107 +677,7 @@ export class Participant {
             }
         }
     }
-    // xCorrDistance( otherParticipant: Participant ): void {
 
-    //     this.minConfidenceScore = 0.35;
-
-    //     let otherX: AveragingFilter[] = otherParticipant.getCurDX();
-    //     let meX: AveragingFilter[] = this.getCurDX();
-
-    //     let otherY: AveragingFilter[] = otherParticipant.getCurDY();
-    //     let meY: AveragingFilter[] = this.getCurDY();
-
-    //     let otherArrayX: number[][] = [];
-    //     let myArrayX: number[][] = [];
-
-    //     let otherArrayY: number[][] = [];
-    //     let myArrayY: number[][] = [];
-
-    //     let sz = math.min(otherX[0].length(), meX[0].length()); //take the lowest sampling rate as the window for comparison
-    //     //log sz here
-
-    //     if( sz < this.windowSize ) return; //TODO: probably send window size from the other participant... maybe
-    //     sz = this.windowSize; 
-
-    //     for (let i = 0; i < PoseIndex.posePointCount; i++) {
-
-    //         otherArrayX.push(otherX[i].getOutputContents(sz));
-    //         myArrayX.push(meX[i].getOutputContents(sz));
-
-    //         otherArrayY.push(otherY[i].getOutputContents(sz));
-    //         myArrayY.push(meY[i].getOutputContents(sz));
-    //     }
-
-
-
-    //     for (let i: number = 0; i < this.xcorrMaxPositionDX.length; i++) {
-
-    //         const sig1X = Buffer.from( myArrayX[i] );
-    //         const sig2X = Buffer.from( otherArrayX[i] );
-
-    //         const sig1Y = Buffer.from( myArrayY[i] );
-    //         const sig2Y = Buffer.from( otherArrayY[i] );
-
-    //         if(this.getAvgScore(i) >= this.minConfidenceScore && otherParticipant.getAvgScore(i) >= this.minConfidenceScore
-    //         &&  sig1X.length == sig2X.length && sig1Y.length == sig2Y.length )
-    //         {
-
-    //             let xcorr_outX;
-    //             let xcorr_outY;
-
-    //             try 
-    //             {
-    //                 xcorr_outX = XCorr.Xcorr( sig1X, sig2X );
-    //                 xcorr_outY = XCorr.Xcorr( sig1Y, sig2Y );
-    //             } 
-    //             catch (ex) 
-    //             {
-    //                 console.warn(ex);
-    //                 console.log("sig1X: " + sig1X.length);
-    //                 console.log("sig2X: " + sig2X.length);
-    //                 console.log("sig1Y: " + sig1Y.length);
-    //                 console.log("sig2Y: " + sig2Y.length);
-    //             }
-
-    //             if( xcorr_outX ){
-
-    //                 if( !isNaN(xcorr_outX.xcorrMax)  )
-    //                 {
-    //                     this.xcorrMaxPositionDX[i].update( xcorr_outX.xcorrMax );
-    //                 }
-    //                 else 
-    //                 {
-    //                     this.xcorrMaxPositionDX[i].update(0.0);
-    //                 }
-    //                 this.iMaxPositionsDX[i].update( xcorr_outX.iMax ); 
-
-    //             }
-
-    //             if( xcorr_outY ) 
-    //             {
-
-    //                 if( !isNaN(xcorr_outY.xcorrMax)  )
-    //                 {
-    //                     this.xcorrMaxPositionDY[i].update( xcorr_outY.xcorrMax );
-    //                 }
-    //                 else 
-    //                 {
-    //                     this.xcorrMaxPositionDY[i].update(0.0);
-    //                 }
-
-    //                 this.iMaxPositionsDY[i].update( xcorr_outY.iMax ); 
-    //             }
-    //             else
-    //             {
-    //                 this.xcorrMaxPositionDY[i].update( -1 );
-    //                 this.xcorrMaxPositionDX[i].update( -1 );
-
-    //                 this.iMaxPositionsDX[i].update( 0 ); 
-    //                 this.iMaxPositionsDY[i].update( 0 ); 
-    //             }
-    //         }
-    //     }
-    // }
 
     //this returns the cross-correlation between this participant and some friend participant for each keypose. Only have dyadic interactions now.
     //using the dx & dy of the points currently & this works much better than the body angles.
@@ -813,7 +714,7 @@ export class Participant {
         // this.xcorrMaxIndexRightShoulderHipElbow  = new CircularBuffer(this.windowSize);
 
         //not really usign this, but changed from a Derivative yikes.
-        let otherAngles: AveragingFilter[] = otherParticipant.getCurAnglesDx();
+        let otherAngles: Derivative[] = otherParticipant.getCurAnglesDx();
 
         let otherAnglesArray: number[][] = [];
         let myAnglesArray: number[][] = [];
@@ -1071,7 +972,9 @@ export class Participant {
 
     getAverageBodyPartWindowedVarianceFromIndex( index: number, minConfidence : number = 0.3 ) : number
     {
-        let maxWindowedVarTestedMaximums = [2, 3, 4, 4, 3, 3 ]; //just from one session -- TODO: find better maxes.
+        //goes through the below order: 
+        //[head, torso, leftArm, rightArm, leftLeg, rightLeg];
+        let maxWindowedVarTestedMaximums = [0.5, 3, 4, 4, 3, 3 ]; //just from one session -- TODO: find better maxes.
 
         let winvar = this.getAverageBodyPartWindowedVariance( PoseIndex.bodyPartArray[index], minConfidence );
         winvar = Scale.linear_scale(winvar, 0, maxWindowedVarTestedMaximums[index], 0, 1) ; 

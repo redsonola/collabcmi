@@ -568,7 +568,7 @@ export class TouchPhrasesEachBar
     update(touch : boolean, windowedVarScore : number) : void
     {
         //temp fix I need propogate windowedVar stuff from other project.
-        this.windowedvar = Scale.linear_scale(windowedVarScore, 0, 0.6, 0, 1); 
+        this.windowedvar = windowedVarScore; //Scale.linear_scale(windowedVarScore, 0, 0.6, 0, 1); 
         this.curPlayingBars = Scale.linear_scale( this.windowedvar, 0, 1, 5, this.MAX_BARS );
 
         this.updateBars( this.getNow() );

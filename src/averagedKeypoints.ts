@@ -4,108 +4,6 @@ import * as PoseIndex from './poseConstants.js';
 import * as math from 'mathjs'
 import * as PoseMatch from './poseMatching';
 
-//represents one touch between 2 skeletons
-export class SkeletonTouch
-{
-    touching : boolean; 
-    prevTouching : boolean = false;//touching before last update?
-
-    //these are arrays of indices into keypoints
-
-    indicesTouching : Array<Array<number>>;
-
-    startedTouching : number; 
-
-    constructor()
-    {
-        this.touching = false; 
-        this.indicesTouching = [];
-        this.startedTouching = 0; 
-    }
-
-    reset()
-    {
-        this.startedTouching = 0; 
-        this.indicesTouching = [];
-    }
-
-    //expecting keypoints for each
-    addTouch(mine:number, theirs:number) : void
-    {
-        let index = this.indexOf(mine, theirs); 
-        if( index === -1 )
-        {
-            this.indicesTouching.push( [mine, theirs] );
-            if(this.startedTouching === 0)
-            {
-                this.startedTouching = performance.now();
-            }
-        }
-        // console.log("touching!"); 
-        // console.log(this.indicesTouching); 
-    }
-
-    indexOf(mine:number, theirs:number) : number
-    {
-        let tuple  : Array<number>; 
-        tuple = [mine, theirs];
-        const isInArray = (element) => element[0] === mine && element[1] === theirs;
-        return this.indicesTouching.findIndex( isInArray );
-    }
-
-    //set to not touching
-    removeTouch(mine:number, theirs:number)  : void
-    {
-        let index = this.indexOf(mine, theirs); 
-        if( index !== -1 )
-            this.indicesTouching.splice(index, 1);
-    }
-
-    updateTouching() : void
-    {
-        this.prevTouching = this.touching; 
-        this.touching = this.indicesTouching.length > 0;
-        if( !this.touching )
-        {
-            this.startedTouching = 0; 
-        }
-    }
-
-    areTouching() : boolean
-    {
-        return this.touching; 
-    }
-
-    justStartedTouching() : boolean
-    {
-        return ( !this.prevTouching && this.touching ); 
-    }
-
-    justStoppedTouching() : boolean
-    {
-        return(  this.prevTouching && !this.touching );
-    }
-
-    howLong()
-    {
-        if(this.touching)
-            return (performance.now() - this.startedTouching ) / 1000.0; //just return seconds for now 
-        else return 0; 
-    }
-
-    whereTouching() : any[]
-    {
-        return this.indicesTouching;
-    }
-
-    //percent of total skeleton touching, disregarding confidence at the moment
-    howMuchTouching() : number
-    {
-        return this.indicesTouching.length / PoseIndex.posePointCount;
-    }
-
-}
-
 
 //a class that averages all the pose keypoints and keeps them all handy.
 //try drawing these instead to test
@@ -115,8 +13,17 @@ export class AverageFilteredKeyPoints
     x : AveragingFilter[];
     y : AveragingFilter[];
 
+    //shorter window for windowed variation
+    xShort : AveragingFilter[];
+    yShort : AveragingFilter[];
+    xShortDx : Derivative[];
+    yShortDy : Derivative[];
+
     xDx : Derivative[]; 
     yDx : Derivative[];
+
+    xDxNOStill : Derivative[]; 
+    yDxNOStill  : Derivative[];
     
     scaledX : AveragingFilter[];
     scaledY : AveragingFilter[];
@@ -125,7 +32,9 @@ export class AverageFilteredKeyPoints
     scaledyDx : Derivative[];
 
     //combined dx & dy, ya know.
-    distance : AveragingFilter[];
+    //ok, this may need to get unfucked but I'm trying to merge things FAST
+    distance : AveragingFilter[]; // this is for touch
+    distanceForWindowedVar : AveragingFilter[]; // this is for windowed var
 
     score : AveragingFilter[];
 
@@ -139,11 +48,13 @@ export class AverageFilteredKeyPoints
     maxDy : number;
 
     distanceOutBufferSize : number;
+    shortBufferSizeXY : number = 4; 
+    shortBufferSizeWinVar : number = 4; 
 
-    windowedVarianceDistance : AveragingFilter[]; //maybe don't take the average for now
+    windowedVarianceDistance : AveragingFilter[]; 
 
-    minConfidence : number; 
-    part : string[];
+     minConfidence : number; 
+     part : string[];
 
     constructor(avgSz : number = 12, avgOutBufferSize : number = 2, width=640, height=480)
     {
@@ -152,12 +63,13 @@ export class AverageFilteredKeyPoints
         this.x = [];
         this.y = []; 
         this.score = [];
-        this.part = []
+        this.part = [];
 
         this.xDx = [];
         this.yDx = [];
 
-        this.distance = [];
+        this.distanceForWindowedVar = [];
+        this.distance = []; 
 
         this.scaledX = [];
         this.scaledY = [];
@@ -171,8 +83,16 @@ export class AverageFilteredKeyPoints
         this.maxDx = 0; 
         this.maxDy = 0;
 
+        
+        this.xDxNOStill = [];
+        this.yDxNOStill = [];
+        this.xShort = [];
+        this.yShort = []; 
+        this.xShortDx = []; 
+        this.yShortDy = []; 
+
         //for how many distance values to keep. need for the variance
-        this.distanceOutBufferSize = avgSz; //try this, perhaps it is a ratio with this, or need to send in the fps
+        this.distanceOutBufferSize = 64; //try this as a ceiling, perhaps it is a ratio with this, or need to send in the fps
         this.windowedVarianceDistance = [];
 
         this.minConfidence = 0.35;
@@ -187,7 +107,17 @@ export class AverageFilteredKeyPoints
             this.xDx.push(new Derivative(avgSz, avgOutBufferSize));
             this.yDx.push(new Derivative(avgSz, avgOutBufferSize));
 
-            this.distance.push( new AveragingFilter(avgSz, this.distanceOutBufferSize) );
+            //the windowed var actually is better w/a shorter filter in this application, TODO: put in terms of fps
+            this.xDxNOStill.push(new Derivative(1, avgOutBufferSize)); //probably will deelte these extra x & y's during a refactor, fixed the thing that made me create so many
+            this.yDxNOStill.push(new Derivative(1, avgOutBufferSize));
+            this.xShort.push(new AveragingFilter(this.distanceOutBufferSize, avgOutBufferSize));
+            this.yShort.push(new AveragingFilter(this.distanceOutBufferSize, avgOutBufferSize));
+            this.xShortDx.push(new Derivative(2, avgOutBufferSize));
+            this.yShortDy.push(new Derivative(2, avgOutBufferSize));
+
+            //try just making window size smaller for this measure
+            this.distanceForWindowedVar.push( new AveragingFilter(1, this.distanceOutBufferSize) );
+            this.distance.push( new AveragingFilter(avgSz, avgOutBufferSize) ); //normal one for this application
 
             this.scaledX.push(new AveragingFilter(avgSz, avgOutBufferSize));
             this.scaledY.push(new AveragingFilter(avgSz, avgOutBufferSize));
@@ -195,9 +125,24 @@ export class AverageFilteredKeyPoints
             this.scaledxDx.push(new Derivative(avgSz, avgOutBufferSize)); 
             this.scaledyDx.push(new Derivative(avgSz, avgOutBufferSize));
 
-            this.windowedVarianceDistance.push(new AveragingFilter(avgSz, avgOutBufferSize)); //fix
+            this.windowedVarianceDistance.push(new AveragingFilter(this.distanceOutBufferSize, avgOutBufferSize)); //fix
         }
 
+    }
+
+    setMinConfidence(score : number) : void
+    {
+      this.minConfidence = score; 
+    }
+
+    setShortBufferSizeXY(sz : number) : void
+    {
+        this.shortBufferSizeXY = sz; 
+    }
+
+    setShortBufferSizeWinVar(sz : number) : void
+    {
+        this.shortBufferSizeWinVar = sz; 
     }
     
     setMinThreshForDx(thresh : number) : void
@@ -222,15 +167,19 @@ export class AverageFilteredKeyPoints
             this.xDx[i].setWindowSize(sz, buffer2Size); 
             this.yDx[i].setWindowSize(sz, buffer2Size); 
 
-            this.distanceOutBufferSize = sz/2;
-            this.distance[i].setWindowSize(sz, this.distanceOutBufferSize); //fix?
-            this.windowedVarianceDistance[i].setWindowSize(sz, buffer2Size); 
-        }
-    }
 
-    setMinConfidence(score : number) : void
-    {
-        this.minConfidence = score; 
+            this.distance[i].setWindowSize(sz, buffer2Size); //normal
+
+
+            this.xDxNOStill.push(new Derivative(1, buffer2Size));
+            this.yDxNOStill.push(new Derivative(1, buffer2Size));
+            this.xShort.push(new AveragingFilter(4, buffer2Size));
+            this.yShort.push(new AveragingFilter(4, buffer2Size));
+
+            // this.distanceOutBufferSize = sz;
+            this.distanceForWindowedVar[i].setWindowSize(1, this.distanceOutBufferSize); //fix?
+            this.windowedVarianceDistance[i].setWindowSize(this.distanceOutBufferSize, buffer2Size); 
+        }
     }
 
     update( keypoints : any[] ) : void
@@ -245,12 +194,19 @@ export class AverageFilteredKeyPoints
         for(let i=0; i<keypoints.length; i++){
             const keypoint = keypoints[i];
             const { y, x } = keypoint.position;
-            this.part[i] = keypoint.part; //todo: make so I only add this once sigh
+            this.part[i] = keypoint.part;
 
-            if( keypoint.score > this.minConfidence ) //dear god take in a minConfidence score instead of this hardcoded bs
+            if( keypoint.score > this.minConfidence )
             {
                 this.x[i].update(x); 
                 this.y[i].update(y);
+
+                //normalize
+                this.xShort[i].update(x / this.width); 
+                this.yShort[i].update(y /this.height);
+                this.xShortDx[i].update(this.xShort[i].getNextWithShorterWindow(this.shortBufferSizeXY));
+                this.yShortDy[i].update(this.yShort[i].getNextWithShorterWindow(this.shortBufferSizeXY));
+
                 this.score[i].update(keypoint.score); 
 
                 this.scaledX[i].update( scaledKeypoints[i].position.x ); 
@@ -259,19 +215,30 @@ export class AverageFilteredKeyPoints
                 this.xDx[i].updateWithStillnessThresh( this.x[i].top(), this.stillnessThresh );
                 this.yDx[i].updateWithStillnessThresh( this.y[i].top(), this.stillnessThresh );
 
+                this.xDxNOStill[i].updateWithStillnessThresh( this.xShort[i].top(), this.stillnessThresh  );
+                this.yDxNOStill[i].updateWithStillnessThresh( this.yShort[i].top(), this.stillnessThresh  );
+    
+
                 this.scaledxDx[i].update(this.scaledX[i].top());
                 this.scaledyDx[i].update(this.scaledY[i].top());
 
                 if( this.x[i].length() > 1 )
                 {
-                    // //took longer to do the correct conversion than to just implement my own dist.
-                    // let distb4Sqrt : number = this.xDx[i].top()*this.xDx[i].top() + this.yDx[i].top()*this.yDx[i].top(); 
-                    // let dist = Math.sqrt(distb4Sqrt); 
+                    //took longer to do the correct conversion than to just implement my own dist.
+                    let xs = this.xShortDx[i].top() * 100;
+                    let xy = this.yShortDy[i].top() * 100;
 
-                    let dist = this.getDist(this.xDx[i].top(), this.yDx[i].top());
+                    let distb4Sqrt : number = xs*xs + xy*xy; 
+                    let dist = Math.sqrt(distb4Sqrt); 
 
+                    //
+
+                    this.distanceForWindowedVar[i].update( dist ); //ok, this is distance but just the magnititude btw positions. Its still pretty good.
+                    this.windowedVarianceDistance[i].update( math.variance( this.distanceForWindowedVar[i].getOutputContents() ) ); 
+
+                    //distance for touch
+                    let dist2 = this.getDist(this.xDx[i].top(), this.yDx[i].top());
                     this.distance[i].update( dist );
-                    this.windowedVarianceDistance[i].update(math.variance( this.distance[i].getOutputContents() )); 
                 }   
             }
             else 
@@ -295,17 +262,17 @@ export class AverageFilteredKeyPoints
             this.maxDy = avgDy; 
     }
 
-    getDist(dx : number, dy : number) : number
+    getWindowedVariance(index:number) : number
     {
+        return this.windowedVarianceDistance[index].getNextWithShorterWindow(this.shortBufferSizeWinVar);
+    }
+
+    getDist(dx : number, dy : number) : number
+   {
         let distb4Sqrt : number = (dx*dx) + (dy*dy); 
         let dist = Math.sqrt(distb4Sqrt); 
 
         return dist; 
-    }
-
-    getWindowedVariance(index:number) : number
-    {
-        return this.windowedVarianceDistance[index].top();
     }
 
     getMaxDx()
@@ -356,22 +323,22 @@ export class AverageFilteredKeyPoints
         return this.x[i].getOutputContents(); 
     }
 
-    getDXBuffer() : AveragingFilter[]
+    getDXBuffer() : Derivative[]
     {
         return this.xDx; 
     }
 
-    getDYBuffer() : AveragingFilter[]
+    getDYBuffer() : Derivative[]
     {
         return this.yDx; 
     }
 
-    getScaledDXBuffer() : AveragingFilter[]
+    getScaledDXBuffer() : Derivative[]
     {
         return this.scaledxDx; 
     }
 
-    getScaledDYBuffer() : AveragingFilter[]
+    getScaledDYBuffer() : Derivative[]
     {
         return this.scaledyDx; 
     }
@@ -429,8 +396,7 @@ export class AverageFilteredKeyPoints
     getAvgScore(index) : number
     {
         return this.score[index].top(); 
-    } 
+    }
 
-    
 }
 

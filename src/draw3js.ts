@@ -160,12 +160,12 @@ export function threeRenderCode({
         }
         videoGroup.add(groupOfStuffToRender);
 
-        //add the skeleton intersection lines to be drawn
-        const skeletonLines : Line[] = skeletonIntersect.getLines(); 
-        for(let i=0; i<skeletonLines.length; i++)
-        {
-          videoGroup.add( skeletonLines[i] )
-        }
+        //add the skeleton intersection lines to be drawn -- currently doesn't work
+        // const skeletonLines : Line[] = skeletonIntersect.getLines(); 
+        // for(let i=0; i<skeletonLines.length; i++)
+        // {
+        //   videoGroup.add( skeletonLines[i] )
+        // }
 
         break;
       }

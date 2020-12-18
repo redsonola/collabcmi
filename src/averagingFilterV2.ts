@@ -40,7 +40,7 @@ export class UGEN
             return this.buffer.getContents();
         else 
         {
-            let out = this.buffer.getContents();
+            let out = this.buffer.getContents().slice(); //slice returns a COPY not a POINTER. good good.
             for(let i=0; i<out.length-sz; i++)
                 out.shift();
             return out; 
@@ -111,6 +111,18 @@ export class AveragingFilter extends UGEN {
             return mean; 
         }
         else return 0;
+    }
+
+    //returns a average with a shorter window. 
+    getNextWithShorterWindow(windowSize : number) : number
+    {
+        if(this.buffer.length()<=0) 
+            return 0; 
+        console.assert(windowSize <= this.buffer.length());
+        let tempBuf = this.getContents(windowSize);
+        let mean = math.mean(tempBuf);
+        console.assert(!isNaN(mean)); 
+        return mean; 
     }
 
     update( s : number ) : void {
