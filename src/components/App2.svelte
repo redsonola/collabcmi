@@ -16,7 +16,7 @@
   import type { Keypoint, Pose } from '@tensorflow-models/posenet';
   import ScoreBar from './scoreBar.svelte';
   import * as Scale from '../scale'
-  import { LoadMidiFilePlayground, MainVolume } from '../midiConversion'
+  import { Tango332Riffs, MainVolume } from '../midiConversion'
   import { FPSTracker } from '../fpsMeasure'
   import { SonifierWithTuba, TouchPhrasesEachBar } from '../xcorrSonify'
 import { SkeletionIntersection } from '../skeletonIntersection';
@@ -75,7 +75,7 @@ import { SkeletionIntersection } from '../skeletonIntersection';
   let howMuchTouch = 0; 
 
 
-  let midiFile : LoadMidiFilePlayground;
+  let midiFile : Tango332Riffs;
   let mainVolume : MainVolume; 
   let tubaSonfier : SonifierWithTuba;
   let touchMusicalPhrases : TouchPhrasesEachBar; 
@@ -248,7 +248,7 @@ import { SkeletionIntersection } from '../skeletonIntersection';
       mainVolume = new MainVolume()
 
       //this is from my audiovisual project
-      midiFile = new LoadMidiFilePlayground(mainVolume); 
+      midiFile = new Tango332Riffs(mainVolume); 
       await midiFile.parseAllFiles(); 
       midiFile.startLoop(); 
 

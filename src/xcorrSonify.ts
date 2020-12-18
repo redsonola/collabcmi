@@ -12,7 +12,7 @@ import { AveragingFilter } from "./averagingFilterV2"; //this starts initialized
 import * as Scale from "./scale"
 import type { Participant } from "./participant"
 import * as PoseIndex from "./poseConstants"
-import type { LoadMidiFilePlayground, MainVolume } from "./midiConversion.js";
+import type { DynamicMovementMidi, MainVolume } from "./midiConversion.js";
 import type { Time } from "tone/build/esm/core/type/Units";
 
 export class TransportTime
@@ -507,11 +507,11 @@ export class TouchPhrasesEachBar
     curPlayingBars : number = 10; 
     lastBar : number = 0; //the last bar we were on 
 
-    percSoundFile : LoadMidiFilePlayground;
+    percSoundFile : DynamicMovementMidi;
     windowedvar : number; 
 
 
-    constructor(tuba : SonifierWithTuba, percLoop : LoadMidiFilePlayground)
+    constructor(tuba : SonifierWithTuba, percLoop : DynamicMovementMidi)
     {
         this.bars = []; 
         this.tuba = tuba; 
@@ -607,7 +607,7 @@ export class TouchPhrasesEachBar
             }
 
             //calling play with 100% match &  windowedVar
-            this.percSoundFile.magneticPlay( 1, this.windowedvar ); 
+            this.percSoundFile.play( this.windowedvar ); 
         }
     }
 

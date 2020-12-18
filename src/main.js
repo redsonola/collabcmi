@@ -29,7 +29,7 @@ import * as PoseMatch from './poseMatching.ts';
 import { SkeletonHatchedLines } from './HatchedLines';
 import * as THREE from 'three';
 
-import { LoadMidiFilePlayground } from './midiConversion'
+import { Tango332Riffs } from './midiConversion'
 
   
 const USING_TEST_VIDEO = true;
@@ -222,7 +222,7 @@ export function init() {
 
 
       /************ TESTING SOUND *************/
-      midiFile = new LoadMidiFilePlayground(); 
+      midiFile = new Tango332Riffs(); 
       await midiFile.parseFile('./perc_midi/base_w_more.mid'); 
       midiFile.startLoop(); 
 
