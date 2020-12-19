@@ -171,10 +171,10 @@ export class AverageFilteredKeyPoints
             this.distance[i].setWindowSize(sz, buffer2Size); //normal
 
 
-            this.xDxNOStill.push(new Derivative(1, buffer2Size));
-            this.yDxNOStill.push(new Derivative(1, buffer2Size));
-            this.xShort.push(new AveragingFilter(4, buffer2Size));
-            this.yShort.push(new AveragingFilter(4, buffer2Size));
+            this.xDxNOStill[i].setWindowSize(1, buffer2Size);
+            this.yDxNOStill[i].setWindowSize(1, buffer2Size);
+            this.xShort[i].setWindowSize(this.distanceOutBufferSize, buffer2Size);
+            this.yShort[i].setWindowSize(this.distanceOutBufferSize, buffer2Size);
 
             // this.distanceOutBufferSize = sz;
             this.distanceForWindowedVar[i].setWindowSize(1, this.distanceOutBufferSize); //fix?
@@ -225,8 +225,8 @@ export class AverageFilteredKeyPoints
                 if( this.x[i].length() > 1 )
                 {
                     //took longer to do the correct conversion than to just implement my own dist.
-                    let xs = this.xShortDx[i].top() * 100;
-                    let xy = this.yShortDy[i].top() * 100;
+                    let xs = (this.xDx[i].top() / this.width ) * 100;
+                    let xy = (this.yDx[i].top() / this.height ) * 100;
 
                     let distb4Sqrt : number = xs*xs + xy*xy; 
                     let dist = Math.sqrt(distb4Sqrt); 
@@ -234,6 +234,8 @@ export class AverageFilteredKeyPoints
                     //
 
                     this.distanceForWindowedVar[i].update( dist ); //ok, this is distance but just the magnititude btw positions. Its still pretty good.
+                    
+                    
                     this.windowedVarianceDistance[i].update( math.variance( this.distanceForWindowedVar[i].getOutputContents() ) ); 
 
                     //distance for touch

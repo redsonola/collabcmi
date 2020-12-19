@@ -1,7 +1,7 @@
 import { Matrix4, Quaternion, Vector3, Group, DirectionalLight, Scene, Color, PlaneBufferGeometry, Mesh, MeshPhongMaterial, Box3, Line } from 'three';
 
 import { videoRect } from './threejs/videoRect';
-import { createJoints, createSkeleton } from './threejs/brentDrawSkeleton';
+import { Joints } from './threejs/brentDrawSkeleton';
 
 import { createOrthographicCamera } from './threejs/createOrthographicCamera';
 import type { CameraVideo } from './threejs/cameraVideoElement';
@@ -42,6 +42,9 @@ export function threeRenderCode({
   const scene = new Scene();
   scene.background = new Color(0xffffff);
 
+  let participantJoints : Joints[] = []; 
+
+
   const light = new DirectionalLight(0xff99cc, 1);
   light.position.set(1, 1, 1).normalize();
   scene.add(light);
@@ -70,6 +73,9 @@ export function threeRenderCode({
       group = new Group();
       group.userData.personId = personId;
       group.userData.isVideoGroup = true;
+
+      participantJoints.push(new Joints(personId));
+
       videoGroups.push(group);
       // if(!isCallAnswered)
       //   videoGroups.push(group);
@@ -132,16 +138,21 @@ export function threeRenderCode({
         const groupOfStuffToRender = new Group();
 
         // do the drawing
-        const joints = createJoints(
-          pose,
-          (k => k.part.includes('Eye') ? 0x8a2be2 : 0xaa5588),
-          (k => k.part.includes('Eye') ? 20 : k.score * 5 + 3)
-        );
+        const isInArray = (element) => element.isPerson(personId);
+        let jointIndex = participantJoints.findIndex( isInArray );        
 
-        const objects = createSkeleton(pose).add(joints);
+        if( jointIndex !== -1 )
+        {
+          const joints = participantJoints[jointIndex].createJoints(
+            pose,
+            (k => k.part.includes('Eye') ? 0x8a2be2 : 0xaa5588),
+            (k => k.part.includes('Eye') ? 20 : k.score * 5 + 3)
+          );
+          groupOfStuffToRender.add(joints);
+        }
 
-        
-        groupOfStuffToRender.add(objects);
+        // const objects = createSkeleton(pose).add(joints);
+
         groupOfStuffToRender.userData.isSkeleton = true;
         groupOfStuffToRender.userData.personId = personId;
 

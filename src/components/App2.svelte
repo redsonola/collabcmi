@@ -16,10 +16,11 @@
   import type { Keypoint, Pose } from '@tensorflow-models/posenet';
   import ScoreBar from './scoreBar.svelte';
   import * as Scale from '../scale'
-  import { Tango332Riffs, MainVolume } from '../midiConversion'
+  import { Tango332Riffs, FourFloorRiffs, MainVolume, DynamicMovementMidi } from '../midiConversion'
   import { FPSTracker } from '../fpsMeasure'
   import { SonifierWithTuba, TouchPhrasesEachBar } from '../xcorrSonify'
-import { SkeletionIntersection } from '../skeletonIntersection';
+  import { SkeletionIntersection } from '../skeletonIntersection';
+  import * as  Tone from 'tone';
   
   const webcamVideo = videoSubscription();
   const videoSources = [
@@ -75,7 +76,7 @@ import { SkeletionIntersection } from '../skeletonIntersection';
   let howMuchTouch = 0; 
 
 
-  let midiFile : Tango332Riffs;
+  let midiFile : DynamicMovementMidi[];
   let mainVolume : MainVolume; 
   let tubaSonfier : SonifierWithTuba;
   let touchMusicalPhrases : TouchPhrasesEachBar; 
@@ -248,9 +249,15 @@ import { SkeletionIntersection } from '../skeletonIntersection';
       mainVolume = new MainVolume()
 
       //this is from my audiovisual project
-      midiFile = new Tango332Riffs(mainVolume); 
-      await midiFile.parseAllFiles(); 
-      midiFile.startLoop(); 
+      midiFile = [new Tango332Riffs(mainVolume), new FourFloorRiffs(mainVolume)]; 
+
+      //note: using a for-loop for this caused my browser to crash! WTF MATE GOOD TIMES.
+      Tone.Transport.start();
+      await midiFile[0].parseAllFiles(); 
+      midiFile[0].startLoop(); 
+      await midiFile[1].parseAllFiles(); 
+      midiFile[1].startLoop(); 
+    
 
       //this is the new code
       tubaSonfier = new SonifierWithTuba(participant, mainVolume);

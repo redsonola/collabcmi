@@ -974,7 +974,7 @@ export class Participant {
     {
         //goes through the below order: 
         //[head, torso, leftArm, rightArm, leftLeg, rightLeg];
-        let maxWindowedVarTestedMaximums = [0.5, 3, 4, 4, 3, 3 ]; //just from one session -- TODO: find better maxes.
+        let maxWindowedVarTestedMaximums = [2, 3, 4, 4, 3, 3 ]; //just from one session -- TODO: find better maxes.
 
         let winvar = this.getAverageBodyPartWindowedVariance( PoseIndex.bodyPartArray[index], minConfidence );
         winvar = Scale.linear_scale(winvar, 0, maxWindowedVarTestedMaximums[index], 0, 1) ; 

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Color, Group, Mesh, MeshBasicMaterial, SphereBufferGeometry, Vector3 } from 'three';
+import { BufferGeometry, Color, Group, Mesh, MeshBasicMaterial, SphereBufferGeometry, Vector3 } from 'three';
 import type { Pose, Keypoint } from '@tensorflow-models/posenet/dist/types';
 
 const partNames = [
@@ -111,21 +111,49 @@ export function createSkeleton(pose: Pose, filter = (x: Keypoint) => true): THRE
   return group;
 }
 
-export function createJoints(
+export class Joints{
+
+   geometry : BufferGeometry[] ;
+   material : MeshBasicMaterial;
+   personId : string;
+
+
+  constructor(personId : string)
+  {
+    this.geometry = []; 
+    this.material = new MeshBasicMaterial({ color: 0x5555ff });
+    this.personId = personId;
+  }
+
+  isPerson(id : string)
+  {
+    return id === this.personId;
+  }
+
+  createJoints(
   pose: Pose,
   color: (k: Keypoint) => number,
   size: (k: Keypoint) => number
 ): THREE.Group {
   const keypoints = pose.keypoints; // .filter(keypoint => keypoint.score > 0.005);
   const group = new Group();
+
+  if( this.geometry.length > 0)
+  {
+    this.geometry.forEach( (geo) => geo.dispose() );
+    this.geometry = [];
+  }
+
   keypoints.forEach(keypoint => {
     const { position } = keypoint;
-    const geometry = new SphereBufferGeometry(size(keypoint), 16, 16);
-    const material = new MeshBasicMaterial({ color: color(keypoint) });
-    const sphere = new Mesh(geometry, material);
+
+    this.geometry.push(new SphereBufferGeometry(size(keypoint), 16, 16));
+    const sphere = new Mesh(this.geometry[ this.geometry.length-1] , this.material);
     sphere.position.x = position.x;
     sphere.position.y = position.y;
     group.add(sphere);
+
   });
   return group;
+}
 }

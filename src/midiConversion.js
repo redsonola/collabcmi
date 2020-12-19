@@ -71,7 +71,7 @@ export class LoadMidiFile {
         return this.currentMidi.length != 0;
     }
 
-    play(which = 0) {
+    play(which = 0, curTime) {
         // window.isPlaying = this.playing;
         // window.currentMidi = this.currentMidi;
 
@@ -120,6 +120,8 @@ export class LoadMidiFile {
 
 export class DynamicMovementMidi extends LoadMidiFile {
 
+     
+
     constructor(mainVolume) {
         super();
 
@@ -133,6 +135,9 @@ export class DynamicMovementMidi extends LoadMidiFile {
         this.looping = false;
         this.startTime = Tone.now();
         this.magneticLoopStarted = 0;
+        this.midiIndex = 0; 
+        this.firstTimePlayed = true; 
+
     }
 
     parseAllFiles() {
@@ -147,7 +152,6 @@ export class DynamicMovementMidi extends LoadMidiFile {
     //hmmm 
     startLoop() {
         this.looping = true;
-        Tone.Transport.start();
         this.startTime = Tone.now();
     }
 
@@ -180,14 +184,15 @@ export class DynamicMovementMidi extends LoadMidiFile {
         return this.playing;
     }
 
-    play(windowedVarScore) 
+    play(windowedVarScore, curTime) 
     {
     }
 
-    reset()
+    reset(curTime)
     {
         this.looping = true; 
-        this.startTime = Tone.now(); 
+        this.startTime = curTime; 
+        this.firstTimePlayed = true; 
     }
 }
 
@@ -243,6 +248,7 @@ export class Tango332Riffs extends DynamicMovementMidi {
         this.startTime = Tone.now(); 
         this.magneticLoopStarted = 0; 
 
+
     }
 
     parseAllFiles()
@@ -257,36 +263,51 @@ export class Tango332Riffs extends DynamicMovementMidi {
     //also add additional notes for super budy & subtract more... on a scale.
     chooseWhichFileIndexBasedOnIndividualActivity( windowedVarScore )
     {
-        let midiIndex = 0; 
 
         //just to start
-        if( windowedVarScore < 0.2 )
-        {
-            midiIndex = 0; 
-        }
-        else if( windowedVarScore < 0.4 )
-        {
-            midiIndex = 1; 
-        }
-        else if( windowedVarScore < 0.6 )
-        {
-            midiIndex = 2; 
-        }
-        else if( windowedVarScore < 0.8 )
-        {
-            midiIndex = 3; 
+        // if( windowedVarScore < 0.2 )
+        // {
+        //     this.midiIndex = 0; 
+        // }
+        // else if( windowedVarScore < 0.4 )
+        // {
+        //     this.midiIndex = 1; 
+        // }
+        // else if( windowedVarScore < 0.6 )
+        // {
+        //     this.midiIndex = 2; 
+        // }
+        // else if( windowedVarScore < 0.8 )
+        // {
+        //     this.midiIndex = 3; 
 
-        }
-        else 
+        // }
+        // else 
+        // {
+        //     this.midiIndex = 4; 
+        // }
+
+        let prevIndex = this.midiIndex;
+
+        //first create the scaling
+        this.midiIndex = Scale.linear_scale( windowedVarScore, 0, 1, 0, this.currentMidi.length-1 );
+        this.midiIndex = Math.round(this.midiIndex);  
+
+        //only change by 1 step at a time
+        if(prevIndex > this.midiIndex )
         {
-            midiIndex = 4; 
+            this.midiIndex = prevIndex - 1;
+        }
+        else if( prevIndex < this.midiIndex )
+        {
+            this.midiIndex = prevIndex + 1; 
         }
 
-        return midiIndex;
+        return this.midiIndex;
     }
     
     //ok, I took out the magnetic part
-    play( windowedVarScore )
+    play( windowedVarScore, curTime )
     {
         
             if ( this.currentMidi.length <= 0 ) 
@@ -299,32 +320,28 @@ export class Tango332Riffs extends DynamicMovementMidi {
                 return; 
             }
 
+
             //need to implement -- if you put a lot of energy in then it lasts longer... !!
             //DISABLED for now
             // let vol = this.createVolumeCurve( windowedVarScore );
         //    this.playgroundSampler.volume.value = vol; 
-           this.playgroundSampler.volume.value = -3; 
+           this.playgroundSampler.volume.value = -2.5; 
 
 
-            //do a volume thing 2?
-            // if( windowedVarScore < 0.07)
-            // {
-            //     return;
-            // }
-
-            let now = Tone.now();
-
-            let secs = now-this.startTime ;
-            if(  ( secs) <  this.scheduledAhead )
+            let secs = curTime-this.startTime ;
+            if(  ( secs) <  this.scheduledAhead && !this.firstTimePlayed )
             {
-
+                // console.log(" what are secs then? " +secs + "curTime: "+ curTime + "this.startTime " + this.startTime);
                 return;
             }
-            // console.log("secs: " + secs + " tone.now: " + now + " start: " + this.startTime ) ; 
 
-            //also map velocity?
+            this.firstTimePlayed = false; //don't need to schedule ahead if 1st time.
+
+            console.log(" here.... ");
+
 
             let midiIndex = this.chooseWhichFileIndexBasedOnIndividualActivity( windowedVarScore );
+            // console.log(midiIndex); 
             this.currentMidi[midiIndex].tracks.forEach((track) => {
 
                 //schedule all of the events
@@ -333,24 +350,45 @@ export class Tango332Riffs extends DynamicMovementMidi {
                     let humanize = Scale.linear_scale( Math.random(), 0, 1, -0.5, 0.1 ); 
                     let humanizePitch = Math.round(Scale.linear_scale( Math.random(), 0, 1, -1, 3 )); 
 
-                    //TODO make this a sliding scale too
-                    // if( synchronityMeasure > 0.6 )
-                    // {
-                    //     humanize = Scale.linear_scale( Math.random(), 0, 1, -0.05, 0.05 ); 
-                    //     humanizePitch = 0;
-                    // }
-
                     let pitch = Tone.Frequency(note.name).toMidi() + humanizePitch; 
 
                     this.playgroundSampler.triggerAttackRelease(
                         Tone.Frequency(pitch, "midi").toNote(),
                         note.duration,
-                        note.time + this.findStartTime( now ), //don't do magnetic
+                        note.time + this.findStartTime( curTime ), //don't do magnetic
                         note.velocity + humanize);
 
                 });
                     
             });
-            this.startTime = now; 
+            this.startTime = curTime; 
     }
+}
+
+
+export class FourFloorRiffs extends Tango332Riffs {
+
+    constructor(mainVolume)
+    {
+        super(mainVolume); 
+    }
+
+    parseAllFiles()
+    {
+        this.parseFile('./collab_perc_midi/fourOntheFloorSparsest.mid');
+        this.parseFile('./collab_perc_midi/fourOntheFloorSparser.mid');
+        this.parseFile('./collab_perc_midi/fourOntheFloorBase.mid');
+        this.parseFile('./collab_perc_midi/fourOntheFloorBusier.mid');
+        this.parseFile('./collab_perc_midi/fourOntheFloorBusiest.mid');
+        this.parseFile('./collab_perc_midi/fourOntheFloorBusiest2.mid');
+    }
+
+    // chooseWhichFileIndexBasedOnIndividualActivity( windowedVarScore )
+    // {
+    //     let midiIndex = Scale.linear_scale( windowedVarScore, 0, 1, 0, this.currentMidi.length );
+    //     midiIndex = Math.round(midiIndex);  
+
+    //     return midiIndex;
+    // }
+
 }

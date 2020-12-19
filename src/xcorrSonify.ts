@@ -507,11 +507,14 @@ export class TouchPhrasesEachBar
     curPlayingBars : number = 10; 
     lastBar : number = 0; //the last bar we were on 
 
-    percSoundFile : DynamicMovementMidi;
-    windowedvar : number; 
+    percSoundFile : DynamicMovementMidi[];
+    currentPercIndex : number;
+    windowedvar : number;
+    
+    lastChangedPercLoop : TransportTime; 
 
 
-    constructor(tuba : SonifierWithTuba, percLoop : DynamicMovementMidi)
+    constructor(tuba : SonifierWithTuba, percLoop : DynamicMovementMidi[])
     {
         this.bars = []; 
         this.tuba = tuba; 
@@ -519,6 +522,10 @@ export class TouchPhrasesEachBar
 
         this.percSoundFile = percLoop;
         this.windowedvar = 0; 
+        this.currentPercIndex = 0; 
+        this.lastChangedPercLoop = new TransportTime();
+        this.lastChangedPercLoop.setPosition( Tone.Transport.position.toString() );
+
     }
 
     updateBars(now : TransportTime)
@@ -553,7 +560,7 @@ export class TouchPhrasesEachBar
             }
         }
         //perhaps always relate the midi file to the bars?
-        this.percSoundFile.setPlaying( this.bars.length > 0 );
+        this.percSoundFile[this.currentPercIndex].setPlaying( this.bars.length > 0 );
     }
 
     getNow() : TransportTime
@@ -583,6 +590,7 @@ export class TouchPhrasesEachBar
     play()
     {
         let now : TransportTime = this.getNow();
+        let nowInSeconds = Tone.now(); 
         let numberOfOnsets = 0;
         let MAX_ONSETS = 2; 
         let played : boolean = false; 
@@ -598,16 +606,38 @@ export class TouchPhrasesEachBar
             // }
         //});
 
+        
         if( played )
         {
-            if(!this.percSoundFile.isPlaying())
+            let minWinVarTochange = 0.3 ;
+            
+            //TODO: how 'sticky' should rhythmic patterns be?
+            if( this.windowedvar < minWinVarTochange && now.bars - this.lastChangedPercLoop.bars > 10 )
             {
-                this.percSoundFile.reset(); 
-                this.percSoundFile.setPlaying(true); 
+                //turn off previous 
+                let previousIndex = this.currentPercIndex;
+
+                this.currentPercIndex = Scale.linear_scale( Math.random(), 0, 1, 0, this.percSoundFile.length-1 ); 
+                this.currentPercIndex = Math.round(this.currentPercIndex); 
+
+                if(previousIndex !== this.currentPercIndex)
+                {
+                    this.lastChangedPercLoop = now ;
+                    this.percSoundFile[previousIndex].setPlaying(false);
+                }
             }
 
+            console.assert( this.currentPercIndex < this.percSoundFile.length ); 
+
+            if(!this.percSoundFile[this.currentPercIndex].isPlaying())
+            {
+                this.percSoundFile[this.currentPercIndex].reset(nowInSeconds); 
+                this.percSoundFile[this.currentPercIndex].setPlaying(true); 
+            }
+
+
             //calling play with 100% match &  windowedVar
-            this.percSoundFile.play( this.windowedvar ); 
+            this.percSoundFile[this.currentPercIndex].play( this.windowedvar, nowInSeconds ); 
         }
     }
 
