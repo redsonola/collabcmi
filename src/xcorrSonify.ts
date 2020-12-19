@@ -288,7 +288,10 @@ export class SonifierWithTuba {
                 let keyOfCPitchClass4 = [ 72, 74, 76, 77, 79, 81, 83, 84 ]; // try higher notes
                 let randNote = Math.random();
                 let index = Math.floor( Scale.linear_scale( randNote, 0, 1, 0, keyOfCPitchClass4.length ) );
-                this.playingNote = keyOfCPitchClass4[index]-24;
+
+                let pitchClass = Math.round( Scale.linear_scale( Math.random(), 0, 1, -5, -1 ));
+
+                this.playingNote = keyOfCPitchClass4[index]+(12*pitchClass);
             }
 
             //TODO: an array of different 'tuba' sounds
