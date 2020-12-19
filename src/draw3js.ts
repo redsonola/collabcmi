@@ -146,7 +146,7 @@ export function threeRenderCode({
           const joints = participantJoints[jointIndex].createJoints(
             pose,
             (k => k.part.includes('Eye') ? 0x8a2be2 : 0xaa5588),
-            (k => k.part.includes('Eye') ? 20 : k.score * 5 + 3)
+            (k => k.part.includes('Eye') ? 1 : k.score * 5 + 3)
           );
           groupOfStuffToRender.add(joints);
         }
