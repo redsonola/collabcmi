@@ -974,9 +974,9 @@ export class Participant {
     {
         //goes through the below order: 
         //[head, torso, leftArm, rightArm, leftLeg, rightLeg];
-        let maxWindowedVarTestedMaximums = [2, 3, 4, 4, 3, 3 ]; //just from one session -- TODO: find better maxes.
+        let maxWindowedVarTestedMaximums = [0.01, 0.01, 0.2, 0.2, 0.2, 0.2 ]; //just from one session -- TODO: find better maxes.
 
-        let winvar = this.getAverageBodyPartWindowedVariance( PoseIndex.bodyPartArray[index], minConfidence );
+        let winvar = this.getAverageBodyPartWindowedVariance( index, PoseIndex.bodyPartArray[index], minConfidence );
         winvar = Scale.linear_scale(winvar, 0, maxWindowedVarTestedMaximums[index], 0, 1) ; 
 
         if( !isNaN( winvar ) )
@@ -984,7 +984,7 @@ export class Participant {
         else return 0; 
     }
 
-    getAverageBodyPartWindowedVariance( bodyPartIndices: number[], minConfidence : number = 0.3 ) : number
+    getAverageBodyPartWindowedVariance( index:number, bodyPartIndices: number[], minConfidence : number = 0.3 ) : number
     {
         let sum : number = 0; 
         let count : number = 0;
@@ -998,14 +998,21 @@ export class Participant {
         } 
         if(count == 0) return 0; 
         else {
+
             let v =  sum/count;
+            if( this.maxVar[index] < v )
+            {
+                this.maxVar[index] = v;
+            }
+            console.log( index + ":" + this.maxVar[index] );
+
             return v; 
          } 
     }
 
     //this is not getting updated at some points.... gah.
     //this should be in an averaging filter. 
-    getMaxBodyPartWindowedVariance(minConfidence : number = 0.3 )
+    getMaxBodyPartWindowedVariance(minConfidence : number = 0.4 )
     {
         let maxWindowedVar : number = 0; 
 
@@ -1018,11 +1025,8 @@ export class Participant {
                 maxWindowedVar = winvar;
             
             // not searching for the max now -- test more later
-            // if( this.maxVar[i] < winvar  )
-            // {
-            //     this.maxVar[i] = winvar;
-            // }
-            // console.log( i + ": " + this.maxVar[i] );
+
+            // if(i < 3)
         }
 
         //update a running average to calm that down dude

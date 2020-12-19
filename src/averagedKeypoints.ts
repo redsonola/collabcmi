@@ -51,7 +51,9 @@ export class AverageFilteredKeyPoints
     shortBufferSizeXY : number = 4; 
     shortBufferSizeWinVar : number = 4; 
 
-    windowedVarianceDistance : AveragingFilter[]; 
+    windowedVarianceDistanceX : AveragingFilter[]; 
+    windowedVarianceDistanceY : AveragingFilter[]; 
+
 
      minConfidence : number; 
      part : string[];
@@ -93,7 +95,9 @@ export class AverageFilteredKeyPoints
 
         //for how many distance values to keep. need for the variance
         this.distanceOutBufferSize = 64; //try this as a ceiling, perhaps it is a ratio with this, or need to send in the fps
-        this.windowedVarianceDistance = [];
+        this.windowedVarianceDistanceX = [];
+        this.windowedVarianceDistanceY = [];
+
 
         this.minConfidence = 0.35;
 
@@ -125,7 +129,9 @@ export class AverageFilteredKeyPoints
             this.scaledxDx.push(new Derivative(avgSz, avgOutBufferSize)); 
             this.scaledyDx.push(new Derivative(avgSz, avgOutBufferSize));
 
-            this.windowedVarianceDistance.push(new AveragingFilter(this.distanceOutBufferSize, avgOutBufferSize)); //fix
+            this.windowedVarianceDistanceX.push(new AveragingFilter(this.distanceOutBufferSize, avgOutBufferSize)); //fix
+            this.windowedVarianceDistanceY.push(new AveragingFilter(this.distanceOutBufferSize, avgOutBufferSize)); //fix
+
         }
 
     }
@@ -178,7 +184,9 @@ export class AverageFilteredKeyPoints
 
             // this.distanceOutBufferSize = sz;
             this.distanceForWindowedVar[i].setWindowSize(1, this.distanceOutBufferSize); //fix?
-            this.windowedVarianceDistance[i].setWindowSize(this.distanceOutBufferSize, buffer2Size); 
+            this.windowedVarianceDistanceX[i].setWindowSize(this.distanceOutBufferSize, buffer2Size); 
+            this.windowedVarianceDistanceY[i].setWindowSize(this.distanceOutBufferSize, buffer2Size); 
+
         }
     }
 
@@ -202,8 +210,8 @@ export class AverageFilteredKeyPoints
                 this.y[i].update(y);
 
                 //normalize
-                this.xShort[i].update(x / this.width); 
-                this.yShort[i].update(y /this.height);
+                this.xShort[i].update((x / this.width)*100); 
+                this.yShort[i].update((y /this.height)*100);
                 this.xShortDx[i].update(this.xShort[i].getNextWithShorterWindow(this.shortBufferSizeXY));
                 this.yShortDy[i].update(this.yShort[i].getNextWithShorterWindow(this.shortBufferSizeXY));
 
@@ -225,22 +233,22 @@ export class AverageFilteredKeyPoints
                 if( this.x[i].length() > 1 )
                 {
                     //took longer to do the correct conversion than to just implement my own dist.
-                    let xs = (this.xDx[i].top() / this.width ) * 100;
-                    let xy = (this.yDx[i].top() / this.height ) * 100;
 
-                    let distb4Sqrt : number = xs*xs + xy*xy; 
-                    let dist = Math.sqrt(distb4Sqrt); 
+
+                    // let distb4Sqrt : number = xs*xs + xy*xy; 
+                    // let dist = Math.sqrt(distb4Sqrt); 
 
                     //
 
-                    this.distanceForWindowedVar[i].update( dist ); //ok, this is distance but just the magnititude btw positions. Its still pretty good.
+                    // this.distanceForWindowedVar[i].update( dist ); //ok, this is distance but just the magnititude btw positions. Its still pretty good.
                     
                     
-                    this.windowedVarianceDistance[i].update( math.variance( this.distanceForWindowedVar[i].getOutputContents() ) ); 
+                    this.windowedVarianceDistanceX[i].update( math.variance( this.xShortDx[i].getOutputContents() ) ); 
+                    this.windowedVarianceDistanceY[i].update( math.variance( this.xShortDx[i].getOutputContents() ) ); 
 
                     //distance for touch
                     let dist2 = this.getDist(this.xDx[i].top(), this.yDx[i].top());
-                    this.distance[i].update( dist );
+                    this.distance[i].update( dist2 );
                 }   
             }
             else 
@@ -250,7 +258,8 @@ export class AverageFilteredKeyPoints
 
                 avgDx += this.xDx[i].top(); 
                 avgDy += this.yDx[i].top(); 
-                this.windowedVarianceDistance[i].update(0); //since this is a measure of movement, it should set to 0... hmm maybe dx & dy as well
+                this.windowedVarianceDistanceX[i].update(0); //since this is a measure of movement, it should set to 0... hmm maybe dx & dy as well
+                this.windowedVarianceDistanceY[i].update(0); //since this is a measure of movement, it should set to 0... hmm maybe dx & dy as well
             }
         }
 
@@ -266,7 +275,9 @@ export class AverageFilteredKeyPoints
 
     getWindowedVariance(index:number) : number
     {
-        return this.windowedVarianceDistance[index].getNextWithShorterWindow(this.shortBufferSizeWinVar);
+         let x = this.windowedVarianceDistanceX[index].getNextWithShorterWindow(this.shortBufferSizeWinVar);
+         let y = this.windowedVarianceDistanceX[index].getNextWithShorterWindow(this.shortBufferSizeWinVar);
+         return (x + y) / 2;
     }
 
     getDist(dx : number, dy : number) : number

@@ -325,7 +325,7 @@ export class Tango332Riffs extends DynamicMovementMidi {
             //DISABLED for now
             // let vol = this.createVolumeCurve( windowedVarScore );
         //    this.playgroundSampler.volume.value = vol; 
-           this.playgroundSampler.volume.value = -2.5; 
+           this.playgroundSampler.volume.value = 10; 
 
 
             let secs = curTime-this.startTime ;
