@@ -290,7 +290,6 @@ export class SonifierWithTuba {
                 let index = Math.floor( Scale.linear_scale( randNote, 0, 1, 0, keyOfCPitchClass4.length ) );
 
                 let pitchClass = Math.round( Scale.linear_scale( Math.random(), 0, 1, -5, -1 ));
-
                 this.playingNote = keyOfCPitchClass4[index]+(12*pitchClass);
             }
 
