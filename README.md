@@ -1,5 +1,11 @@
 # collabcmi
 
+## Dependencies
+
+NodeJS
+NPM version 6.* or 7.1.2 or greater (or less than 7 -- [Husky](https://www.npmjs.com/package/husky) doesn't work with npm 7.0.0 to 7.1.1)
+
+
 Using nvm as a package manager. 
 
 If on Windows, use (& follow instructions here): https://github.com/coreybutler/nvm-windows
