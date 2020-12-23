@@ -118,7 +118,7 @@ export class AveragingFilter extends UGEN {
     {
         if(this.buffer.length()<=0) 
             return 0; 
-        console.assert(windowSize <= this.buffer.length());
+        // console.assert(windowSize <= this.buffer.length());
         let tempBuf = this.getContents(windowSize);
         let mean = math.mean(tempBuf);
         console.assert(!isNaN(mean)); 

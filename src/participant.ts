@@ -1004,7 +1004,7 @@ export class Participant {
             {
                 this.maxVar[index] = v;
             }
-            console.log( index + ":" + this.maxVar[index] );
+            // console.log( index + ":" + this.maxVar[index] );
 
             return v; 
          } 
