@@ -564,8 +564,6 @@ export class SonifierWithTuba {
 
 }
 
-
-
 class PitchOnset extends TransportTime
 {
     pitch : number; 
