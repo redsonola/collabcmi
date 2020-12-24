@@ -55,7 +55,24 @@ class DetectIntersect
 
 }
 
+class WhereTouch
+{
+    isTouching : boolean = false; 
+    keypointIndices : number[] = []; 
+    xyValsPerIndices : {x:number, y:number}[] = []; 
 
+    constructor()
+    {
+    }
+
+    add( wT : WhereTouch )
+    {
+        this.isTouching = this.isTouching || wT.isTouching; 
+        this.keypointIndices.push(...wT.keypointIndices);
+        this.xyValsPerIndices.push(...this.xyValsPerIndices); 
+    }
+
+}
 
 export class LimbIntersect extends DetectIntersect
 {
@@ -265,7 +282,7 @@ export class LimbIntersect extends DetectIntersect
 
     
 
-    closeEnough(limb : LimbIntersect, whatIsEnough : number)
+    closeEnough(limb : LimbIntersect, whatIsEnough : number) : boolean
     {
         let myLine = this.scaleLine( this.line(), this.flip ); 
         let otherLine = this.scaleLine( limb.line(), !this.flip ); 
@@ -289,6 +306,12 @@ export class LimbIntersect extends DetectIntersect
 
         //TODO: find quarters & others in loop.
 
+        //TODO create a whereTouch factory I guess. also pinpoint actually where and not just the skeletion key
+        // let whereTouch : WhereTouch = new WhereTouch(); 
+        // whereTouch.isTouching = dist <= whatIsEnough;
+        // whereTouch.keypointIndices.push(this.index1);
+        // whereTouch.keypointIndices.push(this.index2);
+        // whereTouch.xyValsPerIndices.push( this.keypoints[0].position); 
 
         return dist <= whatIsEnough; 
     }
@@ -700,33 +723,32 @@ export class SkeletionIntersection
 
         // (window as any).headIntersect = this.head.getPositions(); 
 
-        let touch : boolean = false; 
+        let touch : number = 0; 
 
         let friendParts = this.friendSkeleton.getBodyPartIntersections() ;
         // (window as any).friendHeadIntersect = friendParts[0].getPositions(); 
 
         this.friendSkeleton.setShouldFlipSelf( !this.shouldFlipSelf ); 
 
-        let i = 0; //skipping head for now
+        let i = 0; 
         let j; 
-        while( !touch && i<this.parts.length )
+        while( i<this.parts.length ) //TODO make back into a for loop
         {
             j = 0; 
             while( !touch && j<friendParts.length )
             {
-                touch = this.parts[i].intersects( friendParts[j], w, h  ) ;
+                if( this.parts[i].intersects( friendParts[j], w, h  ) )
+                {
+                    touch++; 
+                }
                 j++;
             }
             i++;
         }
 
-        if( touch ){
-            i--; 
-            j--; 
-        }
         //     console.log("Touching! "+i+ " with " + j);
         // } else console.log( "Not touching!!");
-        return touch; 
+        return touch > 0; 
     }
 
 }

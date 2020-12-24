@@ -275,6 +275,64 @@ class LongPlayingNoteTuba extends LongPlayingNoteSampler
     }
 }
 
+class LongPlayingNoteTubaSoft extends LongPlayingNoteSampler
+{
+    constructor( mainVolume : MainVolume )
+    {
+        super(mainVolume);        
+    }
+
+    loadSampler()
+    {
+        let sampler : Tone.Sampler; 
+
+        sampler = new Tone.Sampler({
+            "F1": "041_Tuba_F1_Soft.aif",
+            "A1": "045_Tuba_A1_Soft.aif",
+            "C2": "048_Tuba_C2_Soft.aif",
+            "E2": "052_Tuba_E2_Soft.aif",	
+            "G2": "055_Tuba_G2_Soft.aif",
+            "A2": "057_Tuba_A2_Soft.aif",
+            "C3" : "060_Tuba_C3_Soft.aif",
+            "D3" : "062_Tuba_D3_Soft.aif",
+            "Eb3": "063_Tuba_Eb3_Soft.aif",
+        },
+        {
+            baseUrl: "./Tuba_samples/Tuba_Long/Soft/"
+        });
+        return sampler; 
+    }
+}
+
+class LongPlayingNoteTubaLoud extends LongPlayingNoteSampler
+{
+    constructor( mainVolume : MainVolume )
+    {
+        super(mainVolume);        
+    }
+
+    loadSampler()
+    {
+        let sampler : Tone.Sampler; 
+
+        sampler = new Tone.Sampler({
+            "F1": "041_Tuba_F1_Loud.aif",
+            "A1": "045_Tuba_A1_Loud.aif",
+            "C2": "048_Tuba_C2_Loud.aif",
+            "E2": "052_Tuba_E2_Loud.aif",	
+            "G2": "055_Tuba_G2_Loud.aif",
+            "A2": "057_Tuba_A2_Loud.aif",
+            "C3" : "060_Tuba_C3_Loud.aif",
+            "D3" : "062_Tuba_D3_Loud.aif",
+            "Eb3": "063_Tuba_Eb3_Loud.aif",
+        },
+        {
+            baseUrl: "./Tuba_samples/Tuba_Long/Loud/"
+        });
+        return sampler; 
+    }
+}
+
 
 class LongPlayingNoteCelloLoud extends LongPlayingNoteSampler
 {
@@ -388,7 +446,9 @@ export class SonifierWithTuba {
         
         this.longPlayingNoteSamplers = [new LongPlayingNoteTuba(mainVolume), 
                                         new LongPlayingNoteCelloLoud(mainVolume), 
-                                        new LongPlayingNoteCelloLoud(mainVolume)];
+                                        new LongPlayingNoteCelloSoft(mainVolume), 
+                                        new LongPlayingNoteTubaLoud(mainVolume), 
+                                        new LongPlayingNoteTubaSoft(mainVolume)];
 
         //create 4 to start
         // this.longTuba = [
@@ -501,6 +561,9 @@ export class SonifierWithTuba {
 
             //TODO: an array of different 'tuba' sounds
             let humanize = Scale.linear_scale( Math.random(), 0, 1, 0.4, 1 ); 
+
+
+
             if( Math.random() > 0.5 )
             {
                 this.tubaSampler.triggerAttackRelease(Tone.Frequency(this.playingNote, "midi").toNote(), "8n", Tone.now(), humanize);

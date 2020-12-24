@@ -7,10 +7,12 @@ export class SkeletonTouch
     prevTouching : boolean = false;//touching before last update?
 
     //these are arrays of indices into keypoints
-
     indicesTouching : Array<Array<number>>;
-
-    startedTouching : number; 
+    startedTouching : number;
+    
+    //for a specific mapping in the music.
+    minYTouch : number = -1; 
+    minYTouchIndex : number = -1; 
 
     constructor()
     {
@@ -26,7 +28,7 @@ export class SkeletonTouch
     }
 
     //expecting keypoints for each
-    addTouch(mine:number, theirs:number) : void
+    addTouch(mine:number, theirs:number, pt: { x:number, y:number } = {x:-1, y:-1}) : void
     {
         let index = this.indexOf(mine, theirs); 
         if( index === -1 )
@@ -37,8 +39,18 @@ export class SkeletonTouch
                 this.startedTouching = performance.now();
             }
         }
+        if( pt.y > 0 && (this.minYTouch < pt.y || this.minYTouch < 0 ) )
+        {
+            this.minYTouch = pt.y;
+            this.minYTouchIndex = this.indicesTouching.length-1; 
+        }
         // console.log("touching!"); 
         // console.log(this.indicesTouching); 
+    }
+
+    getMinYTouch()
+    {
+        return this.minYTouch; 
     }
 
     indexOf(mine:number, theirs:number) : number
@@ -49,12 +61,20 @@ export class SkeletonTouch
         return this.indicesTouching.findIndex( isInArray );
     }
 
+    //update minY touching
+
+
     //set to not touching
     removeTouch(mine:number, theirs:number)  : void
     {
         let index = this.indexOf(mine, theirs); 
-        if( index !== -1 )
+        if( index !== -1 ){
             this.indicesTouching.splice(index, 1);
+            // if( index === this.minYTouchIndex )
+            // {
+            //     this.updateMinYTouching(); 
+            // }
+        }
     }
 
     updateTouching() : void

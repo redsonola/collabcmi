@@ -208,35 +208,84 @@ export class Tango332Riffs extends DynamicMovementMidi {
     {
         super(); 
 
-        this.playgroundSampler = new Tone.Sampler({
-            urls: {
-            "G2" : "CYCdh_K2room_Kick-01.wav",
-            "A2" : "CYCdh_K2room_Kick-02.wav",
-            "B2" : "CYCdh_K2room_Kick-03.wav",
-            "C3" : "CYCdh_K2room_Kick-04.wav",
-            "D3" : "CYCdh_K2room_Kick-05.wav",
-            "E3" : "CYCdh_K2room_Kick-06.wav",
+        // this.playgroundSampler = new Tone.Sampler({
+        //     urls: {
+        //     "G2" : "CYCdh_K2room_Kick-01.wav",
+        //     "A2" : "CYCdh_K2room_Kick-02.wav",
+        //     "B2" : "CYCdh_K2room_Kick-03.wav",
+        //     "C3" : "CYCdh_K2room_Kick-04.wav",
+        //     "D3" : "CYCdh_K2room_Kick-05.wav",
+        //     "E3" : "CYCdh_K2room_Kick-06.wav",
 
-            "F3" : "CYCdh_K2room_SdSt-07.wav",
-            "G3" : "CYCdh_K2room_SdSt-06.wav",
-            "A3" : "CYCdh_K2room_SdSt-05.wav",
-            "B3" : "CYCdh_K2room_SdSt-04.wav",
-            "C4" : "CYCdh_K2room_SdSt-03.wav",
-            "C#4" : "CYCdh_K2room_SdSt-01.wav",
+        //     "F3" : "CYCdh_K2room_SdSt-07.wav",
+        //     "G3" : "CYCdh_K2room_SdSt-06.wav",
+        //     "A3" : "CYCdh_K2room_SdSt-05.wav",
+        //     "B3" : "CYCdh_K2room_SdSt-04.wav",
+        //     "C4" : "CYCdh_K2room_SdSt-03.wav",
+        //     "C#4" : "CYCdh_K2room_SdSt-01.wav",
 
-            "D4" : "CYCdh_K2room_ClHat-01.wav",
-            "E4" : "CYCdh_K2room_ClHat-02.wav",
-            "F4" : "CYCdh_K2room_ClHat-03.wav",
-            "G4" : "CYCdh_K2room_ClHat-04.wav",
-            "A4" : "CYCdh_K2room_ClHat-05.wav",
-            "B4" : "CYCdh_K2room_ClHat-06.wav",
-            "C5" : "CYCdh_K2room_ClHat-07.wav",
-        },
-        // release : 1,
-        baseUrl : "./audio_samples/Kit_2_Acoustic_room/"
-        }).connect(mainVolume.getVolume());
+        //     "D4" : "CYCdh_K2room_ClHat-01.wav",
+        //     "E4" : "CYCdh_K2room_ClHat-02.wav",
+        //     "F4" : "CYCdh_K2room_ClHat-03.wav",
+        //     "G4" : "CYCdh_K2room_ClHat-04.wav",
+        //     "A4" : "CYCdh_K2room_ClHat-05.wav",
+        //     "B4" : "CYCdh_K2room_ClHat-06.wav",
+        //     "C5" : "CYCdh_K2room_ClHat-07.wav",
+        // },
+        // // release : 1,
+        // baseUrl : "./audio_samples/Kit_2_Acoustic_room/"
+        // }).connect(mainVolume.getVolume());
 
-        this.synths.push(this.playgroundSampler);
+        this.playgroundSamplers = [
+            new Tone.Sampler({
+                urls: {
+                "G3" : "MC Set1.wav",
+                "A3" : "MC Set3.wav"
+            },
+            // release : 1,
+            baseUrl : "./audio_samples/Muted Can/"
+            }).connect(mainVolume.getVolume()),
+
+            new Tone.Sampler({
+                urls: {
+                "G3" : "MC Set1-01.wav",
+                "A3" : "MC Set3-01.wav"
+            },
+            // release : 1,
+            baseUrl : "./audio_samples/Muted Can/"
+            }).connect(mainVolume.getVolume()),
+
+            new Tone.Sampler({
+                urls: {
+                "G3" : "MC Set1-02.wav",
+                "A3" : "MC Set3-02.wav"
+            },
+            // release : 1,
+            baseUrl : "./audio_samples/Muted Can/"
+            }).connect(mainVolume.getVolume()),
+
+            new Tone.Sampler({
+                urls: {
+                "G3" : "MC Set1-03.wav",
+                "A3" : "MC Set3-03.wav"
+            },
+            // release : 1,
+            baseUrl : "./audio_samples/Muted Can/"
+            }).connect(mainVolume.getVolume()),
+
+            new Tone.Sampler({
+                urls: {
+                "G3" : "MC Set1-04.wav",
+                "A3" : "MC Set2-04.wav"
+            },
+            // release : 1,
+            baseUrl : "./audio_samples/Muted Can/"
+            }).connect(mainVolume.getVolume())
+        ];
+
+        
+
+        this.synths.push(this.playgroundSamplers);
         window.players = this.players; 
         this.myloop = null; 
 
@@ -324,8 +373,13 @@ export class Tango332Riffs extends DynamicMovementMidi {
             //need to implement -- if you put a lot of energy in then it lasts longer... !!
             //DISABLED for now
             // let vol = this.createVolumeCurve( windowedVarScore );
-        //    this.playgroundSampler.volume.value = vol; 
-           this.playgroundSampler.volume.value = 10; 
+        //    this.playgroundSampler.volume.value = vol;    
+            
+
+           this.playgroundSamplers.forEach( (sampler) =>
+           {
+                sampler.volume.value = 0; 
+           });
 
 
             let secs = curTime-this.startTime ;
@@ -352,7 +406,11 @@ export class Tango332Riffs extends DynamicMovementMidi {
 
                     let pitch = Tone.Frequency(note.name).toMidi() + humanizePitch; 
 
-                    this.playgroundSampler.triggerAttackRelease(
+                    //makes it less "tinny" & humanizes.
+                    let samplerIndex = Scale.linear_scale( Math.random(), 0, 1, 0, this.playgroundSamplers.length-1 );
+                    samplerIndex = Math.round( samplerIndex );
+
+                    this.playgroundSamplers[samplerIndex].triggerAttackRelease(
                         Tone.Frequency(pitch, "midi").toNote(),
                         note.duration,
                         note.time + this.findStartTime( curTime ), //don't do magnetic
