@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { BufferGeometry, Color, Group, Mesh, MeshBasicMaterial, SphereBufferGeometry, Vector3 } from 'three';
 import type { Pose, Keypoint } from '@tensorflow-models/posenet/dist/types';
+import { VerletNode } from './PByte3/VerletNode';
 
 const partNames = [
     "Ankle",
@@ -148,10 +149,15 @@ export class Joints{
     const { position } = keypoint;
 
     this.geometry.push(new SphereBufferGeometry(size(keypoint), 16, 16));
-    const sphere = new Mesh(this.geometry[ this.geometry.length-1] , this.material);
-    sphere.position.x = position.x;
-    sphere.position.y = position.y;
-    group.add(sphere);
+    // const sphere = new Mesh(this.geometry[ this.geometry.length-1] , this.material);
+    // sphere.position.x = position.x;
+    // sphere.position.y = position.y;
+    // group.add(sphere);
+
+    const node = new VerletNode(new THREE.Vector3(position.x, position.y, 0), 10);
+    node.position.x = position.x;
+    node.position.y = position.y;
+    group.add(node);
 
   });
   return group;
