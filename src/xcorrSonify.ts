@@ -73,14 +73,51 @@ class LongPlayingNoteSampler
 {
 
     TUBA_MAX_LENGTH : number = 3.5; //4sec before hard click -- WTF MATE
-    curLongTubaIndex : number = 0;
+    curLongIndex : number = 0;
 
     lastAttackTime : number[] = []; //that means its not attacking
     longPlayingNote : number[] = []; 
 
-    constructor( mainVolume : MainVolume ) {
-    
-    
+    longEnv : Tone.AmplitudeEnvelope[]; 
+    longSampler : Tone.Sampler[];
+    compressors : Tone.Limiter[];
+    longVibrato : Tone.Vibrato[]; 
+
+    constructor( mainVolume : MainVolume ) 
+    {
+        this.longSampler = [
+            this.loadSampler(), 
+            this.loadSampler(),
+            this.loadSampler(),
+            this.loadSampler() ];
+
+        this.compressors = 
+        [
+            new Tone.Limiter(-20),
+            new Tone.Limiter(-20),
+            new Tone.Limiter(-20)
+        ];
+
+        this.longEnv = [];
+        this.longPlayingNote = []; 
+        this.lastAttackTime = [];
+        this.longVibrato = []; 
+        this.longSampler.forEach(
+            (tuba) =>
+            {
+                let newEnv = this.createLongEnv();
+                this.longEnv.push(newEnv); 
+                this.longPlayingNote.push(-1); 
+                this.lastAttackTime.push(-1); 
+                let vib = new Tone.Vibrato(0, 1); 
+                this.longVibrato.push(vib); 
+
+                //new Tone.Convolver("./fan_sounds/fan4.wav"), new Tone.Convolver("./fan_sounds/cng_fan1.wav"), 
+
+                //TODO: convolve the tuba files offline with the fan files. 
+                tuba.chain(vib, newEnv, mainVolume.getVolume()); 
+            }
+        );
     }
 
     loadSampler() : Tone.Sampler
@@ -98,37 +135,112 @@ class LongPlayingNoteSampler
         });
     }
 
+    isPlaying() : boolean
+    {
+        return ( this.lastAttackTime[this.curLongIndex] > -1 );
+    }
 
     update(now : number)
     {
-        if( this.lastAttackTime[this.curLongTubaIndex] > -1 )
+        if( this.isPlaying() )
         {
-            if( now - this.lastAttackTime[this.curLongTubaIndex] >= this.TUBA_MAX_LENGTH )
+            if( now - this.lastAttackTime[this.curLongIndex] >= this.TUBA_MAX_LENGTH )
             {
-                let curPitch = this.longPlayingNote[this.curLongTubaIndex]; 
+                let curPitch = this.longPlayingNote[this.curLongIndex]; 
                 this.triggerRelease();
 
-                if( this.curLongTubaIndex < this.lastAttackTime.length-1 ){
-                    this.curLongTubaIndex++; 
+                if( this.curLongIndex < this.lastAttackTime.length-1 ){
+                    this.curLongIndex++; 
                 }
                 else
                 {
-                    this.curLongTubaIndex = 0;  
+                    this.curLongIndex = 0;  
                 }
 
-                this.triggerAttack(curPitch); 
+                this.triggerAttack(curPitch, now); 
             }
         }
     }
 
-    //TODO: make generic so I just have to change the sampler files.
-    triggerAttack(pitch : number = -1)
+    triggerAttack(pitch : number = -1, curTime = -1)
     {
+        // //for now pick a random note in key of C --> maybe put in melody, like in a midi file whatever.
+        if( this.longPlayingNote[this.curLongIndex] !== -1)
+        {
+            return;  //this is monophone! bc I they won't let me put release curves on separate notes >_<
+            //this.triggerRelease();
+        }
 
+        if( curTime === -1 )
+        {
+            this.lastAttackTime[this.curLongIndex] = Tone.now(); //gawd I need to pass IN the time this is horrendous. refactor.
+        }
+        else
+        {
+            this.lastAttackTime[this.curLongIndex] = curTime; 
+        }
+        // let i = 0; 
+        // let found = false; 
+        // while (!found && i<this.longPlayingNote.length)
+        // {
+        //     found = this.longPlayingNote[]
+        //     i++; 
+        // }
+
+        //note -- it could be not done releasing when I start the next note.
+        //there is an error with the triggerAttack method in here. 
+        //using try/catch to carry on but looking into it & also will do more sound design
+        try
+        {
+            if(pitch === -1)
+            {
+                let keyOfCPitchClass4 = [ 72, 74, 76, 77, 79, 81, 83, 84 ]; // try higher notes
+                let randNote = Math.random();
+                let index = Math.floor( Scale.linear_scale( randNote, 0, 1, 0, keyOfCPitchClass4.length ) );
+                this.longPlayingNote[this.curLongIndex] = keyOfCPitchClass4[index]-24;
+            }
+            else 
+            {
+                this.longPlayingNote[this.curLongIndex] = pitch;
+            }
+            
+            this.longSampler[this.curLongIndex].triggerAttack(Tone.Frequency(this.longPlayingNote[this.curLongIndex], "midi").toNote());
+            this.longEnv[this.curLongIndex].triggerAttack(); 
+            // console.log("attack triggered")
+
+        }
+        catch(e)
+        {
+            console.log(e);
+            // console.log( this.longPlayingNote );
+        }
     }
+
     triggerRelease(forHeldNote : boolean = false)
     {
+        if( this.longPlayingNote[this.curLongIndex] === -1)
+            return; //do nothing if there is no playing note
+        else
+        {
+            // this.tubaSampler.triggerRelease(Tone.Frequency(this.playingNote, "midi").toNote());
+            this.longEnv[this.curLongIndex].triggerRelease(); 
+            //this.longTuba.triggerRelease(Tone.Frequency(this.longPlayingNote, "midi").toNote(), "+2.0");
 
+            //this.tubaSampler.releaseAll(); 
+            this.longPlayingNote[this.curLongIndex] = -1; //nothing is playing
+            this.lastAttackTime[this.curLongIndex] = -1;
+
+            // console.log("release triggered")
+        }
+    }
+
+    setVibrato(freq : number, depth : number)
+    {
+        
+        this.longVibrato.forEach(( vibrato )=>{
+            vibrato.frequency.rampTo(freq, 0.1); 
+            vibrato.depth.rampTo(depth); 
+        });
     }
 
 
@@ -136,50 +248,9 @@ class LongPlayingNoteSampler
 
 class LongPlayingNoteTuba extends LongPlayingNoteSampler
 {
-    longEnv : Tone.AmplitudeEnvelope[]; 
-    longTuba : Tone.Sampler[];
-    compressors : Tone.Limiter[];
-    longVibrato : Tone.Vibrato[]; 
-
     constructor( mainVolume : MainVolume )
     {
-        super(mainVolume);
-
-        this.longTuba = [
-            this.loadSampler(), 
-            this.loadSampler(),
-            this.loadSampler(),
-            this.loadSampler() ];
-
-        this.compressors = 
-        [
-            new Tone.Limiter(-20),
-            new Tone.Limiter(-20),
-            new Tone.Limiter(-20)
-        ];
-
-        this.longEnv = [];
-        this.longPlayingNote = []; 
-        this.lastAttackTime = [];
-        this.longVibrato = []; 
-        this.longTuba.forEach(
-            (tuba) =>
-            {
-                let newEnv = this.createLongEnv();
-                this.longEnv.push(newEnv); 
-                this.longPlayingNote.push(-1); 
-                this.lastAttackTime.push(-1); 
-                let vib = new Tone.Vibrato(0, 1); 
-                this.longVibrato.push(vib); 
-
-                //new Tone.Convolver("./fan_sounds/fan4.wav"), new Tone.Convolver("./fan_sounds/cng_fan1.wav"), 
-
-                //TODO: convolve the tuba files offline with the fan files. 
-                tuba.chain(vib, newEnv, mainVolume.getVolume()); 
-            }
-        );
-
-        
+        super(mainVolume);        
     }
 
     loadSampler()
@@ -200,86 +271,69 @@ class LongPlayingNoteTuba extends LongPlayingNoteSampler
         {
             baseUrl: "./Tuba_samples/Tuba_Long/Normal/"
         });
+        return sampler; 
+    }
+}
+
+
+class LongPlayingNoteCelloLoud extends LongPlayingNoteSampler
+{
+    constructor( mainVolume : MainVolume )
+    {
+        super(mainVolume);        
+    }
+
+    loadSampler() : Tone.Sampler
+    {
+        let sampler : Tone.Sampler; 
+
+        sampler = new Tone.Sampler({
+
+            "C1": "Cello loudC1.wav",
+            "A1": "Cello loudA1.wav",
+            "C2": "Cello loudC2.wav",
+            "A2": "Cello loudA2.wav",
+            "C3": "Cello loudC3.wav",
+            "A3": "Cello loudA3.wav",
+            "C4": "Cello loudC4.wav",
+            "A4": "Cello loudA4.wav"
+        },
+        {
+            baseUrl: "./audio_samples/Cello Loud/"
+        });
 
         return sampler; 
     }
+}
 
-    triggerAttack(pitch : number = -1)
+class LongPlayingNoteCelloSoft extends LongPlayingNoteSampler
+{
+    constructor( mainVolume : MainVolume )
     {
-        // //for now pick a random note in key of C --> maybe put in melody, like in a midi file whatever.
-        if( this.longPlayingNote[this.curLongTubaIndex] !== -1)
-        {
-            return;  //this is monophone! bc I they won't let me put release curves on separate notes >_<
-            //this.triggerRelease();
-        }
-
-        this.lastAttackTime[this.curLongTubaIndex] = Tone.now(); //gawd I need to pass IN the time this is horrendous. refactor.
-
-        // let i = 0; 
-        // let found = false; 
-        // while (!found && i<this.longPlayingNote.length)
-        // {
-        //     found = this.longPlayingNote[]
-        //     i++; 
-        // }
-
-        //note -- it could be not done releasing when I start the next note.
-        //there is an error with the triggerAttack method in here. 
-        //using try/catch to carry on but looking into it & also will do more sound design
-        try
-        {
-            if(pitch === -1)
-            {
-                let keyOfCPitchClass4 = [ 72, 74, 76, 77, 79, 81, 83, 84 ]; // try higher notes
-                let randNote = Math.random();
-                let index = Math.floor( Scale.linear_scale( randNote, 0, 1, 0, keyOfCPitchClass4.length ) );
-                this.longPlayingNote[this.curLongTubaIndex] = keyOfCPitchClass4[index]-24;
-            }
-            else 
-            {
-                this.longPlayingNote[this.curLongTubaIndex] = pitch;
-            }
-            
-            this.longTuba[this.curLongTubaIndex].triggerAttack(Tone.Frequency(this.longPlayingNote[this.curLongTubaIndex], "midi").toNote());
-            this.longEnv[this.curLongTubaIndex].triggerAttack(); 
-            // console.log("attack triggered")
-
-        }
-        catch(e)
-        {
-            console.log(e);
-            // console.log( this.longPlayingNote );
-        }
+        super(mainVolume);        
     }
 
-    triggerRelease(forHeldNote : boolean = false)
+    loadSampler()
     {
-        if( this.longPlayingNote[this.curLongTubaIndex] === -1)
-            return; //do nothing if there is no playing note
-        else
+        let sampler : Tone.Sampler; 
+
+        sampler = new Tone.Sampler({
+
+            "C1": "Cello softC1.wav",
+            "A1": "Cello softA1.wav",
+            "C2": "Cello softC2.wav",
+            "A2": "Cello softA2.wav",
+            "C3": "Cello softC3.wav",
+            "A3": "Cello softA3.wav",
+            "C4": "Cello softC4.wav",
+            "A4": "Cello softA4.wav"
+        },
         {
-            // this.tubaSampler.triggerRelease(Tone.Frequency(this.playingNote, "midi").toNote());
-            this.longEnv[this.curLongTubaIndex].triggerRelease(); 
-            //this.longTuba.triggerRelease(Tone.Frequency(this.longPlayingNote, "midi").toNote(), "+2.0");
-
-            //this.tubaSampler.releaseAll(); 
-            this.longPlayingNote[this.curLongTubaIndex] = -1; //nothing is playing
-            this.lastAttackTime[this.curLongTubaIndex] = -1;
-
-            // console.log("release triggered")
-        }
-    }
-
-    setVibrato(freq : number, depth : number)
-    {
-        
-        this.longVibrato.forEach(( vibrato )=>{
-            vibrato.frequency.rampTo(freq, 0.1); 
-            vibrato.depth.rampTo(depth); 
+            baseUrl: "./audio_samples/Cello Soft/"
         });
+
+        return sampler; 
     }
-
-
 }
 
 export class SonifierWithTuba {
@@ -319,18 +373,10 @@ export class SonifierWithTuba {
     ampEnv : Tone.AmplitudeEnvelope;
     ampEnv2 : Tone.AmplitudeEnvelope;
 
-    // longEnv : Tone.AmplitudeEnvelope[]; 
-    // longPlayingNote : number[]; 
-    // longTuba : Tone.Sampler[];
-    // lastAttackTime : number[]; //that means its not attacking
-    // TUBA_MAX_LENGTH : number = 3.5; //4sec before hard click -- WTF MATE
-    // curLongTubaIndex : number = 0; 
-
-
-    // compressors : Tone.Limiter[];
     limiter : Tone.Limiter;
 
-    longPlayingNoteTuba : LongPlayingNoteTuba; 
+    longPlayingNoteSamplers : LongPlayingNoteSampler[]; 
+    whichIsPlayingIndex : number = 0; 
 
 
     constructor( p : Participant, mainVolume : MainVolume ) {
@@ -339,7 +385,10 @@ export class SonifierWithTuba {
         this.tubaSampler = this.loadTubaSampler();
         this.tubeSampler2 = this.loadTubaSampler();
 
-        this.longPlayingNoteTuba = new LongPlayingNoteTuba(mainVolume);
+        
+        this.longPlayingNoteSamplers = [new LongPlayingNoteTuba(mainVolume), 
+                                        new LongPlayingNoteCelloLoud(mainVolume), 
+                                        new LongPlayingNoteCelloLoud(mainVolume)];
 
         //create 4 to start
         // this.longTuba = [
@@ -371,27 +420,6 @@ export class SonifierWithTuba {
             release: 0.8
         });
 
-        // this.longEnv = [];
-        // this.longPlayingNote = []; 
-        // this.lastAttackTime = [];
-        // this.longVibrato = []; 
-        // this.longTuba.forEach(
-        //     (tuba) =>
-        //     {
-        //         let newEnv = this.createLongEnv();
-        //         this.longEnv.push(newEnv); 
-        //         this.longPlayingNote.push(-1); 
-        //         this.lastAttackTime.push(-1); 
-        //         let vib = new Tone.Vibrato(0, 1); 
-        //         this.longVibrato.push(vib); 
-
-        //         //new Tone.Convolver("./fan_sounds/fan4.wav"), new Tone.Convolver("./fan_sounds/cng_fan1.wav"), 
-
-        //         //TODO: convolve the tuba files offline with the fan files. 
-        //         tuba.chain(vib, newEnv, mainVolume.getVolume()); 
-        //     }
-        // );
-
         //set up the signal chain for the fx/synthesis
         this.convolver1 = new Tone.Convolver("./fan_sounds/cng_fan1.wav");
         this.convolver2 =  new Tone.Convolver("./fan_sounds/fan4.wav") 
@@ -404,33 +432,9 @@ export class SonifierWithTuba {
         this.tubeSampler2.chain(this.ampEnv2, mainVolume.getVolume());
         //this.longTuba.chain(this.convolver2, this.vibrato, this.longEnv, mainVolume.getVolume());
 
-        //this.convolver2 -- let's see
-
         this.masterCompressor.connect(mainVolume.getVolume());
-        // this.tubaSampler.release = 0.25; 
-        // this.tubaSampler.curve = "exponential"; 
-
         this.testSynth = new Tone.Synth().connect(mainVolume.getVolume());
 
-        // //set up the samplers
-        // for(let i=0; i<PoseIndex.bodyPartArray.length; i++)
-        // {
-        //     this.tubaSamplers.push( this.loadTubaSampler() ); 
-        //     this.convolver1s.push( new Tone.Convolver("./fan_sounds/cng_fan1.wav") );
-        //     this.convolver2s.push( new Tone.Convolver("./fan_sounds/fan4.wav") );
-        //     this.compressors.push( new Tone.Compressor(-5, 9) );
-        //     this.connectSamplers( this.tubaSamplers[i], this.convolver1s[i], this.convolver2s[i], this.compressors[i], this.masterCompressor );
-        //     this.avgFilter.push( new AveragingFilter(8, 2) );
-
-        //     Tone.Destination.volume.rampTo(35); 
-        // }
-
-        // convolver2 = new Tone.Convolver(tubaSampler2); 
-        //  fanSample1Reverb = new Tone.Freeverb();
-        //  fanSample1Reverb.dampening.value = 1000;
-        // fanSample2Reverb = new Tone.Freeverb().toMaster();
-        // fanSample2Reverb.dampening.value = 1000;
-        // fanSample2.chain(convolver2, fanSample2Reverb, Tone.Master );
     }
 
     createLongEnv()
@@ -442,51 +446,6 @@ export class SonifierWithTuba {
             release: 0.8
         });
     }
-
-    loadCelloSoftSampler()
-    {
-        let sampler : Tone.Sampler; 
-
-        sampler = new Tone.Sampler({
-
-            "C1": "Cello softC1.wav",
-            "A1": "Cello softA1.wav",
-            "C2": "Cello softC2.wav",
-            "A2": "Cello softA2.wav",
-            "C3": "Cello softC3.wav",
-            "A3": "Cello softA3.wav",
-            "C4": "Cello softC4.wav",
-            "A4": "Cello softA4.wav"
-        },
-        {
-            baseUrl: "./audio_samples/Cello Soft/"
-        });
-
-        return sampler; 
-    }
-
-    loadCelloLoudSampler()
-    {
-        let sampler : Tone.Sampler; 
-
-        sampler = new Tone.Sampler({
-
-            "C1": "Cello loudC1.wav",
-            "A1": "Cello loudA1.wav",
-            "C2": "Cello loudC2.wav",
-            "A2": "Cello loudA2.wav",
-            "C3": "Cello loudC3.wav",
-            "A3": "Cello loudA3.wav",
-            "C4": "Cello loudC4.wav",
-            "A4": "Cello loudA4.wav"
-        },
-        {
-            baseUrl: "./audio_samples/Cello Loud/"
-        });
-
-        return sampler; 
-    }
-
 
     loadTubaSampler()
     {
@@ -514,7 +473,7 @@ export class SonifierWithTuba {
     update()
     {
         let now : number = Tone.now(); 
-        this.longPlayingNoteTuba.update( now );
+        this.longPlayingNoteSamplers[this.whichIsPlayingIndex].update( now );
 
     }
 
@@ -565,14 +524,18 @@ export class SonifierWithTuba {
 
     triggerRelease(forHeldNote : boolean = false)
     {
-        this.longPlayingNoteTuba.triggerRelease(forHeldNote);
+        if( this.longPlayingNoteSamplers[this.whichIsPlayingIndex].isPlaying() )
+        {
+            this.whichIsPlayingIndex = Scale.linear_scale( Math.random(), 0, 1, 0, this.longPlayingNoteSamplers.length-1 ); 
+            this.whichIsPlayingIndex = Math.round( this.whichIsPlayingIndex ); 
+        }
+        this.longPlayingNoteSamplers[this.whichIsPlayingIndex].triggerRelease(forHeldNote);
     }
 
     triggerAttack(pitch : number = -1)
     {
-        this.longPlayingNoteTuba.triggerAttack(pitch); 
+        this.longPlayingNoteSamplers[this.whichIsPlayingIndex].triggerAttack(pitch); 
     }
-
 
     setVibrato(howLongTouch:number)
     {
@@ -587,18 +550,15 @@ export class SonifierWithTuba {
 
             freq = Scale.linear_scale(howLongTouch, 2, 9, 0, 4);
             depth = Scale.linear_scale(howLongTouch, 2, 9, 0, 0.3);
-
         }
 
         this.vibrato.frequency.rampTo(freq, 0.1); 
         this.vibrato.depth.rampTo(depth); 
 
-        this.longPlayingNoteTuba.setVibrato(freq, depth); 
-
-        // this.longVibrato.forEach(( vibrato )=>{
-        //     vibrato.frequency.rampTo(freq, 0.1); 
-        //     vibrato.depth.rampTo(depth); 
-        // });
+        this.longPlayingNoteSamplers.forEach( ( sampler ) =>
+            {
+                sampler.setVibrato(freq, depth); 
+            });
     }
 
 
