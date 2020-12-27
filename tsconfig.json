@@ -21,7 +21,8 @@
     "noEmit": true,
     "jsx": "react",
     "noImplicitAny": false,
-    "checkJs": false
+    "checkJs": false,
+    "importsNotUsedAsValues": "preserve"
   },
   "include": [
     "src"

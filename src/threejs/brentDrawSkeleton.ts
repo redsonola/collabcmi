@@ -151,8 +151,10 @@ export class Joints{
     const sphere = new Mesh(this.geometry[ this.geometry.length-1] , this.material);
     sphere.position.x = position.x;
     sphere.position.y = position.y;
-    group.add(sphere);
 
+    // console.log( "here:" + position.x + "," + position.y );
+
+    group.add(sphere);
   });
   return group;
 }

@@ -1105,75 +1105,79 @@ export class Participant {
     {
 
         //TODO: ok this should be a passed in value -- but it is passed in via draw3js.ts line 84 
-        let percentXOver = 0.66; 
+    //     let percentXOver = 0.66; 
 
-       if( sTouch === undefined )
-       {
-           sTouch = new SkeletonTouch();
-       }
+    //    if( sTouch === undefined )
+    //    {
+    //        sTouch = new SkeletonTouch();
+    //    }
        
-        let {y:ty, x:tx } = keypointToTest.position; 
-        let scaledTx = 1-( tx / theirW );
-        if(!iAmSecond)
-        {
-            scaledTx -= percentXOver; //move the friend over, since that is the one that will be offset
-        }
-        let scaledTy = ty / theirH;
+    //     let {y:ty, x:tx } = keypointToTest.position; 
+    //     let scaledTx = 1-( tx / theirW );
+    //     if(!iAmSecond)
+    //     {
+    //         scaledTx -= percentXOver; //move the friend over, since that is the one that will be offset
+    //     }
+    //     let scaledTy = ty / theirH;
 
-        let keypoints : any = this.avgKeyPoints.top(); 
+    //     let keypoints : any = this.avgKeyPoints.top(); 
 
-        let minConfidence = 0.4; //testing new minconfidences.
+    //     let minConfidence = 0.4; //testing new minconfidences.
         
 
-        for(let i=0; i<keypoints.length; i++){
-            const keypoint = keypoints[i];
-            const { y, x } = keypoint.position;
-            let scaledX = 1-( x / w ); //x is flipped 
-            if(iAmSecond)
-            {
-                scaledX -= percentXOver;
-            }
+    //     for(let i=0; i<keypoints.length; i++){
+    //         const keypoint = keypoints[i];
+    //         const { y, x } = keypoint.position;
+    //         let scaledX = 1-( x / w ); //x is flipped 
+    //         if(iAmSecond)
+    //         {
+    //             scaledX -= percentXOver;
+    //         }
 
-            let scaledY = y / h;
-            const score = keypoint.score; 
+    //         let scaledY = y / h;
+    //         const score = keypoint.score; 
 
-            // if(score >= minConfidence && keypointToTest.score >= minConfidence ){
-            //     console.log( keypointToTest.part+ " scaledTx:" + scaledTx );//+ " scaledY:" + scaledY);
-            // }
+    //         // if(score >= minConfidence && keypointToTest.score >= minConfidence ){
+    //         //     console.log( keypointToTest.part+ " scaledTx:" + scaledTx );//+ " scaledY:" + scaledY);
+    //         // }
 
-            let dist = this.avgKeyPoints.getDist(scaledTx-scaledX, scaledTy-scaledY); //yikes what is wrong with me
-            if(( dist < minDistanceTouching  && score >= minConfidence && keypointToTest.score >= minConfidence ) )
-            {
-                sTouch.addTouch( i, index );
+    //         let dist = this.avgKeyPoints.getDist(scaledTx-scaledX, scaledTy-scaledY); //yikes what is wrong with me
+    //         if(( dist < minDistanceTouching  && score >= minConfidence && keypointToTest.score >= minConfidence ) )
+    //         {
+    //             sTouch.addTouch( i, index );
 
-                // console.log( "touching! dist: " + dist + " scaledX:" + scaledX + " scaledY:" + scaledY + 
-                // " scaledTx:" + scaledTx + " scaledTy:" + scaledTy + " my index: " + keypoint.part + " their index: " + keypointToTest.part ); 
+    //             // console.log( "touching! dist: " + dist + " scaledX:" + scaledX + " scaledY:" + scaledY + 
+    //             // " scaledTx:" + scaledTx + " scaledTy:" + scaledTy + " my index: " + keypoint.part + " their index: " + keypointToTest.part ); 
 
-            //     console.log( "touching! dist: " + dist + " my score:" + score + " their score:" + keypointToTest.score + 
-            //     " my index: " + keypoint.part + " their index: " + keypointToTest.part ); 
+    //         //     console.log( "touching! dist: " + dist + " my score:" + score + " their score:" + keypointToTest.score + 
+    //         //     " my index: " + keypoint.part + " their index: " + keypointToTest.part ); 
 
-            //    console.log( "scaledX:" + scaledX + " scaledY:" + scaledY + 
-            //     " scaledTx:" + scaledTx + " scaledTy:" + scaledTy + " my index: " + keypoint.part + " their index: " + keypointToTest.part ); 
+    //         //    console.log( "scaledX:" + scaledX + " scaledY:" + scaledY + 
+    //         //     " scaledTx:" + scaledTx + " scaledTy:" + scaledTy + " my index: " + keypoint.part + " their index: " + keypointToTest.part ); 
 
  
-            }
-            else
-            {
-                sTouch.removeTouch( i, index );
+    //         }
+    //         else
+    //         {
+    //             sTouch.removeTouch( i, index );
 
-                // console.log( "NOT TOUCHING! dist: " + dist + " scaledX:" + scaledX + " scaledY:" + scaledY + 
-                // " scaledTx:" + scaledTx + " scaledTy:" + scaledTy + " my index: " + keypoint.part + " their index: " + keypointToTest.part ); 
+    //             // console.log( "NOT TOUCHING! dist: " + dist + " scaledX:" + scaledX + " scaledY:" + scaledY + 
+    //             // " scaledTx:" + scaledTx + " scaledTy:" + scaledTy + " my index: " + keypoint.part + " their index: " + keypointToTest.part ); 
 
-            }
-        }
+    //         }
+    //     }
 
         //TODO: this does not return where the touch was. could do that.
         this.intersection.setShouldFlipSelf(iAmSecond)
-        if (this.intersection.touching(w, h) )
-        {
-            sTouch.addTouch(0, 0); //TODO -- get these values from the skeleton
+        let whereTouch = this.intersection.touching(w, h) ;
+        if( whereTouch.isTouching ){
+            sTouch.addWhereTouch(whereTouch); //TODO -- get these values from the skeleton
         }
-
+        else 
+        {
+            sTouch.removeTouch(0,0);
+        }
+        
         return sTouch; 
 
     }

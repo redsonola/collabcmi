@@ -1,5 +1,7 @@
 import { OrthographicCamera, Vector3, WebGLRenderer, Geometry, Box3, Object3D } from 'three';
 
+import { OrbitControls }  from 'three/examples/jsm/controls/OrbitControls.js';
+
 export function cameraSizeRectangle(x, y, width, height) {
   return new Geometry().setFromPoints([
     new Vector3(0, 0, 0),
@@ -27,11 +29,11 @@ export function createOrthographicCamera(canvas, _width, _height) {
   camera.position.z = 100;
 
   camera.lookAt(new Vector3(100, 100, 0));
-
   camera.updateMatrixWorld();
-
   const renderer = new WebGLRenderer({ canvas, alpha: true });
   renderer.setPixelRatio(window.devicePixelRatio);
+
+  // const controls = new OrbitControls( camera, renderer.domElement );
 
   return {
     camera,

@@ -151,6 +151,14 @@ export function threeRenderCode({
           groupOfStuffToRender.add(joints);
         }
 
+        //add the skeleton intersection lines to be drawn -- currently doesn't work
+        groupOfStuffToRender.add( skeletonIntersect.getDrawGroup() );
+        // const skeletonLines : Line[] = skeletonIntersect.getLines(); 
+        // for(let i=0; i<skeletonLines.length; i++)
+        // {
+        //   videoGroup.add( skeletonLines[i] )
+        // }
+
         // const objects = createSkeleton(pose).add(joints);
 
         groupOfStuffToRender.userData.isSkeleton = true;
@@ -171,12 +179,7 @@ export function threeRenderCode({
         }
         videoGroup.add(groupOfStuffToRender);
 
-        //add the skeleton intersection lines to be drawn -- currently doesn't work
-        // const skeletonLines : Line[] = skeletonIntersect.getLines(); 
-        // for(let i=0; i<skeletonLines.length; i++)
-        // {
-        //   videoGroup.add( skeletonLines[i] )
-        // }
+
 
         break;
       }

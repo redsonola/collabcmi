@@ -1,4 +1,5 @@
 import * as PoseIndex from './poseConstants.js';
+import type {WhereTouch} from './skeletonIntersection'
 
 //represents one touch between 2 skeletons
 export class SkeletonTouch
@@ -11,8 +12,9 @@ export class SkeletonTouch
     startedTouching : number;
     
     //for a specific mapping in the music.
-    minYTouch : number = -1; 
-    minYTouchIndex : number = -1; 
+    positionWhereTouch : { x:number, y:number } = {x:-1, y:-1}; 
+    distanceFrom : number = -1;
+    // minYTouchIndex : number = -1; 
 
     constructor()
     {
@@ -28,7 +30,7 @@ export class SkeletonTouch
     }
 
     //expecting keypoints for each
-    addTouch(mine:number, theirs:number, pt: { x:number, y:number } = {x:-1, y:-1}) : void
+    addTouch(mine:number, theirs:number) : void
     {
         let index = this.indexOf(mine, theirs); 
         if( index === -1 )
@@ -39,18 +41,31 @@ export class SkeletonTouch
                 this.startedTouching = performance.now();
             }
         }
-        if( pt.y > 0 && (this.minYTouch < pt.y || this.minYTouch < 0 ) )
-        {
-            this.minYTouch = pt.y;
-            this.minYTouchIndex = this.indicesTouching.length-1; 
-        }
+        // if( pt.y > 0 && (this.minYTouch < pt.y || this.minYTouch < 0 ) )
+        // {
+        //     this.minYTouch = pt.y;
+        //     this.minYTouchIndex = this.indicesTouching.length-1; 
+        // }
         // console.log("touching!"); 
         // console.log(this.indicesTouching); 
     }
 
-    getMinYTouch()
+    addWhereTouch(whereTouch : WhereTouch)
     {
-        return this.minYTouch; 
+        //dummy values
+        this.addTouch(0, 0);
+        this.positionWhereTouch = whereTouch.intersectPoint;
+        this.distanceFrom = whereTouch.dist; 
+    }
+
+    getTouchPosition() : {x: number, y: number}
+    {
+        return this.positionWhereTouch; 
+    }
+
+    getDistanceFrom() : number
+    {
+        return this.distanceFrom; 
     }
 
     indexOf(mine:number, theirs:number) : number
