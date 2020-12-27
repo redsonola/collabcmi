@@ -83,6 +83,9 @@ class LongPlayingNoteSampler
     compressors : Tone.Limiter[];
     longVibrato : Tone.Vibrato[]; 
 
+    isCello : boolean = false; 
+    name : string = "generic";
+
     constructor( mainVolume : MainVolume ) 
     {
         this.longSampler = [
@@ -162,7 +165,7 @@ class LongPlayingNoteSampler
         }
     }
 
-    triggerAttack(pitch : number = -1, curTime = -1)
+    triggerAttack(pitch : number = -1, yToPitchClass = 0.5, curTime = -1)
     {
         // //for now pick a random note in key of C --> maybe put in melody, like in a midi file whatever.
         if( this.longPlayingNote[this.curLongIndex] !== -1)
@@ -194,10 +197,21 @@ class LongPlayingNoteSampler
         {
             if(pitch === -1)
             {
-                let keyOfCPitchClass4 = [ 72, 74, 76, 77, 79, 81, 83, 84 ]; // try higher notes
+                let keyOfCPitchClass4 = [ 72, 74, 76, 77, 79, 81, 83 ]; // try higher notes
                 let randNote = Math.random();
                 let index = Math.floor( Scale.linear_scale( randNote, 0, 1, 0, keyOfCPitchClass4.length ) );
-                this.longPlayingNote[this.curLongIndex] = keyOfCPitchClass4[index]-24;
+                let pitchClass = Math.round(Scale.linear_scale(yToPitchClass, 0, 1, 2, 4 )); 
+                this.longPlayingNote[this.curLongIndex] = keyOfCPitchClass4[index] - (pitchClass*12);
+
+                console.log( "this long playing note:" + this.longPlayingNote[this.curLongIndex] + "   yToPitchClass " + yToPitchClass );
+
+
+                //ok I know this is sloppy but production code time!
+                if( this.isCello )
+                {
+                    this.longPlayingNote[this.curLongIndex] = this.longPlayingNote[this.curLongIndex] + 12; 
+                }
+
             }
             else 
             {
@@ -211,8 +225,9 @@ class LongPlayingNoteSampler
         }
         catch(e)
         {
+            console.log( "Likely this buffer was not set: " + this.name + "->" +this.longPlayingNote[this.curLongIndex] );
+
             console.log(e);
-            // console.log( this.longPlayingNote );
         }
     }
 
@@ -250,7 +265,8 @@ class LongPlayingNoteTuba extends LongPlayingNoteSampler
 {
     constructor( mainVolume : MainVolume )
     {
-        super(mainVolume);        
+        super(mainVolume);  
+        this.name = "normal tuba";      
     }
 
     loadSampler()
@@ -279,7 +295,8 @@ class LongPlayingNoteTubaSoft extends LongPlayingNoteSampler
 {
     constructor( mainVolume : MainVolume )
     {
-        super(mainVolume);        
+        super(mainVolume);  
+        this.name = "soft tuba";      
     }
 
     loadSampler()
@@ -287,15 +304,15 @@ class LongPlayingNoteTubaSoft extends LongPlayingNoteSampler
         let sampler : Tone.Sampler; 
 
         sampler = new Tone.Sampler({
-            "F1": "041_Tuba_F1_Soft.aif",
-            "A1": "045_Tuba_A1_Soft.aif",
-            "C2": "048_Tuba_C2_Soft.aif",
-            "E2": "052_Tuba_E2_Soft.aif",	
-            "G2": "055_Tuba_G2_Soft.aif",
-            "A2": "057_Tuba_A2_Soft.aif",
-            "C3" : "060_Tuba_C3_Soft.aif",
-            "D3" : "062_Tuba_D3_Soft.aif",
-            "Eb3": "063_Tuba_Eb3_Soft.aif",
+            "F1": "041_Tuba_F1_Soft.mp3",
+            "A1": "045_Tuba_A1_Soft.mp3",
+            "C2": "048_Tuba_C2_Soft.mp3",
+            "E2": "052_Tuba_E2_Soft.mp3",	
+            "G2": "055_Tuba_G2_Soft.mp3",
+            "A2": "057_Tuba_A2_Soft.mp3",
+            "C3" : "060_Tuba_C3_Soft.mp3",
+            "D3" : "062_Tuba_D3_Soft.mp3",
+            "Eb3": "063_Tuba_Eb3_Soft.mp3"
         },
         {
             baseUrl: "./Tuba_samples/Tuba_Long/Soft/"
@@ -308,7 +325,9 @@ class LongPlayingNoteTubaLoud extends LongPlayingNoteSampler
 {
     constructor( mainVolume : MainVolume )
     {
-        super(mainVolume);        
+        super(mainVolume);  
+        this.name = "loud tuba";      
+      
     }
 
     loadSampler()
@@ -316,15 +335,15 @@ class LongPlayingNoteTubaLoud extends LongPlayingNoteSampler
         let sampler : Tone.Sampler; 
 
         sampler = new Tone.Sampler({
-            "F1": "041_Tuba_F1_Loud.aif",
-            "A1": "045_Tuba_A1_Loud.aif",
-            "C2": "048_Tuba_C2_Loud.aif",
-            "E2": "052_Tuba_E2_Loud.aif",	
-            "G2": "055_Tuba_G2_Loud.aif",
-            "A2": "057_Tuba_A2_Loud.aif",
-            "C3" : "060_Tuba_C3_Loud.aif",
-            "D3" : "062_Tuba_D3_Loud.aif",
-            "Eb3": "063_Tuba_Eb3_Loud.aif",
+            "F1": "041_Tuba_F1_Loud.mp3",
+            "A1": "045_Tuba_A1_Loud.mp3",
+            "C2": "048_Tuba_C2_Loud.mp3",
+            "E2": "052_Tuba_E2_Loud.mp3",	
+            "G2": "055_Tuba_G2_Loud.mp3",
+            "A2": "057_Tuba_A2_Loud.mp3",
+            "C3" : "060_Tuba_C3_Loud.mp3",
+            "D3" : "062_Tuba_D3_Loud.mp3",
+            "Eb3": "063_Tuba_Eb3_Loud.mp3",
         },
         {
             baseUrl: "./Tuba_samples/Tuba_Long/Loud/"
@@ -338,7 +357,11 @@ class LongPlayingNoteCelloLoud extends LongPlayingNoteSampler
 {
     constructor( mainVolume : MainVolume )
     {
-        super(mainVolume);        
+        super(mainVolume);     
+        this.TUBA_MAX_LENGTH = 2.5; //ok so its not a tuba anymore sue me.
+        this.isCello = true; 
+        this.name = "loud cello";      
+
     }
 
     loadSampler() : Tone.Sampler
@@ -368,7 +391,10 @@ class LongPlayingNoteCelloSoft extends LongPlayingNoteSampler
 {
     constructor( mainVolume : MainVolume )
     {
-        super(mainVolume);        
+        super(mainVolume);  
+        this.TUBA_MAX_LENGTH = 2.5; 
+        this.isCello = true; 
+        this.name = "soft cello";      
     }
 
     loadSampler()
@@ -537,7 +563,7 @@ export class SonifierWithTuba {
 
     }
 
-    triggerAttackRelease(pitch : number = -1) : number
+    triggerAttackRelease(pitch : number = -1, yToPitchClass=0) : number
     {
 
         //note -- it could be not done releasing when I start the next note.
@@ -555,7 +581,7 @@ export class SonifierWithTuba {
                 let randNote = Math.random();
                 let index = Math.floor( Scale.linear_scale( randNote, 0, 1, 0, keyOfCPitchClass4.length ) );
 
-                let pitchClass = Math.round( Scale.linear_scale( Math.random(), 0, 1, -5, -2 ));
+                let pitchClass = Math.round( Scale.linear_scale( yToPitchClass, 0, 1, -5, -2, true ));
                 this.playingNote = keyOfCPitchClass4[index]+(12*pitchClass);
             }
 
@@ -595,9 +621,9 @@ export class SonifierWithTuba {
         this.longPlayingNoteSamplers[this.whichIsPlayingIndex].triggerRelease(forHeldNote);
     }
 
-    triggerAttack(pitch : number = -1)
+    triggerAttack(pitch : number = -1, yTopitchClass = -1)
     {
-        this.longPlayingNoteSamplers[this.whichIsPlayingIndex].triggerAttack(pitch); 
+        this.longPlayingNoteSamplers[this.whichIsPlayingIndex].triggerAttack(pitch, yTopitchClass); 
     }
 
     setVibrato(howLongTouch:number)
@@ -630,13 +656,17 @@ export class SonifierWithTuba {
 class PitchOnset extends TransportTime
 {
     pitch : number; 
-    constructor(time : TransportTime)
+    yToPitchClass : number =1;
+
+    constructor(time : TransportTime, yToPitchClass : number)
     {
         super(); 
         this.pitch = -1; 
         this.bars = time.bars;
         this.beats = time.beats; 
         this.sixteenths = time.sixteenths; 
+        this.yToPitchClass = yToPitchClass;
+
     }
     hasPitch()
     {
@@ -659,7 +689,7 @@ export class MusicSequencerLoop
     }
 
     //record an onset
-    onset()
+    onset(yToPitchClass : number)
     {
         let on : TransportTime = new TransportTime(); 
         on.setPosition( Tone.Transport.position.toString() ); 
@@ -668,7 +698,7 @@ export class MusicSequencerLoop
         // if( !this.isRepeatedBeat(on) ) {
         //     this.onsets.push(new PitchOnset(on));
         // }
-        this.onsets.push(new PitchOnset(on));
+        this.onsets.push(new PitchOnset(on, yToPitchClass));
         if(this.bar === -1)
         {
             this.bar = on.bars; 
@@ -700,7 +730,7 @@ export class MusicSequencerLoop
                 }
                 else
                 {
-                    this.tuba.triggerAttackRelease(onset.pitch);
+                    this.tuba.triggerAttackRelease(onset.pitch, onset.yToPitchClass);
                 }
                 played = true;
             }
@@ -790,7 +820,7 @@ export class TouchPhrasesEachBar
         return now; 
     }
 
-    update(touch : boolean, windowedVarScore : number) : void
+    update(touch : boolean, yToPitchClass:number, windowedVarScore : number) : void
     {
         //temp fix I need propogate windowedVar stuff from other project.
         this.windowedvar = windowedVarScore; //Scale.linear_scale(windowedVarScore, 0, 0.6, 0, 1); 
@@ -800,7 +830,7 @@ export class TouchPhrasesEachBar
 
         if(touch)
         {
-            this.curRecordingBar.onset(); 
+            this.curRecordingBar.onset(yToPitchClass); 
         }
 
     }

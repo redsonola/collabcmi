@@ -140,12 +140,13 @@
       skeletonTouching = 0;
     }
     let justStartedTouching : boolean = participant.justStartedTouching();
-    touchMusicalPhrases.update(justStartedTouching, windowedVarScore);
+    let yposOfTouch : number = participant.getTouchPosition().y;
+    touchMusicalPhrases.update(justStartedTouching, yposOfTouch, windowedVarScore);
     tubaSonfier.update();  
     if( justStartedTouching )
     {
       //tubaSonfier.triggerAttackRelease(); 
-      tubaSonfier.triggerAttack(); 
+      tubaSonfier.triggerAttack(-1, yposOfTouch); //yes, need to fix this
     }
     else if ( participant.justStoppedTouching() )
     {
@@ -154,6 +155,7 @@
     howLongTouch = participant.howLongTouching(); 
     howMuchTouch = participant.howMuchTouching();
     tubaSonfier.setVibrato(howLongTouch);
+    // console.log("y" + participant.getTouchPosition().y); 
     //midiFile.magneticPlay( 1, windowedVarScore ); //ugh. need to work on this more.
 
     try {

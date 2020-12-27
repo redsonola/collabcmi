@@ -110,18 +110,7 @@ export class DrawSkeletonIntersectLine {
             } });
 
         this.geometry = new THREE.BufferGeometry().setFromPoints(points); 
-        // this.mesh = ;
         group.add(new THREE.Line(this.geometry, this.material));
-
-
-        //     const { position } = keypoint;
-
-        //     this.geometry.push(new SphereBufferGeometry(size(keypoint), 16, 16));
-        //     const sphere = new Mesh(this.geometry[this.geometry.length - 1], this.material);
-        //     sphere.position.x = position.x;
-        //     sphere.position.y = position.y;
-
-        // });
 
         return group;
     }
