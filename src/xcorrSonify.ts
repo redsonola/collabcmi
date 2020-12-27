@@ -86,6 +86,8 @@ class LongPlayingNoteSampler
     isCello : boolean = false; 
     name : string = "generic";
 
+    TIME_WAIT_BEFORE_RELEASE = 0.5; 
+
     constructor( mainVolume : MainVolume ) 
     {
         this.longSampler = [
@@ -150,7 +152,7 @@ class LongPlayingNoteSampler
             if( now - this.lastAttackTime[this.curLongIndex] >= this.TUBA_MAX_LENGTH )
             {
                 let curPitch = this.longPlayingNote[this.curLongIndex]; 
-                this.triggerRelease();
+                this.triggerRelease(true, this.TIME_WAIT_BEFORE_RELEASE);
 
                 if( this.curLongIndex < this.lastAttackTime.length-1 ){
                     this.curLongIndex++; 
@@ -231,14 +233,14 @@ class LongPlayingNoteSampler
         }
     }
 
-    triggerRelease(forHeldNote : boolean = false)
+    triggerRelease(forHeldNote : boolean = false, waitBeforeReleasing=0)
     {
         if( this.longPlayingNote[this.curLongIndex] === -1)
             return; //do nothing if there is no playing note
         else
         {
             // this.tubaSampler.triggerRelease(Tone.Frequency(this.playingNote, "midi").toNote());
-            this.longEnv[this.curLongIndex].triggerRelease(); 
+            this.longEnv[this.curLongIndex].triggerRelease(Tone.now() + waitBeforeReleasing); 
             //this.longTuba.triggerRelease(Tone.Frequency(this.longPlayingNote, "midi").toNote(), "+2.0");
 
             //this.tubaSampler.releaseAll(); 
