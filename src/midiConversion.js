@@ -378,7 +378,7 @@ export class Tango332Riffs extends DynamicMovementMidi {
 
            this.playgroundSamplers.forEach( (sampler) =>
            {
-                sampler.volume.value = -10; 
+                sampler.volume.value = -20; 
            });
 
 

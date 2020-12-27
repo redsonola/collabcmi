@@ -142,7 +142,7 @@
     let justStartedTouching : boolean = participant.justStartedTouching();
     let yposOfTouch : number = participant.getTouchPosition().y;
     touchMusicalPhrases.update(justStartedTouching, yposOfTouch, windowedVarScore);
-    tubaSonfier.update();  
+    tubaSonfier.update(yposOfTouch);  
     if( justStartedTouching )
     {
       //tubaSonfier.triggerAttackRelease(); 

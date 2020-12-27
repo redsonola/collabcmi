@@ -145,7 +145,7 @@ class LongPlayingNoteSampler
         return ( this.lastAttackTime[this.curLongIndex] > -1 );
     }
 
-    update(now : number)
+    update(now : number, yToPitch:number)
     {
         if( this.isPlaying() )
         {
@@ -162,7 +162,7 @@ class LongPlayingNoteSampler
                     this.curLongIndex = 0;  
                 }
 
-                this.triggerAttack(curPitch, now); 
+                this.triggerAttack(-1, yToPitch, now); 
             }
         }
     }
@@ -199,14 +199,21 @@ class LongPlayingNoteSampler
         {
             if(pitch === -1)
             {
-                let keyOfCPitchClass4 = [ 72, 74, 76, 77, 79, 81, 83 ]; // try higher notes
+                // let keyOfCPitchClass4 = [ 72, 74, 76, 77, 79, 81, 83 ]; // try higher notes
+                // let randNote = Math.random();
+                // let index = Math.floor( Scale.linear_scale( randNote, 0, 1, 0, keyOfCPitchClass4.length ) );
+                // let pitchClass = Math.round(Scale.linear_scale(yToPitchClass, 0, 1, 2, 4 )); 
+                // this.longPlayingNote[this.curLongIndex] = keyOfCPitchClass4[index] - (pitchClass*12);
+
+                // console.log( "this long playing note:" + this.longPlayingNote[this.curLongIndex] + "   yToPitchClass " + yToPitchClass );
+
+                let keyOfCPitchClass4 = [ 48, 50, 52, 53, 55, 57, 59, 60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 77, 79, 81, 83, 84 ]; // try higher notes
                 let randNote = Math.random();
-                let index = Math.floor( Scale.linear_scale( randNote, 0, 1, 0, keyOfCPitchClass4.length ) );
-                let pitchClass = Math.round(Scale.linear_scale(yToPitchClass, 0, 1, 2, 4 )); 
-                this.longPlayingNote[this.curLongIndex] = keyOfCPitchClass4[index] - (pitchClass*12);
+                let index = Math.floor( Scale.linear_scale( yToPitchClass, 0, 1, 0, keyOfCPitchClass4.length ) );
+                index = (keyOfCPitchClass4.length - 1) - index; //flip
+                this.longPlayingNote[this.curLongIndex] = keyOfCPitchClass4[index] - (24);
 
                 console.log( "this long playing note:" + this.longPlayingNote[this.curLongIndex] + "   yToPitchClass " + yToPitchClass );
-
 
                 //ok I know this is sloppy but production code time!
                 if( this.isCello )
@@ -558,10 +565,10 @@ export class SonifierWithTuba {
     }
 
     //this is totally a cludge... I need to separate these 2 things into 2 different classes but ok.
-    update()
+    update(yToPitch : number)
     {
         let now : number = Tone.now(); 
-        this.longPlayingNoteSamplers[this.whichIsPlayingIndex].update( now );
+        this.longPlayingNoteSamplers[this.whichIsPlayingIndex].update( now, yToPitch );
 
     }
 
