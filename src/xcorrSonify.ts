@@ -598,17 +598,23 @@ export class SonifierWithTuba {
             let humanize = Scale.linear_scale( Math.random(), 0, 1, 0.4, 1 ); 
 
 
-
-            if( Math.random() > 0.5 )
+            let noteDurDecider = Math.random(); 
+            if( noteDurDecider > 0.9 )
             {
-                this.tubaSampler.triggerAttackRelease(Tone.Frequency(this.playingNote, "midi").toNote(), "8n", Tone.now(), humanize);
-                this.ampEnv.triggerAttackRelease("16n");
+                this.tubaSampler.triggerAttackRelease(Tone.Frequency(this.playingNote, "midi").toNote(), "2n", Tone.now(), humanize);
+                this.ampEnv.triggerAttackRelease("4n");
             }
-            else 
+            else if( noteDurDecider > 0.75 )
+            {
+                this.tubeSampler2.triggerAttackRelease(Tone.Frequency(this.playingNote, "midi").toNote(), "4n", Tone.now(), humanize);
+                this.ampEnv2.triggerAttackRelease("8n");
+            }
+            else    
             {
                 this.tubeSampler2.triggerAttackRelease(Tone.Frequency(this.playingNote, "midi").toNote(), "8n", Tone.now(), humanize);
                 this.ampEnv2.triggerAttackRelease("16n");
             }
+
            // this.testSynth.triggerAttackRelease(Tone.Frequency(this.playingNote, "midi").toNote(), "16n");
         }
         catch(e)
@@ -665,9 +671,10 @@ export class SonifierWithTuba {
 class PitchOnset extends TransportTime
 {
     pitch : number; 
-    yToPitchClass : number =1;
+    yToPitchClass : number = 1;
+    relativeBar : number; 
 
-    constructor(time : TransportTime, yToPitchClass : number)
+    constructor(time : TransportTime, yToPitchClass : number, relativeBar: number)
     {
         super(); 
         this.pitch = -1; 
@@ -675,11 +682,17 @@ class PitchOnset extends TransportTime
         this.beats = time.beats; 
         this.sixteenths = time.sixteenths; 
         this.yToPitchClass = yToPitchClass;
+        this.relativeBar = relativeBar; 
 
     }
     hasPitch()
     {
         return this.pitch !== -1; 
+    }
+
+    sameBeat(time : TransportTime)
+    {
+        return ( super.sameBeat(time) && ( (time.bars - this.bars) % (this.relativeBar+1)==0 ) );
     }
 }
 
@@ -688,13 +701,15 @@ export class MusicSequencerLoop
     onsets : PitchOnset[]; 
     tuba : SonifierWithTuba; 
     bar : number; //what is the starting bar of the recording?
+    loopLengthInBars : number; //how long the loop is -- in bars
 
     //todo: take in an instrument (?)
-    constructor(tuba : SonifierWithTuba)
+    constructor(tuba : SonifierWithTuba, loopLengthInBars: number)
     {
        this.onsets = []; 
        this.tuba = tuba; 
        this.bar = -1; 
+       this.loopLengthInBars = loopLengthInBars; 
     }
 
     //record an onset
@@ -707,11 +722,11 @@ export class MusicSequencerLoop
         // if( !this.isRepeatedBeat(on) ) {
         //     this.onsets.push(new PitchOnset(on));
         // }
-        this.onsets.push(new PitchOnset(on, yToPitchClass));
         if(this.bar === -1)
         {
             this.bar = on.bars; 
         }
+        this.onsets.push(new PitchOnset(on, yToPitchClass,  on.bars % this.bar ));
     }
 
     isRepeatedBeat( on : TransportTime )
@@ -730,7 +745,7 @@ export class MusicSequencerLoop
         //number notes at the same time
         let played = false; 
         this.onsets.forEach( (onset) => {  
-            if( onset.sameBeat(now)  )
+            if( onset.sameBeat(now) )
             {
                 if(!onset.hasPitch())
                 {
@@ -759,8 +774,8 @@ export class TouchPhrasesEachBar
     bars : MusicSequencerLoop[]; 
     tuba : SonifierWithTuba;
     curRecordingBar : MusicSequencerLoop; 
-    MAX_BARS : number = 10;
-    MAX_TIME_ALIVE : number = 20; //should max time alive also be controlled by win var? 5 to 25?
+    MAX_BARS : number = 20;
+    MAX_TIME_ALIVE : number = 30; //should max time alive also be controlled by win var? 5 to 25?
     curPlayingBars : number = 10; 
     lastBar : number = 0; //the last bar we were on 
 
@@ -770,12 +785,16 @@ export class TouchPhrasesEachBar
     
     lastChangedPercLoop : TransportTime; 
 
+    lengthOfLoopInBars : number = 1;
+    MAX_BARS_TO_LOOP : number = 8; 
+ 
+
 
     constructor(tuba : SonifierWithTuba, percLoop : DynamicMovementMidi[])
     {
         this.bars = []; 
         this.tuba = tuba; 
-        this.curRecordingBar = new MusicSequencerLoop(this.tuba); 
+        this.curRecordingBar = new MusicSequencerLoop(this.tuba, this.lengthOfLoopInBars); 
 
         this.percSoundFile = percLoop;
         this.windowedvar = 0; 
@@ -787,7 +806,7 @@ export class TouchPhrasesEachBar
 
     updateBars(now : TransportTime)
     {
-        if( now.bars <= this.lastBar )
+        if( now.bars <= this.lastBar + (this.lengthOfLoopInBars-1) )
         {
             return;  //just get out if we don't need to update the bar
         }
@@ -799,7 +818,8 @@ export class TouchPhrasesEachBar
         if( this.curRecordingBar.length() > 0 )
         {
             this.bars.push(this.curRecordingBar); 
-            this.curRecordingBar = new MusicSequencerLoop(this.tuba);
+            this.lengthOfLoopInBars = Math.floor( Scale.linear_scale( Math.random(), 0, 1, 0, this.MAX_BARS_TO_LOOP ) )  ;
+            this.curRecordingBar = new MusicSequencerLoop(this.tuba, this.lengthOfLoopInBars);
         }
 
         //trim based on the length
