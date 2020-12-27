@@ -623,12 +623,37 @@ class HeadIntersect extends BodyPartIntersect {
 
     update(keypoints: any[]) {
         //TODO: deal with confidence later on this.
-        let noseToEarDistance: number = distance(keypoints, PoseIndex.nose, PoseIndex.rightEar);
+        let noseToEarDistance1: number = distance(keypoints, PoseIndex.nose, PoseIndex.rightEar);
+        let noseToEarDistance2: number = distance(keypoints, PoseIndex.nose, PoseIndex.leftEar);
+        let rightX = keypoints[PoseIndex.rightEar].position.x ;
+        let rightY = keypoints[PoseIndex.rightEar].position.y ;
+        let leftX = keypoints[PoseIndex.leftEar].position.x ;
+        let leftY = keypoints[PoseIndex.leftEar].position.y ;
+
+
+        if( keypoints[PoseIndex.rightEar].score < this.minConfidence )
+        {
+            noseToEarDistance1 = distance(keypoints, PoseIndex.nose, PoseIndex.rightEye);
+            rightX = keypoints[PoseIndex.rightEye].position.x ;
+            rightY = keypoints[PoseIndex.rightEye].position.y ;
+        }
+
+        if( keypoints[PoseIndex.leftEar].score < this.minConfidence )
+        {
+            noseToEarDistance2 = distance(keypoints, PoseIndex.nose, PoseIndex.leftEye);
+            leftX = keypoints[PoseIndex.leftEye].position.x ;
+            leftY = keypoints[PoseIndex.leftEye].position.y ;
+        }
+
+        let noseToEarDistance = (noseToEarDistance1 + noseToEarDistance2) / 2;
+        let xcenter = ( rightX + leftX ) / 2 ;
+        let ycenter = ( rightY + leftY ) / 2 ;
+
 
         let headCenter = new THREE.Vector3();
-        headCenter.setX(keypoints[PoseIndex.nose].position.x);
-        headCenter.setY(keypoints[PoseIndex.nose].position.y);
-        headCenter.setZ(0);
+        headCenter.setX( xcenter );
+        headCenter.setY( ycenter );
+        headCenter.setZ( 0 );
 
         this.sphere.set(headCenter, noseToEarDistance);
         let box = new THREE.Box3;
