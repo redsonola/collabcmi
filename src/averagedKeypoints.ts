@@ -99,7 +99,7 @@ export class AverageFilteredKeyPoints
         this.windowedVarianceDistanceY = [];
 
 
-        this.minConfidence = 0.35;
+        this.minConfidence = 0.4;
 
         for(let i=0; i<PoseIndex.posePointCount; i++)
         {
@@ -204,10 +204,14 @@ export class AverageFilteredKeyPoints
             const { y, x } = keypoint.position;
             this.part[i] = keypoint.part;
 
+            this.x[i].update(x); 
+            this.y[i].update(y);
+            this.score[i].update(keypoint.score);
+
+
             if( keypoint.score > this.minConfidence )
             {
-                this.x[i].update(x); 
-                this.y[i].update(y);
+
 
                 //normalize
                 this.xShort[i].update((x / this.width)*100); 
@@ -215,13 +219,12 @@ export class AverageFilteredKeyPoints
                 this.xShortDx[i].update(this.xShort[i].getNextWithShorterWindow(this.shortBufferSizeXY));
                 this.yShortDy[i].update(this.yShort[i].getNextWithShorterWindow(this.shortBufferSizeXY));
 
-                this.score[i].update(keypoint.score); 
 
                 this.scaledX[i].update( scaledKeypoints[i].position.x ); 
                 this.scaledY[i].update( scaledKeypoints[i].position.y ); 
 
                 this.xDx[i].updateWithStillnessThresh( this.x[i].top(), this.stillnessThresh );
-                this.yDx[i].updateWithStillnessThresh( this.y[i].top(), this.stillnessThresh );
+                this.yDx[i].updateWithStillnessThresh( this.y[i].top(), this.stillnessThresh ); 
 
                 this.xDxNOStill[i].updateWithStillnessThresh( this.xShort[i].top(), this.stillnessThresh  );
                 this.yDxNOStill[i].updateWithStillnessThresh( this.yShort[i].top(), this.stillnessThresh  );
@@ -230,7 +233,7 @@ export class AverageFilteredKeyPoints
                 this.scaledxDx[i].update(this.scaledX[i].top());
                 this.scaledyDx[i].update(this.scaledY[i].top());
 
-                if( this.x[i].length() > 1 )
+                if( this.xShortDx[i].length() > 1 )
                 {
                     //took longer to do the correct conversion than to just implement my own dist.
 

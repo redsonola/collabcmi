@@ -71,14 +71,16 @@ export class DrawSkeletonIntersectLine {
     personId: string;
     limbs: LimbIntersect[];
     mesh : THREE.Mesh | null;
+    minConfidence : number; 
 
 
-    constructor(personId: string = "") {
+    constructor(minConfidence:number =0.4, personId: string = "") {
         this.geometry = null;
         this.mesh = null; 
         this.material = new THREE.LineBasicMaterial({ color: 0xff55ff });
         this.personId = personId;
         this.limbs = [];
+        this.minConfidence = minConfidence; 
     }
 
     isPerson(id: string) {
@@ -100,8 +102,9 @@ export class DrawSkeletonIntersectLine {
         }
 
         this.limbs.forEach(limb => {
-            let keypoints = limb.getKeypoints();
-            if( keypoints[0].position.x && keypoints[0].position.y && keypoints[1].position.x && keypoints[1].position.y )  
+            const keypoints = limb.getKeypoints(); 
+            if( keypoints[0].position.x && keypoints[0].position.y && keypoints[1].position.x && keypoints[1].position.y &&
+                keypoints[0].score > this.minConfidence && keypoints[1].score > this.minConfidence )  
             {
                     points.push( new THREE.Vector3( keypoints[0].position.x, keypoints[0].position.y, 0.95 ) ); 
                     points.push( new THREE.Vector3( keypoints[1].position.x, keypoints[1].position.y, 0.95 ) ); 
@@ -430,7 +433,7 @@ class BodyPartIntersect extends DetectIntersect {
         this.meshMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
         this.w = w;
         this.h = h;
-        this.drawSkeleton = new DrawSkeletonIntersectLine(""); 
+        this.drawSkeleton = new DrawSkeletonIntersectLine(confidence, ""); 
 
     }
 
@@ -665,11 +668,9 @@ export class SkeletionIntersection {
 
     material: THREE.Material
 
-    drawSkeleton : DrawSkeletonIntersectLine; 
 
     constructor(participant_: Participant, minConfidence: number = 0.4, w: number = 1, h: number = 1) {
         this.participant = participant_;
-        this.drawSkeleton = new DrawSkeletonIntersectLine( this.participant.getParticipantID() );
 
         this.material = new THREE.LineBasicMaterial({
             color: 0x0000ff

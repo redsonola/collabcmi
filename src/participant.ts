@@ -87,7 +87,7 @@ export class Participant {
 
     minConfidenceScore : number = 0.3; 
 
-    keyPointsBufferSize : number = 2; 
+    keyPointsBufferSize : number = 2; //changed 12/26/2020
 
     avgMinBodyPartXCorr : number = 100;
     avgMaxBodyPartXCorr : number = -100;
