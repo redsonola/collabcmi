@@ -16,7 +16,7 @@
   import type { Keypoint, Pose } from '@tensorflow-models/posenet';
   import ScoreBar from './scoreBar.svelte';
   import * as Scale from '../scale'
-  import { Tango332Riffs, FourFloorRiffs, MainVolume, DynamicMovementMidi } from '../midiConversion'
+  import { Tango332Riffs, FourFloorRiffs, MainVolume, DynamicMovementMidi, BodhranTango332 } from '../midiConversion'
   import { FPSTracker } from '../fpsMeasure'
   import { SonifierWithTuba, TouchPhrasesEachBar } from '../xcorrSonify'
   import { SkeletionIntersection } from '../skeletonIntersection';
@@ -251,7 +251,7 @@
       mainVolume = new MainVolume()
 
       //this is from my audiovisual project
-      midiFile = [new Tango332Riffs(mainVolume), new FourFloorRiffs(mainVolume)]; 
+      midiFile = [new Tango332Riffs(mainVolume), new FourFloorRiffs(mainVolume), new BodhranTango332(mainVolume)]; 
 
       //note: using a for-loop for this caused my browser to crash! WTF MATE GOOD TIMES.
       Tone.Transport.start();

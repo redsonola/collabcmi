@@ -428,7 +428,7 @@ export class FourFloorRiffs extends Tango332Riffs {
 
     constructor(mainVolume)
     {
-        super(mainVolume); 
+        super(mainVolume);
     }
 
     parseAllFiles()
@@ -449,4 +449,44 @@ export class FourFloorRiffs extends Tango332Riffs {
     //     return midiIndex;
     // }
 
+}
+
+export class BodhranTango332 extends Tango332Riffs
+{
+    constructor(mainVolume)
+    {
+        super(mainVolume);
+        this.playgroundSamplers = [
+            new Tone.Sampler({
+                urls: {
+                "G4" : "Bodhran2.wav",
+                "A4" : "Bodhran3.wav"
+            },
+            // release : 1,
+            baseUrl : "./audio_samples/Muted Can/"
+            }).connect(mainVolume.getVolume()),
+
+            new Tone.Sampler({
+                urls: {
+                    "G4" : "Bodhran4.wav",
+                    "A4" : "Bodhran5.wav"
+            },
+            // release : 1,
+            baseUrl : "./audio_samples/Bodhran/"
+            }).connect(mainVolume.getVolume())
+        ];  
+    }
+    
+    parseAllFiles()
+    {
+        this.parseFile('./collab_perc_midi/milongaPatternSparser.mid');
+        this.parseFile('./collab_perc_midi/milongaPatternBase.mid');
+        this.parseFile('./collab_perc_midi/milongaPatternBaseBusier.mid');
+    }
+
+    findStartTime(origTime) {
+        let curSchedule = this.scheduledAhead + origTime; //loops start playing in 2 measures 
+        curSchedule = curSchedule + this.noteQuarterLen * 2; 
+        return curSchedule;
+    }
 }
