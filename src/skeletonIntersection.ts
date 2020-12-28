@@ -398,7 +398,7 @@ export class LimbIntersect extends DetectIntersect {
         this.h = h;
         let myLine = this.scaleLine(this.line(), this.flip);
         let otherLine = this.scaleLine(limb.line(), !this.flip);
-        const CLOSE_ENOUGH: number = 0.05; //what is enough is less now.
+        const CLOSE_ENOUGH: number = 0.09;
         let whereIntersect: WhereTouch = new WhereTouch();
         whereIntersect.isTouching = false;
 

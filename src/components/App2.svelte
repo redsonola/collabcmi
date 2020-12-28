@@ -145,11 +145,16 @@
     }
     let justStartedTouching : boolean = participant.justStartedTouching();
     let yposOfTouch : number = participant.getTouchPosition().y;
-    touchMusicalPhrases.update(justStartedTouching, yposOfTouch, windowedVarScore);
+    let combinedWindowedScore = windowedVarScore;
+    if( friendParticipant.getMaxBodyPartWindowedVariance() )
+    {
+      combinedWindowedScore = combinedWindowedScore + friendParticipant.getMaxBodyPartWindowedVariance() / 2;
+    }
+    touchMusicalPhrases.update(justStartedTouching, yposOfTouch, combinedWindowedScore);
     if( justStartedTouching )
     {
       //tubaSonfier.triggerAttackRelease(); 
-      tubaSonfier.triggerAttack(-1, yposOfTouch); //yes, need to fix this
+      tubaSonfier.triggerAttack(xCorrTouching, -1, yposOfTouch); //yes, need to fix this
     }
     else if ( participant.justStoppedTouching() )
     {

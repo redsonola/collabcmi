@@ -374,6 +374,9 @@ class LongPlayingNoteSampler
 
     TIME_WAIT_BEFORE_RELEASE = 0.5;
     playing : boolean = false; 
+
+    LOWEST_WHILST_TOUCHING : number = -15;
+
     
     samplerFactory : SamplerFactory = new SamplerFactory(); 
 
@@ -436,6 +439,12 @@ class LongPlayingNoteSampler
     {
         if( this.isPlaying() )
         {
+            this.longSampler.forEach( (sampler)=>
+            {
+                sampler.volume.rampTo( Scale.linear_scale( touchingXCorr, 0.099, 0.66, this.LOWEST_WHILST_TOUCHING, 20 ) );
+                // console.log( "touchingXCorr: " + touchingXCorr + " volume :" + sampler.volume.value );
+            });
+
             if(( now - this.lastAttackTime[this.curLongIndex] >= this.TUBA_MAX_LENGTH ) )
             {
                 let curPitch = this.longPlayingNote[this.curLongIndex]; 
@@ -450,14 +459,10 @@ class LongPlayingNoteSampler
                 }
 
                 this.curYToPitch = yToPitch; 
-                this.triggerAttack(-1, yToPitch, now, true); 
+                this.triggerAttack(touchingXCorr, -1, yToPitch, now, true); 
             }
                     //change volume based on touching xcorr
-            this.longSampler.forEach( (sampler)=>
-            {
-                sampler.volume.rampTo( Scale.linear_scale( touchingXCorr, 0.099, 1, -30, 15 ) );
-            // console.log( "touchingXCorr: " + touchingXCorr + " volume :" + sampler.volume.value );
-            });
+
 
         }
         else //ok, overkill but
@@ -472,10 +477,20 @@ class LongPlayingNoteSampler
 
     }
 
-    triggerAttack(pitch : number = -1, yToPitchClass = 0.5, curTime = -1, isForHeld=false)
+    triggerAttack(touchingXCorr:number, pitch : number = -1, yToPitchClass = 0.5, curTime = -1, isForHeld=false)
     {
         this.curYToPitch = yToPitchClass;
-        this.playing = !isForHeld;
+        if(!isForHeld) //note DO NOT SET FALSE!
+        {
+            this.playing = true; 
+        }
+
+        //maybe I don't need this here. check later.
+        this.longSampler.forEach( (sampler)=>
+        {
+            sampler.volume.rampTo( Scale.linear_scale( touchingXCorr, 0.099, 0.66, this.LOWEST_WHILST_TOUCHING, 20 ) );
+            // console.log( "touchingXCorr: " + touchingXCorr + " volume :" + sampler.volume.value );
+        });
 
         // //for now pick a random note in key of C --> maybe put in melody, like in a midi file whatever.
         if( this.longPlayingNote[this.curLongIndex] !== -1)
@@ -559,6 +574,7 @@ class LongPlayingNoteSampler
 
             // console.log("release triggered")
         }
+        
         if( !forHeldNote )
         {
             for(let i=0; i<this.longSampler.length; i++)
@@ -837,12 +853,16 @@ export class SonifierWithTuba {
             this.whichIsPlayingIndex = Scale.linear_scale( Math.random(), 0, 1, 0, this.longPlayingNoteSamplers.length-1 ); 
             this.whichIsPlayingIndex = Math.round( this.whichIsPlayingIndex ); 
         }
-        this.longPlayingNoteSamplers[this.whichIsPlayingIndex].triggerRelease(forHeldNote);
+
+        //trigger release for ALL
+        this.longPlayingNoteSamplers.forEach( sampler => {
+            sampler.triggerRelease(forHeldNote); 
+        });
     }
 
-    triggerAttack(pitch : number = -1, yTopitchClass = -1)
+    triggerAttack(xcorr: number, pitch : number = -1, yTopitchClass = -1)
     {
-        this.longPlayingNoteSamplers[this.whichIsPlayingIndex].triggerAttack(pitch, yTopitchClass); 
+        this.longPlayingNoteSamplers[this.whichIsPlayingIndex].triggerAttack(xcorr, pitch, yTopitchClass); 
     }
 
     setVibrato(howLongTouch:number)
@@ -937,6 +957,10 @@ export class MusicSequencerLoop
             this.bar = on.bars; 
         }
         this.onsets.push(new PitchOnset(on, yToPitchClass,  on.bars % this.bar ));
+        let returnArray = this.tuba.triggerAttackRelease();
+        this.onsets[ this.onsets.length-1 ].pitch = returnArray[0];  
+        this.onsets[ this.onsets.length-1 ].whichInstrument = returnArray[1];  
+        
     }
 
     isRepeatedBeat( on : TransportTime )
@@ -1074,6 +1098,8 @@ export class TouchPhrasesEachBar
         //temp fix I need propogate windowedVar stuff from other project.
         this.windowedvar = windowedVarScore; //Scale.linear_scale(windowedVarScore, 0, 0.6, 0, 1); 
         this.curPlayingBars = Scale.linear_scale( this.windowedvar, 0, 1, 5, this.MAX_BARS );
+        this.MAX_TIME_ALIVE = Scale.linear_scale( this.windowedvar, 0, 1, 5, 30 );
+
 
         this.updateBars( this.getNow() );
 
