@@ -49,7 +49,7 @@ export class AverageFilteredKeyPoints
 
     distanceOutBufferSize : number;
     shortBufferSizeXY : number = 4; 
-    shortBufferSizeWinVar : number = 4; 
+    shortBufferSizeWinVar : number = 2; 
 
     windowedVarianceDistanceX : AveragingFilter[]; 
     windowedVarianceDistanceY : AveragingFilter[]; 
@@ -94,7 +94,7 @@ export class AverageFilteredKeyPoints
         this.yShortDy = []; 
 
         //for how many distance values to keep. need for the variance
-        this.distanceOutBufferSize = 64; //try this as a ceiling, perhaps it is a ratio with this, or need to send in the fps
+        this.distanceOutBufferSize = 12; //try this as a ceiling, perhaps it is a ratio with this, or need to send in the fps
         this.windowedVarianceDistanceX = [];
         this.windowedVarianceDistanceY = [];
 

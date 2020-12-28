@@ -77,6 +77,8 @@
 
 
   let midiFile : DynamicMovementMidi[];
+  let midiFileBass : DynamicMovementMidi[];
+
   let mainVolume : MainVolume; 
   let tubaSonfier : SonifierWithTuba;
   let touchMusicalPhrases : TouchPhrasesEachBar; 
@@ -251,7 +253,8 @@
       mainVolume = new MainVolume()
 
       //this is from my audiovisual project
-      midiFile = [new Tango332Riffs(mainVolume), new FourFloorRiffs(mainVolume), new BodhranTango332(mainVolume)]; 
+      midiFile = [new Tango332Riffs(mainVolume), new FourFloorRiffs(mainVolume)]; 
+      midiFileBass = [ new BodhranTango332(mainVolume) ];
 
       //note: using a for-loop for this caused my browser to crash! WTF MATE GOOD TIMES.
       Tone.Transport.start();
@@ -259,11 +262,13 @@
       midiFile[0].startLoop(); 
       await midiFile[1].parseAllFiles(); 
       midiFile[1].startLoop(); 
+      await midiFileBass[0].parseAllFiles(); 
+      midiFileBass[0].startLoop(); 
     
 
       //this is the new code
       tubaSonfier = new SonifierWithTuba(participant, mainVolume);
-      touchMusicalPhrases = new TouchPhrasesEachBar(tubaSonfier, midiFile); 
+      touchMusicalPhrases = new TouchPhrasesEachBar(tubaSonfier, midiFile, midiFileBass); 
 
     // const posenet = await initPosenet(webcamVideo);
     // const webcamVideo = await makeVideoElement();

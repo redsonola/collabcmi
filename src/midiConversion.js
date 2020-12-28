@@ -339,7 +339,7 @@ export class Tango332Riffs extends DynamicMovementMidi {
         let prevIndex = this.midiIndex;
 
         //first create the scaling
-        this.midiIndex = Scale.linear_scale( windowedVarScore, 0, 1, 0, this.currentMidi.length-1 );
+        this.midiIndex = Scale.linear_scale( windowedVarScore, 0, 1, 0, this.currentMidi.length );
         this.midiIndex = Math.round(this.midiIndex);  
 
         //only change by 1 step at a time
@@ -378,7 +378,7 @@ export class Tango332Riffs extends DynamicMovementMidi {
 
            this.playgroundSamplers.forEach( (sampler) =>
            {
-                sampler.volume.value = -20; 
+                sampler.volume.value = -15; 
            });
 
 
@@ -391,17 +391,19 @@ export class Tango332Riffs extends DynamicMovementMidi {
 
             this.firstTimePlayed = false; //don't need to schedule ahead if 1st time.
 
-            console.log(" here.... ");
-
-
             let midiIndex = this.chooseWhichFileIndexBasedOnIndividualActivity( windowedVarScore );
+            midiIndex--; 
+            if( midiIndex < 0 )
+            {
+                return; 
+            }
             // console.log(midiIndex); 
             this.currentMidi[midiIndex].tracks.forEach((track) => {
 
                 //schedule all of the events
                 track.notes.forEach((note) => {
 
-                    let humanize = Scale.linear_scale( Math.random(), 0, 1, -0.5, 0.1 ); 
+                    let humanize = Scale.linear_scale( Math.random(), 0, 1, -0.3, 0.1 ); 
                     let humanizePitch = Math.round(Scale.linear_scale( Math.random(), 0, 1, -1, 3 )); 
 
                     let pitch = Tone.Frequency(note.name).toMidi() + humanizePitch; 
@@ -451,42 +453,86 @@ export class FourFloorRiffs extends Tango332Riffs {
 
 }
 
+//just kidding its a Dumbek
 export class BodhranTango332 extends Tango332Riffs
 {
     constructor(mainVolume)
     {
         super(mainVolume);
+        this.playgroundSamplers = []; 
         this.playgroundSamplers = [
             new Tone.Sampler({
                 urls: {
-                "G4" : "Bodhran2.wav",
-                "A4" : "Bodhran3.wav"
-            },
-            // release : 1,
-            baseUrl : "./audio_samples/Muted Can/"
+                    "A4" : "Dumbek 1 c.wav",
+                    "G4" : "Dumbek 1 d.wav",
+                },
+                // release : 1,
+                baseUrl : "./audio_samples/Dumbek/"
+            }).connect(mainVolume.getVolume()),
+
+            new Tone.Sampler(
+            {
+                urls: {
+                    "A4" : "Dumbek 2 c.wav",
+                    "G4" : "Dumbek 2 d.wav",
+                },
+                // release : 1,
+                baseUrl : "./audio_samples/Dumbek/"
+            }).connect(mainVolume.getVolume()) ,
+
+            new Tone.Sampler({
+                urls: {
+                    "A4" : "Dumbek 1 a.wav",
+                    "G4" : "Dumbek 1 b.wav",
+                },
+                // release : 1,
+                baseUrl : "./audio_samples/Dumbek/"
             }).connect(mainVolume.getVolume()),
 
             new Tone.Sampler({
                 urls: {
-                    "G4" : "Bodhran4.wav",
-                    "A4" : "Bodhran5.wav"
-            },
-            // release : 1,
-            baseUrl : "./audio_samples/Bodhran/"
+                    "A4" : "Dumbek 2 a.wav",
+                    "G4" : "Dumbek 2 b.wav",
+                },
+                // release : 1,
+                baseUrl : "./audio_samples/Dumbek/"
             }).connect(mainVolume.getVolume())
+
         ];  
+
+
+        //let it play out
+        this.currentMidi.forEach( ( currentMidi ) =>{
+            currentMidi.tracks.forEach((track) => {
+                track.notes.forEach((note) => {
+                    //note.duration = "1n";
+                    note.name = Tone.Frequency( Tone.Frequency(note.name).toMidi() - 12 , "midi").toNote();
+                });
+            });
+        } );  
     }
     
     parseAllFiles()
     {
-        this.parseFile('./collab_perc_midi/milongaPatternSparser.mid');
-        this.parseFile('./collab_perc_midi/milongaPatternBase.mid');
-        this.parseFile('./collab_perc_midi/milongaPatternBaseBusier.mid');
+        this.parseFile('./collab_perc_midi/fourOntheFloorSparsestBass.mid');
+        this.parseFile('./collab_perc_midi/fourOntheFloorSparserBass.mid');
+        this.parseFile('./collab_perc_midi/fourOntheFloorBaseBass.mid');
+        this.parseFile('./collab_perc_midi/milongaPatternSparserBass.mid');
+        this.parseFile('./collab_perc_midi/milongaPatternBaseBass.mid');
     }
 
-    findStartTime(origTime) {
-        let curSchedule = this.scheduledAhead + origTime; //loops start playing in 2 measures 
-        curSchedule = curSchedule + this.noteQuarterLen * 2; 
-        return curSchedule;
+    play( windowedVarScore, curTime )
+    {
+        super.play(windowedVarScore, curTime);
+        this.playgroundSamplers.forEach( (sampler) =>
+        {
+             sampler.volume.value = 7; 
+        });
     }
+
+    // chooseWhichFileIndexBasedOnIndividualActivity( windowedVarScore )
+    // {
+    //     let index = Math.round(Scale.linear_scale( windowedVarScore, 0, 1, 0, this.currentMidi.length )); 
+    //     return index; 
+    // }
 }

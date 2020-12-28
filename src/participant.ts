@@ -974,9 +974,10 @@ export class Participant {
     {
         //goes through the below order: 
         //[head, torso, leftArm, rightArm, leftLeg, rightLeg];
-        let maxWindowedVarTestedMaximums = [0.01, 0.01, 0.2, 0.2, 0.2, 0.2 ]; //just from one session -- TODO: find better maxes.
+        let maxWindowedVarTestedMaximums = [2, 2, 5, 5, 5, 5 ]; //just from one session -- TODO: find better maxes.
 
         let winvar = this.getAverageBodyPartWindowedVariance( index, PoseIndex.bodyPartArray[index], minConfidence );
+        // console.log(index + ":" + winvar);
         winvar = Scale.linear_scale(winvar, 0, maxWindowedVarTestedMaximums[index], 0, 1) ; 
 
         if( !isNaN( winvar ) )

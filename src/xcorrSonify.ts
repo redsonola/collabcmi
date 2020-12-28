@@ -87,7 +87,11 @@ class SamplerFactory
             this.loadSampler("soft cello" ),
             this.loadSampler("loud cello" ),
             this.loadSampler("cello stabs" ), 
-            this.loadSampler("clay drum" )
+            this.loadSampler("clay drum" ),
+            this.loadSampler("plucked cello"),
+            this.loadSampler("plucked cello"),
+            this.loadSampler("plucked cello"),
+            this.loadSampler("plucked cello")
         ];
         return samplers;
     }
@@ -111,9 +115,13 @@ class SamplerFactory
         {
             return this.loadCelloSoftSampler();
         }
-        else if( this.type == "cello stabs" )
+        else if( this.type === "cello stabs" )
         {
             return this.loadCelloStabSampler();
+        }
+        else if( this.type === "plucked cello" )
+        {
+            return this.loadPluckedCelloSampler();
         }
         else if( this.type == "clay drum" )
         {
@@ -265,6 +273,27 @@ class SamplerFactory
         },
         {
             baseUrl: "./audio_samples/Large Clay Drum/"
+        });
+
+        return sampler; 
+    }
+
+    loadPluckedCelloSampler() : Tone.Sampler
+    {
+        let sampler : Tone.Sampler; 
+
+        sampler = new Tone.Sampler({
+            "C1": "Cello pluckC1.wav",
+            "A1": "Cello pluckA1.wav",
+            "C2": "Cello pluckC2.wav",
+            "A2": "Cello pluckA2.wav",
+            "C3": "Cello pluckC3.wav",
+            "A3": "Cello pluckA3.wav",
+            "C4": "Cello pluckC4.wav",
+            "A4": "Cello pluckA4.wav"
+        },
+        {
+            baseUrl: "./audio_samples/Cello Pluck/"
         });
 
         return sampler; 
@@ -455,7 +484,7 @@ class LongPlayingNoteSampler
                 this.longPlayingNote[this.curLongIndex] = keyOfCPitchClass4[index] - 24;
                 pitch = keyOfCPitchClass4[index] - 24;
 
-                console.log( "this long playing note:" + this.longPlayingNote[this.curLongIndex] + "   yToPitchClass " + yToPitchClass );
+                // console.log( "this long playing note:" + this.longPlayingNote[this.curLongIndex] + "   yToPitchClass " + yToPitchClass );
 
                 //ok I know this is sloppy but production code time!
                 if( this.isCello )
@@ -917,6 +946,10 @@ export class TouchPhrasesEachBar
 
     percSoundFile : DynamicMovementMidi[];
     currentPercIndex : number;
+
+    percSoundFileBass : DynamicMovementMidi[];
+    currentPercIndexBass : number = 0;
+
     windowedvar : number;
     
     lastChangedPercLoop : TransportTime; 
@@ -926,7 +959,7 @@ export class TouchPhrasesEachBar
  
 
 
-    constructor(tuba : SonifierWithTuba, percLoop : DynamicMovementMidi[])
+    constructor(tuba : SonifierWithTuba, percLoop : DynamicMovementMidi[], percBass : DynamicMovementMidi[] )
     {
         this.bars = []; 
         this.tuba = tuba; 
@@ -937,6 +970,9 @@ export class TouchPhrasesEachBar
         this.currentPercIndex = 0; 
         this.lastChangedPercLoop = new TransportTime();
         this.lastChangedPercLoop.setPosition( Tone.Transport.position.toString() );
+
+        this.percSoundFileBass = percBass; 
+        this.currentPercIndexBass = 0;
 
     }
 
@@ -974,6 +1010,8 @@ export class TouchPhrasesEachBar
         }
         //perhaps always relate the midi file to the bars?
         this.percSoundFile[this.currentPercIndex].setPlaying( this.bars.length > 0 );
+        this.percSoundFileBass[this.currentPercIndexBass].setPlaying( this.bars.length > 0 );
+
     }
 
     getNow() : TransportTime
@@ -1024,7 +1062,7 @@ export class TouchPhrasesEachBar
         {
             let minWinVarTochange = 0.3 ;
             
-            //TODO: how 'sticky' should rhythmic patterns be?
+            //TODO: how 'sticky' should rhythmic patterns be? -- this switches which pattern
             if( this.windowedvar < minWinVarTochange && now.bars - this.lastChangedPercLoop.bars > 10 )
             {
                 //turn off previous 
@@ -1046,13 +1084,17 @@ export class TouchPhrasesEachBar
             {
                 this.percSoundFile[this.currentPercIndex].reset(nowInSeconds); 
                 this.percSoundFile[this.currentPercIndex].setPlaying(true); 
+
+                this.percSoundFileBass[this.currentPercIndexBass].reset(nowInSeconds); 
+                this.percSoundFileBass[this.currentPercIndexBass].setPlaying(true); 
             }
 
-
             //calling play with 100% match &  windowedVar //NOTE: TURNED IT OFF!
-            this.percSoundFile[this.currentPercIndex].play( this.windowedvar, nowInSeconds );  
+            
+            this.percSoundFileBass[this.currentPercIndexBass].play( this.windowedvar, nowInSeconds );  
+            this.percSoundFile[this.currentPercIndex].play( this.windowedvar, nowInSeconds );
+
         }
     }
-
 }
 
