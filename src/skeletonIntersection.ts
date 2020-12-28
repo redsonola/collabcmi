@@ -47,16 +47,40 @@ class DetectIntersect {
 
 }
 
+//TODO: keep many of these?
 export class WhereTouch {
     isTouching: boolean = false;
     intersectPoint: { x: number, y: number } = { x: 0, y: 0 };
     dist: number = Number.MAX_SAFE_INTEGER;
 
-    ifDistIsLessReplace(wT: WhereTouch): void {
+    myIndex : number []= []; 
+    theirIndex : number[] = [];
+
+    ifDistIsLessReplace( wT: WhereTouch, myIndex:number[]=[], theirIndex: number[]=[] ): void {
         if (this.dist > wT.dist) {
             this.dist = wT.dist;
             this.intersectPoint = wT.intersectPoint;
             this.isTouching = wT.isTouching;
+
+            //this is...... awkward and prob. could be refactored out in some way but oh well I will fix later.
+            if( myIndex.length > 0 )
+            {
+                this.myIndex = myIndex; 
+            }
+            else
+            {
+                this.myIndex = wT.myIndex; 
+            }
+
+            if( theirIndex.length > 0 )
+            {
+                this.theirIndex = theirIndex;
+            }
+            else
+            {
+                this.theirIndex = wT.theirIndex; 
+            }
+             
         }
     }
 
@@ -119,7 +143,6 @@ export class DrawSkeletonIntersectLine {
     }
 }
 
-
 export class LimbIntersect extends DetectIntersect {
     limbLine: THREE.Line3;
     keypoints: any[];
@@ -143,6 +166,11 @@ export class LimbIntersect extends DetectIntersect {
 
     getIndex1(): number {
         return this.index1;
+    }
+
+    getIndices() : number[]
+    {
+        return [this.index1, this.index2];
     }
 
     setSize(w: number, h: number) {
@@ -330,11 +358,15 @@ export class LimbIntersect extends DetectIntersect {
         let myLine = this.scaleLine(this.line(), this.flip);
         let otherLine = this.scaleLine(limb.line(), !this.flip);
 
+        let myIndices = this.getIndices();
+        let theirIndices = limb.getIndices(); 
+
+
         //find shortest distance btw 2 end points 
         whereIntersect = this.findDistBetweenPointAndLine(otherLine.start, myLine);
-        whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(otherLine.end, myLine));
-        whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(myLine.end, otherLine));
-        whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(myLine.start, otherLine));
+        whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(otherLine.end, myLine), myIndices, theirIndices);
+        whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(myLine.end, otherLine), myIndices, theirIndices);
+        whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(myLine.start, otherLine), myIndices, theirIndices);
 
         //find the shortest distance btw each midpoint
 
@@ -344,8 +376,8 @@ export class LimbIntersect extends DetectIntersect {
         let otherMidPoint = new THREE.Vector3();
         otherMidPoint = otherLine.getCenter(otherMidPoint);
 
-        whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(myMidPoint, otherLine));
-        whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(otherMidPoint, myLine));
+        whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(myMidPoint, otherLine), myIndices, theirIndices);
+        whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(otherMidPoint, myLine), myIndices, theirIndices);
 
         whereIntersect.isTouching = whereIntersect.dist <= whatIsEnough;
 
@@ -366,7 +398,7 @@ export class LimbIntersect extends DetectIntersect {
         this.h = h;
         let myLine = this.scaleLine(this.line(), this.flip);
         let otherLine = this.scaleLine(limb.line(), !this.flip);
-        const CLOSE_ENOUGH: number = 0.09;
+        const CLOSE_ENOUGH: number = 0.05; //what is enough is less now.
         let whereIntersect: WhereTouch = new WhereTouch();
         whereIntersect.isTouching = false;
 
@@ -518,7 +550,7 @@ class BodyPartIntersect extends DetectIntersect {
         for (let i = 0; i < this.limbs.length; i++) {
             for (let j = 0; j < otherLimbs.length; j++) {
                 if (this.limbs[i].getScore() > this.minConfidence)
-                    whereTouch.ifDistIsLessReplace(this.limbs[i].intersects(otherLimbs[j], w, h));
+                    whereTouch.ifDistIsLessReplace(this.limbs[i].intersects(otherLimbs[j], w, h), this.limbs[i].getIndices(), otherLimbs[j].getIndices());
             }
         }
         return whereTouch;

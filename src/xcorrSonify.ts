@@ -367,10 +367,13 @@ class LongPlayingNoteSampler
     compressors : Tone.Limiter[];
     longVibrato : Tone.Vibrato[]; 
 
+    curYToPitch : number = 0; 
+
     isCello : boolean = false; 
     name : string;
 
     TIME_WAIT_BEFORE_RELEASE = 0.5;
+    playing : boolean = false; 
     
     samplerFactory : SamplerFactory = new SamplerFactory(); 
 
@@ -426,17 +429,17 @@ class LongPlayingNoteSampler
 
     isPlaying() : boolean
     {
-        return ( this.lastAttackTime[this.curLongIndex] > -1 );
+        return this.playing;
     }
 
-    update(now : number, yToPitch:number)
+    update(now : number, yToPitch:number, touchingXCorr : number)
     {
         if( this.isPlaying() )
         {
-            if( now - this.lastAttackTime[this.curLongIndex] >= this.TUBA_MAX_LENGTH )
+            if(( now - this.lastAttackTime[this.curLongIndex] >= this.TUBA_MAX_LENGTH ) )
             {
                 let curPitch = this.longPlayingNote[this.curLongIndex]; 
-                this.triggerRelease(true, this.TIME_WAIT_BEFORE_RELEASE);
+                this.triggerRelease(true, 0);
 
                 if( this.curLongIndex < this.lastAttackTime.length-1 ){
                     this.curLongIndex++; 
@@ -446,13 +449,34 @@ class LongPlayingNoteSampler
                     this.curLongIndex = 0;  
                 }
 
-                this.triggerAttack(-1, yToPitch, now); 
+                this.curYToPitch = yToPitch; 
+                this.triggerAttack(-1, yToPitch, now, true); 
             }
+                    //change volume based on touching xcorr
+            this.longSampler.forEach( (sampler)=>
+            {
+                sampler.volume.rampTo( Scale.linear_scale( touchingXCorr, 0.099, 1, -30, 15 ) );
+            // console.log( "touchingXCorr: " + touchingXCorr + " volume :" + sampler.volume.value );
+            });
+
         }
+        else //ok, overkill but
+        {
+            this.longSampler.forEach( (sampler)=>
+            {
+                sampler.volume.rampTo( -90);
+            // console.log( "touchingXCorr: " + touchingXCorr + " volume :" + sampler.volume.value );
+            });
+        }
+
+
     }
 
-    triggerAttack(pitch : number = -1, yToPitchClass = 0.5, curTime = -1)
+    triggerAttack(pitch : number = -1, yToPitchClass = 0.5, curTime = -1, isForHeld=false)
     {
+        this.curYToPitch = yToPitchClass;
+        this.playing = !isForHeld;
+
         // //for now pick a random note in key of C --> maybe put in melody, like in a midi file whatever.
         if( this.longPlayingNote[this.curLongIndex] !== -1)
         {
@@ -481,8 +505,8 @@ class LongPlayingNoteSampler
                 let randNote = Math.random();
                 index = Math.round( Scale.linear_scale( yToPitchClass, 0, 1, 1, keyOfCPitchClass4.length ) );
                 index = keyOfCPitchClass4.length - index; //flip
-                this.longPlayingNote[this.curLongIndex] = keyOfCPitchClass4[index] - 24;
-                pitch = keyOfCPitchClass4[index] - 24;
+                this.longPlayingNote[this.curLongIndex] = keyOfCPitchClass4[index] - 12;
+                pitch = keyOfCPitchClass4[index] - 12;
 
                 // console.log( "this long playing note:" + this.longPlayingNote[this.curLongIndex] + "   yToPitchClass " + yToPitchClass );
 
@@ -519,7 +543,14 @@ class LongPlayingNoteSampler
         else
         {
             // this.tubaSampler.triggerRelease(Tone.Frequency(this.playingNote, "midi").toNote());
-            this.longEnv[this.curLongIndex].triggerRelease(Tone.now() + waitBeforeReleasing); 
+            if(waitBeforeReleasing!==0)
+            {
+                this.longEnv[this.curLongIndex].triggerRelease(Tone.now() + waitBeforeReleasing); 
+            }
+            else
+            {
+                this.longEnv[this.curLongIndex].triggerRelease(); 
+            }
             //this.longTuba.triggerRelease(Tone.Frequency(this.longPlayingNote, "midi").toNote(), "+2.0");
 
             //this.tubaSampler.releaseAll(); 
@@ -527,6 +558,17 @@ class LongPlayingNoteSampler
             this.lastAttackTime[this.curLongIndex] = -1;
 
             // console.log("release triggered")
+        }
+        if( !forHeldNote )
+        {
+            for(let i=0; i<this.longSampler.length; i++)
+            {
+                this.longPlayingNote[i] = -1;
+                this.lastAttackTime[i] = -1;
+                this.longSampler[i].volume.rampTo(-90);
+                this.longEnv[i].triggerRelease();
+            }
+            this.playing = false; 
         }
     }
 
@@ -641,9 +683,10 @@ export class SonifierWithTuba {
         this.samplers.push( ...samplerFactory.loadAllSamplers() ); 
         // this.samplers.push(...samplerFactory.loadCanSamplers() ); 
         
+        //only tuba!
         this.longPlayingNoteSamplers = [new LongPlayingNoteTuba(mainVolume), 
-                                        new LongPlayingNoteCelloLoud(mainVolume), 
-                                        new LongPlayingNoteCelloSoft(mainVolume), 
+                                        // new LongPlayingNoteCelloLoud(mainVolume), 
+                                        // new LongPlayingNoteCelloSoft(mainVolume), 
                                         new LongPlayingNoteTubaLoud(mainVolume), 
                                         new LongPlayingNoteTubaSoft(mainVolume)];
 
@@ -720,11 +763,14 @@ export class SonifierWithTuba {
     }
 
     //this is totally a cludge... I need to separate these 2 things into 2 different classes but ok.
-    update(yToPitch : number)
+    update(yToPitch : number, touchingXCorr : number)
     {
         let now : number = Tone.now(); 
-        this.longPlayingNoteSamplers[this.whichIsPlayingIndex].update( now, yToPitch );
-
+        this.longPlayingNoteSamplers.forEach( (sampler) =>
+            {
+                sampler.update( now, yToPitch, touchingXCorr );
+            }
+        );
     }
 
     triggerAttackRelease(pitch : number = -1, yToPitchClass=0, whichInstrument=0) : number[]
@@ -757,20 +803,20 @@ export class SonifierWithTuba {
 
 
             let noteDurDecider = Math.random(); 
-            if( noteDurDecider > 0.9 )
-            {
-                this.samplers[whichInstrument].triggerAttackRelease(Tone.Frequency(this.playingNote, "midi").toNote(), "2n", Tone.now(), humanize);
-                this.ampEnvs[whichInstrument].triggerAttackRelease("4n");
-            }
-            else if( noteDurDecider > 0.75 )
+            if( noteDurDecider > 0.8 )
             {
                 this.samplers[whichInstrument].triggerAttackRelease(Tone.Frequency(this.playingNote, "midi").toNote(), "4n", Tone.now(), humanize);
                 this.ampEnvs[whichInstrument].triggerAttackRelease("8n");
             }
-            else    
+            else if( noteDurDecider > 0.4 )
             {
                 this.samplers[whichInstrument].triggerAttackRelease(Tone.Frequency(this.playingNote, "midi").toNote(), "8n", Tone.now(), humanize);
                 this.ampEnvs[whichInstrument].triggerAttackRelease("16n");
+            }
+            else    
+            {
+                this.samplers[whichInstrument].triggerAttackRelease(Tone.Frequency(this.playingNote, "midi").toNote(), "16n", Tone.now(), humanize);
+                this.ampEnvs[whichInstrument].triggerAttackRelease("32n");
             }
 
            // this.testSynth.triggerAttackRelease(Tone.Frequency(this.playingNote, "midi").toNote(), "16n");

@@ -50,12 +50,22 @@ export class SkeletonTouch
         // console.log(this.indicesTouching); 
     }
 
+    //try this for now.
+    removeAllTouches()
+    {
+        this.indicesTouching = []; 
+    }
+
+
     addWhereTouch(whereTouch : WhereTouch)
     {
         //dummy values
-        this.addTouch(0, 0);
         this.positionWhereTouch = whereTouch.intersectPoint;
         this.distanceFrom = whereTouch.dist; 
+        for(let i=0; i<whereTouch.myIndex.length; i++)
+        {
+            this.addTouch( whereTouch.myIndex[i], whereTouch.theirIndex[i] ); 
+        }
     }
 
     getTouchPosition() : {x: number, y: number}
@@ -90,6 +100,12 @@ export class SkeletonTouch
             //     this.updateMinYTouching(); 
             // }
         }
+    }
+
+    //these are the keypoints of the intersecting limbs
+    getTouchingKeypoints()
+    {
+        return this.indicesTouching; 
     }
 
     updateTouching() : void

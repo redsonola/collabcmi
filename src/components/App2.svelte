@@ -71,6 +71,8 @@
   let windowedVarianceLeftLeg=0;
   let windowedVarianceRightLeg=0;
 
+  let xCorrTouching = 0;
+
   let skeletonTouching =0; 
   let howLongTouch = 0; 
   let howMuchTouch = 0; 
@@ -144,7 +146,6 @@
     let justStartedTouching : boolean = participant.justStartedTouching();
     let yposOfTouch : number = participant.getTouchPosition().y;
     touchMusicalPhrases.update(justStartedTouching, yposOfTouch, windowedVarScore);
-    tubaSonfier.update(yposOfTouch);  
     if( justStartedTouching )
     {
       //tubaSonfier.triggerAttackRelease(); 
@@ -196,6 +197,8 @@
         if (!Number.isNaN(combined)) {
           synchScore = combined; 
         }
+        xCorrTouching = participant.getTouchingXCorr();
+        tubaSonfier.update(yposOfTouch, xCorrTouching);  
 
       }
       
@@ -500,7 +503,8 @@
   <ScoreBar label="how long touching:" score={howLongTouch} />
   <ScoreBar label="how much touching:" score={howMuchTouch} />
   <ScoreBar label="match score:" score={matchScore} />
-  <ScoreBar label="xcorr score:"score={xCorrScore} />
+  <ScoreBar label="touching xcorr score:" score={xCorrTouching} />
+  <ScoreBar label="total xcorr score:"score={xCorrScore} />
   <ScoreBar label="combined score:"score={synchScore} />
   <ScoreBar label="windowed var score:"score={windowedVarScore} />
   <ScoreBar label="windowed var head:"score={windowedVarianceHead} />
