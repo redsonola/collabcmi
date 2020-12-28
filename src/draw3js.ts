@@ -1,4 +1,4 @@
-import { Matrix4, Quaternion, Vector3, Group, DirectionalLight, Scene, Color, PlaneBufferGeometry, Mesh, MeshPhongMaterial, Box3, Line } from 'three';
+import { Matrix4, Quaternion, Vector3, Group, DirectionalLight, Scene, Color, PlaneBufferGeometry, Mesh, MeshPhongMaterial, Box3, Line, MeshBasicMaterial, Plane, PlaneHelper } from 'three';
 
 import { videoRect } from './threejs/videoRect';
 import { Joints } from './threejs/brentDrawSkeleton';
@@ -11,7 +11,7 @@ import type { Size } from './components/PoseMessages';
 import { orderParticipantID } from './participant'
 import type { SkeletionIntersection } from './skeletonIntersection';
 
-export const videoOverlapAmount = 0.66; 
+export const videoOverlapAmount = 0.66;
 
 export interface PoseVideo {
   video: CameraVideo;
@@ -42,7 +42,7 @@ export function threeRenderCode({
   const scene = new Scene();
   scene.background = new Color(0xffffff);
 
-  let participantJoints : Joints[] = []; 
+  let participantJoints: Joints[] = [];
 
 
   const light = new DirectionalLight(0xff99cc, 1);
@@ -59,7 +59,7 @@ export function threeRenderCode({
   const findGroup = id => videoGroups.find(g => g.userData.personId === id);
 
   const videos: Mesh<PlaneBufferGeometry, MeshPhongMaterial>[] = [];
-                                                          //TODO this only works for dyads. Find another solution.
+  //TODO this only works for dyads. Find another solution.
   const addVideo = (video: CameraVideo, personId: string) => {
     let group: Group | undefined = findGroup(personId);
     if (group) {
@@ -80,7 +80,7 @@ export function threeRenderCode({
       // if(!isCallAnswered)
       //   videoGroups.push(group);
       // else videoGroups.unshift(group);
-       videoGroups.sort( ( a, b ) => orderParticipantID( a.userData.personId, b.userData.personId ) );
+      videoGroups.sort((a, b) => orderParticipantID(a.userData.personId, b.userData.personId));
       allVideosGroup.add(group); //add from start? - can this be removed?
     }
 
@@ -90,8 +90,30 @@ export function threeRenderCode({
 
     group.add(vid);
     for (let i = 0; i < videoGroups.length; i++) {
-      videoGroups[i].position.x = videoOverlapAmount*i + 0.5;
-      videoGroups[i].position.y = 0.5; 
+      const group = videoGroups[i];
+      group.position.x = videoOverlapAmount * i + 0.5;
+      group.position.y = 0.5;
+
+      const clippingPlanes: Plane[] = [];
+      // clip the right side if it's not the last video:
+      if (i !== videoGroups.length - 1) {
+        const plane = new Plane(new Vector3(-1, 0, 0), videoOverlapAmount * i + videoOverlapAmount);
+        clippingPlanes.push(plane);
+      }
+
+      // clip the left side if it's not the first video:
+      if (i !== 0) {
+        const plane = new Plane(new Vector3(1, 0, 0), -videoOverlapAmount * i - 1 + videoOverlapAmount);
+        clippingPlanes.push(plane);
+        // show where it's clipping for debugging:
+        // scene.add(new PlaneHelper(plane, 2, 0xff0000));
+      }
+
+      group.children
+        .filter(x => x.userData.isVideo)
+        .forEach((vid) => {
+          (vid as Mesh<any, MeshBasicMaterial>).material.clippingPlanes = clippingPlanes;
+        });
     }
 
     lookAt(new Box3(
@@ -152,7 +174,7 @@ export function threeRenderCode({
         // }
 
         //add the skeleton intersection lines to be drawn -- currently doesn't work
-        groupOfStuffToRender.add( skeletonIntersect.getDrawGroup() );
+        groupOfStuffToRender.add(skeletonIntersect.getDrawGroup());
         // const skeletonLines : Line[] = skeletonIntersect.getLines(); 
         // for(let i=0; i<skeletonLines.length; i++)
         // {
@@ -215,7 +237,7 @@ export interface UpdatePose {
   personId: string;
   targetVideoId: string; // which video to draw the pose on
   pose: Pose;
-  skeletonIntersect : SkeletionIntersection;
+  skeletonIntersect: SkeletionIntersection;
   size: { width: number, height: number };
 }
 
