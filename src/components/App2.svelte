@@ -18,7 +18,7 @@
   import * as Scale from '../scale'
   import { Tango332Riffs, FourFloorRiffs, MainVolume, DynamicMovementMidi, BodhranTango332 } from '../midiConversion'
   import { FPSTracker } from '../fpsMeasure'
-  import { SonifierWithTuba, TouchPhrasesEachBar } from '../xcorrSonify'
+  import { SonifierWithTuba, SoundMessage, TouchPhrasesEachBar } from '../xcorrSonify'
   import { SkeletionIntersection } from '../skeletonIntersection';
   import * as  Tone from 'tone';
   
@@ -97,6 +97,7 @@
     }, 1);
   }
 
+  /***************** main update function *****************/ 
   function keypointsUpdated (particiantId: string, pose: Pose, size: Size) {
     let thisparticipant : Participant; 
 
@@ -146,31 +147,14 @@
     let justStartedTouching : boolean = participant.justStartedTouching();
     let yposOfTouch : number = participant.getTouchPosition().y;
     let combinedWindowedScore = windowedVarScore;
-    if( friendParticipant.getMaxBodyPartWindowedVariance() )
-    {
-      combinedWindowedScore = combinedWindowedScore + friendParticipant.getMaxBodyPartWindowedVariance() / 2;
-    }
-    touchMusicalPhrases.update(justStartedTouching, yposOfTouch, combinedWindowedScore);
-    if( justStartedTouching )
-    {
-      //tubaSonfier.triggerAttackRelease(); 
-      tubaSonfier.triggerAttack(xCorrTouching, -1, yposOfTouch); //yes, need to fix this
-    }
-    else if ( participant.justStoppedTouching() )
-    {
-      tubaSonfier.triggerRelease(); 
-    }
     howLongTouch = participant.howLongTouching(); 
     howMuchTouch = participant.howMuchTouching();
-    tubaSonfier.setVibrato(howLongTouch);
-    // console.log("y" + participant.getTouchPosition().y); 
-    //midiFile.magneticPlay( 1, windowedVarScore ); //ugh. need to work on this more.
+
 
     try {
       // participant.xCorrPositions( friendParticipant ); //update xcorr for position
       participant.xCorrDistance( friendParticipant ); //update xcorr velocity/distance
       participant.updatePoseSimilarity( friendParticipant ); 
-
 
       const r0 = findRadiusOfKeypoint(participant, 0);
       if (!Number.isNaN(r0)) {
@@ -203,14 +187,29 @@
           synchScore = combined; 
         }
         xCorrTouching = participant.getTouchingXCorr();
-        tubaSonfier.update(yposOfTouch, xCorrTouching);  
 
       }
-      
-      // updateAudioStuffHere
+
+      if( friendParticipant.getMaxBodyPartWindowedVariance() )
+      {
+        combinedWindowedScore = combinedWindowedScore + friendParticipant.getMaxBodyPartWindowedVariance() / 2;
+      }
+
+      //update music 1st
+      tubaSonfier.update(yposOfTouch, xCorrTouching, justStartedTouching, participant.justStoppedTouching(), howLongTouch);  
+      touchMusicalPhrases.update(justStartedTouching, yposOfTouch, combinedWindowedScore);
+
     } catch (ex) {
       console.warn(ex);
     }
+
+    //********** get the music messages HERE ********************//
+    let soundMessages : SoundMessage[] = tubaSonfier.getSoundMessages(); 
+    soundMessages.forEach( (msg) => { 
+      console.log(msg.toString());
+    });
+    tubaSonfier.clearMessages(); 
+
 
 
   }
@@ -408,6 +407,17 @@
       if(touchMusicalPhrases){ 
         touchMusicalPhrases.play(); 
       }
+
+            //********** get the music messages HERE ********************//
+      if( tubaSonfier )
+      {
+        let soundMessages : SoundMessage[] = tubaSonfier.getSoundMessages(); 
+        soundMessages.forEach( (msg) => { 
+          console.log(msg.toString());
+        });
+        tubaSonfier.clearMessages(); 
+      }
+
     });
 
     goLoop(async () => {

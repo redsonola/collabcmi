@@ -286,6 +286,7 @@ export class LimbIntersect extends DetectIntersect {
     // modified from here: https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
     // The main function that returns true if line segment 'p1q1' 
     // and 'p2q2' intersect. 
+    // NOTE: this is not used bc it does not handle all cases!! failed unit tests #$%^&*(O^&) with false positives.
     intersectsLine(line1: THREE.Line3, line2: THREE.Line3): boolean {
 
 
@@ -485,25 +486,6 @@ class BodyPartIntersect extends DetectIntersect {
             this.limbs[i].setSize(w, h);
         }
     }
-
-
-    //     makeLine(): THREE.Mesh 
-    //     {
-    //         let points : THREE.Vector3[] = this.getVectors(); 
-    //         const shape = new THREE.Shape();
-
-    //         shape.moveTo(points[0].x, points[0].y);
-    //         points.forEach(({ x, y }) => {
-    //         shape.lineTo(x, y);
-    //         });
-    //         shape.lineTo(points[0].x, points[0].y);
-
-    //         const geometry = new THREE.ShapeBufferGeometry(shape);
-    //         const mesh = new THREE.Mesh(geometry, this.meshMaterial);
-    //         mesh.position.z = 1.5;
-
-    //         return mesh;
-    //   }
 
     update(keypoints: any[]): void {
         for (let i = 0; i < this.limbs.length; i++) {
@@ -785,11 +767,6 @@ export class SkeletionIntersection {
     getDrawGroup() : THREE.Group
     {
         let group : THREE.Group = new THREE.Group();
-        // for(let i=0; i<3; i++)
-        // {
-        //     group.add(this.parts[i].draw());
-
-        // }
 
         this.parts.forEach( ( part ) =>
             {

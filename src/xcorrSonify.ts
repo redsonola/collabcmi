@@ -15,6 +15,40 @@ import * as PoseIndex from "./poseConstants"
 import type { DynamicMovementMidi, MainVolume } from "./midiConversion.js";
 import type { Time } from "tone/build/esm/core/type/Units";
 
+
+
+export enum InstrumentID
+{
+    tuba = 0,
+    cello, 
+    pluckedcello,
+    clayDrum, 
+    mutedcanPercussion, 
+    dumbekPercussion
+}
+
+//note: these are all note-ons, no note-offs yet
+export class SoundMessage
+{
+    id : InstrumentID = 0 ; 
+    pitch : number = 0;
+    velocity : number = 0;
+    
+
+    constructor(id : InstrumentID, pitch : number, velocity : number = 0)
+    {
+        this.id = id; 
+        this.pitch = pitch; 
+    }
+
+    toString() : string
+    {
+        return "SoundMessage --> id: " + this.id + " pitch: " + this.pitch ; 
+    }
+
+}
+
+
 export class TransportTime
 {
     bars : number =0; 
@@ -69,6 +103,11 @@ export class TransportTime
 
 }
 
+class SamplerWithID extends Tone.Sampler
+{
+    id : InstrumentID = -1;
+}
+
 class SamplerFactory 
 {
     type : string = ""; 
@@ -76,9 +115,9 @@ class SamplerFactory
     {
     }
 
-    loadAllSamplers() : Tone.Sampler[]
+    loadAllSamplers() : SamplerWithID[]
     {
-        let samplers : Tone.Sampler[];
+        let samplers : SamplerWithID[];
         samplers = 
         [
             this.loadSampler("normal tuba" ),
@@ -96,7 +135,7 @@ class SamplerFactory
         return samplers;
     }
 
-    loadSampler( type : string ) : Tone.Sampler
+    loadSampler( type : string ) : SamplerWithID
     {
         this.type = type;
         if( this.type === "normal tuba" )
@@ -133,11 +172,11 @@ class SamplerFactory
         }
     }
 
-    loadTubaNormalSampler() : Tone.Sampler
+    loadTubaNormalSampler() : SamplerWithID
     {
-        let sampler : Tone.Sampler; 
+        let sampler : SamplerWithID; 
 
-        sampler = new Tone.Sampler({
+        sampler = new SamplerWithID({
             "F1": "041_Tuba_F1_Normal.wav",
             "A1": "045_Tuba_A1_Normal.wav",
             "C2": "048_Tuba_C2_Normal.wav",
@@ -151,14 +190,15 @@ class SamplerFactory
         {
             baseUrl: "./Tuba_samples/Tuba_Long/Normal/"
         });
+        sampler.id = InstrumentID.tuba;
         return sampler; 
     }
 
-    loadTubaSoftSampler() : Tone.Sampler
+    loadTubaSoftSampler() : SamplerWithID
     {
-        let sampler : Tone.Sampler; 
+        let sampler : SamplerWithID; 
 
-        sampler = new Tone.Sampler({
+        sampler = new SamplerWithID({
             "F1": "041_Tuba_F1_Soft.mp3",
             "A1": "045_Tuba_A1_Soft.mp3",
             "C2": "048_Tuba_C2_Soft.mp3",
@@ -170,14 +210,15 @@ class SamplerFactory
         {
             baseUrl: "./Tuba_samples/Tuba_Long/Soft/"
         });
+        sampler.id = InstrumentID.tuba;
         return sampler; 
     }
 
-    loadTubaLoudSampler() : Tone.Sampler
+    loadTubaLoudSampler() : SamplerWithID
     {
-        let sampler : Tone.Sampler; 
+        let sampler : SamplerWithID; 
 
-        sampler = new Tone.Sampler({
+        sampler = new SamplerWithID({
             "F1": "041_Tuba_F1_Loud.mp3",
             "A1": "045_Tuba_A1_Loud.mp3",
             "C2": "048_Tuba_C2_Loud.mp3",
@@ -189,14 +230,15 @@ class SamplerFactory
         {
             baseUrl: "./Tuba_samples/Tuba_Long/Loud/"
         });
+        sampler.id = InstrumentID.tuba;
         return sampler; 
     }
 
-    loadCelloLoudSampler() : Tone.Sampler
+    loadCelloLoudSampler() : SamplerWithID
     {
-        let sampler : Tone.Sampler; 
+        let sampler : SamplerWithID; 
 
-        sampler = new Tone.Sampler({
+        sampler = new SamplerWithID({
 
             "C1": "Cello loudC1.wav",
             "A1": "Cello loudA1.wav",
@@ -210,15 +252,16 @@ class SamplerFactory
         {
             baseUrl: "./audio_samples/Cello Loud/"
         });
+        sampler.id = InstrumentID.cello;
 
         return sampler; 
     }
 
-    loadCelloSoftSampler() : Tone.Sampler
+    loadCelloSoftSampler() : SamplerWithID
     {
-        let sampler : Tone.Sampler; 
+        let sampler : SamplerWithID; 
 
-        sampler = new Tone.Sampler({
+        sampler = new SamplerWithID({
 
             "C1": "Cello softC1.wav",
             "A1": "Cello softA1.wav",
@@ -232,15 +275,17 @@ class SamplerFactory
         {
             baseUrl: "./audio_samples/Cello Soft/"
         });
+        sampler.id = InstrumentID.cello;
+
 
         return sampler; 
     }
 
-    loadCelloStabSampler() : Tone.Sampler
+    loadCelloStabSampler() : SamplerWithID
     {
-        let sampler : Tone.Sampler; 
+        let sampler : SamplerWithID; 
 
-        sampler = new Tone.Sampler({
+        sampler = new SamplerWithID({
 
             "C1": "Cello stabsC1.wav",
             "A1": "Cello stabsA1.wav",
@@ -254,15 +299,17 @@ class SamplerFactory
         {
             baseUrl: "./audio_samples/Cello Stabs/"
         });
+        sampler.id = InstrumentID.cello;
+
 
         return sampler; 
     }
 
-    loadClayDrumSampler() : Tone.Sampler
+    loadClayDrumSampler() : SamplerWithID
     {
-        let sampler : Tone.Sampler; 
+        let sampler : SamplerWithID; 
 
-        sampler = new Tone.Sampler({
+        sampler = new SamplerWithID({
 
             "C1": "Large Clay Drum Mute 1.wav",
             "A1": "Large Clay Drum Mute 2.wav",
@@ -274,15 +321,17 @@ class SamplerFactory
         {
             baseUrl: "./audio_samples/Large Clay Drum/"
         });
+        sampler.id = InstrumentID.clayDrum;
+
 
         return sampler; 
     }
 
-    loadPluckedCelloSampler() : Tone.Sampler
+    loadPluckedCelloSampler() : SamplerWithID
     {
-        let sampler : Tone.Sampler; 
+        let sampler : SamplerWithID; 
 
-        sampler = new Tone.Sampler({
+        sampler = new SamplerWithID({
             "C1": "Cello pluckC1.wav",
             "A1": "Cello pluckA1.wav",
             "C2": "Cello pluckC2.wav",
@@ -295,60 +344,63 @@ class SamplerFactory
         {
             baseUrl: "./audio_samples/Cello Pluck/"
         });
+        sampler.id = InstrumentID.pluckedcello;
+
 
         return sampler; 
     }
 
-    loadCanSamplers() : Tone.Sampler[]
-    {
-        let samplers = [
-            new Tone.Sampler({
-                urls: {
-                "G3" : "MC Set1.wav",
-                "A3" : "MC Set3.wav"
-            },
-            // release : 1,
-            baseUrl : "./audio_samples/Muted Can/"
-            }),
+    //not using now
+    // loadCanSamplers() : Tone.Sampler[]
+    // {
+    //     let samplers = [
+    //         new Tone.Sampler({
+    //             urls: {
+    //             "G3" : "MC Set1.wav",
+    //             "A3" : "MC Set3.wav"
+    //         },
+    //         // release : 1,
+    //         baseUrl : "./audio_samples/Muted Can/"
+    //         }),
 
-            new Tone.Sampler({
-                urls: {
-                "G3" : "MC Set1-01.wav",
-                "A3" : "MC Set3-01.wav"
-            },
-            // release : 1,
-            baseUrl : "./audio_samples/Muted Can/"
-            }),
-            new Tone.Sampler({
-                urls: {
-                "G3" : "MC Set1-02.wav",
-                "A3" : "MC Set3-02.wav"
-            },
-            // release : 1,
-            baseUrl : "./audio_samples/Muted Can/"
-            }),
+    //         new Tone.Sampler({
+    //             urls: {
+    //             "G3" : "MC Set1-01.wav",
+    //             "A3" : "MC Set3-01.wav"
+    //         },
+    //         // release : 1,
+    //         baseUrl : "./audio_samples/Muted Can/"
+    //         }),
+    //         new Tone.Sampler({
+    //             urls: {
+    //             "G3" : "MC Set1-02.wav",
+    //             "A3" : "MC Set3-02.wav"
+    //         },
+    //         // release : 1,
+    //         baseUrl : "./audio_samples/Muted Can/"
+    //         }),
 
-            new Tone.Sampler({
-                urls: {
-                "G3" : "MC Set1-03.wav",
-                "A3" : "MC Set3-03.wav"
-            },
-            // release : 1,
-            baseUrl : "./audio_samples/Muted Can/"
-            }),
+    //         new Tone.Sampler({
+    //             urls: {
+    //             "G3" : "MC Set1-03.wav",
+    //             "A3" : "MC Set3-03.wav"
+    //         },
+    //         // release : 1,
+    //         baseUrl : "./audio_samples/Muted Can/"
+    //         }),
 
-            new Tone.Sampler({
-                urls: {
-                "G3" : "MC Set1-04.wav",
-                "A3" : "MC Set2-04.wav"
-            },
-            // release : 1,
-            baseUrl : "./audio_samples/Muted Can/"
-            }) ];
+    //         new Tone.Sampler({
+    //             urls: {
+    //             "G3" : "MC Set1-04.wav",
+    //             "A3" : "MC Set2-04.wav"
+    //         },
+    //         // release : 1,
+    //         baseUrl : "./audio_samples/Muted Can/"
+    //         }) ];
 
-        return samplers;
+    //     return samplers;
 
-    }
+    // }
 }
 
 
@@ -363,7 +415,7 @@ class LongPlayingNoteSampler
     longPlayingNote : number[] = []; 
 
     longEnv : Tone.AmplitudeEnvelope[]; 
-    longSampler : Tone.Sampler[];
+    longSampler : SamplerWithID[];
     compressors : Tone.Limiter[];
     longVibrato : Tone.Vibrato[]; 
 
@@ -376,6 +428,8 @@ class LongPlayingNoteSampler
     playing : boolean = false; 
 
     LOWEST_WHILST_TOUCHING : number = -15;
+
+    instrumentID : InstrumentID = -1; 
 
     
     samplerFactory : SamplerFactory = new SamplerFactory(); 
@@ -477,7 +531,7 @@ class LongPlayingNoteSampler
 
     }
 
-    triggerAttack(touchingXCorr:number, pitch : number = -1, yToPitchClass = 0.5, curTime = -1, isForHeld=false)
+    triggerAttack(touchingXCorr:number, pitch : number = -1, yToPitchClass = 0.5, curTime = -1, isForHeld=false) : number
     {
         this.curYToPitch = yToPitchClass;
         if(!isForHeld) //note DO NOT SET FALSE!
@@ -495,7 +549,7 @@ class LongPlayingNoteSampler
         // //for now pick a random note in key of C --> maybe put in melody, like in a midi file whatever.
         if( this.longPlayingNote[this.curLongIndex] !== -1)
         {
-            return;  //this is monophone! bc I they won't let me put release curves on separate notes >_<
+            return -1;  //this is monophone! bc I they won't let me put release curves on separate notes >_<
             //this.triggerRelease();
         }
 
@@ -549,6 +603,7 @@ class LongPlayingNoteSampler
 
             // console.log(e);
         }
+        return pitch; 
     }
 
     triggerRelease(forHeldNote : boolean = false, waitBeforeReleasing=0)
@@ -604,7 +659,8 @@ class LongPlayingNoteTuba extends LongPlayingNoteSampler
 {
     constructor( mainVolume : MainVolume )
     {
-        super(mainVolume, "normal tuba");  
+        super(mainVolume, "normal tuba"); 
+        this.instrumentID = InstrumentID.tuba;  
     }
 }
 
@@ -612,7 +668,8 @@ class LongPlayingNoteTubaSoft extends LongPlayingNoteSampler
 {
     constructor( mainVolume : MainVolume )
     {
-        super(mainVolume, "soft tuba");  
+        super(mainVolume, "soft tuba"); 
+        this.instrumentID = InstrumentID.tuba;   
     }
 }
 
@@ -620,7 +677,8 @@ class LongPlayingNoteTubaLoud extends LongPlayingNoteSampler
 {
     constructor( mainVolume : MainVolume )
     {
-        super(mainVolume, "loud tuba");        
+        super(mainVolume, "loud tuba");   
+        this.instrumentID = InstrumentID.tuba;       
     }
 }
 
@@ -632,6 +690,8 @@ class LongPlayingNoteCelloLoud extends LongPlayingNoteSampler
         super(mainVolume, "loud cello");     
         this.TUBA_MAX_LENGTH = 2.5; //ok so its not a tuba anymore sue me.
         this.isCello = true; 
+        this.instrumentID = InstrumentID.cello;  
+
     }
 }
 
@@ -642,6 +702,7 @@ class LongPlayingNoteCelloSoft extends LongPlayingNoteSampler
         super(mainVolume, "soft cello");  
         this.TUBA_MAX_LENGTH = 2.5; 
         this.isCello = true; 
+        this.instrumentID = InstrumentID.cello;  
     }
 }
 
@@ -665,7 +726,7 @@ export class SonifierWithTuba {
     // samplersLoaded : boolean = false; 
 
     participant : Participant;
-    samplers : Tone.Sampler[];
+    samplers : SamplerWithID[];
     nonCanSamplerCountNumber : number; 
 
     // tubeSampler2 :  Tone.Sampler; 
@@ -687,6 +748,8 @@ export class SonifierWithTuba {
 
     longPlayingNoteSamplers : LongPlayingNoteSampler[]; 
     whichIsPlayingIndex : number = 0; 
+
+    soundMessages : SoundMessage[] = []; 
 
 
     constructor( p : Participant, mainVolume : MainVolume ) {
@@ -779,14 +842,30 @@ export class SonifierWithTuba {
     }
 
     //this is totally a cludge... I need to separate these 2 things into 2 different classes but ok.
-    update(yToPitch : number, touchingXCorr : number)
+    update(yToPitch : number, touchingXCorr : number, startedTouching : boolean, stoppedTouching : boolean, howLongTouch : number)
     {
+        this.soundMessages = []; //clear previous messages
+
         let now : number = Tone.now(); 
+
+        if( startedTouching )
+        {
+            this.triggerAttack(touchingXCorr, -1, yToPitch);
+        }
+        else if( stoppedTouching )
+        {
+            this.triggerRelease();
+        }
+
+        this.setVibrato(howLongTouch);
+
         this.longPlayingNoteSamplers.forEach( (sampler) =>
             {
                 sampler.update( now, yToPitch, touchingXCorr );
             }
         );
+
+
     }
 
     triggerAttackRelease(pitch : number = -1, yToPitchClass=0, whichInstrument=0) : number[]
@@ -835,13 +914,17 @@ export class SonifierWithTuba {
                 this.ampEnvs[whichInstrument].triggerAttackRelease("32n");
             }
 
-           // this.testSynth.triggerAttackRelease(Tone.Frequency(this.playingNote, "midi").toNote(), "16n");
+            let msg : SoundMessage = new SoundMessage( this.samplers[whichInstrument].id, this.playingNote );
+            this.soundMessages.push( msg );
+            
         }
         catch(e)
         {
             // console.log(e);
             console.log( "SHORT NOTE: Likely this buffer was not set: " + whichInstrument + "->" + this.playingNote + " pitch: " 
-                + pitch + "  index: " + index );        }
+                + pitch + "  index: " + index );        
+        }
+
 
         return [this.playingNote, whichInstrument]; 
     }
@@ -862,7 +945,13 @@ export class SonifierWithTuba {
 
     triggerAttack(xcorr: number, pitch : number = -1, yTopitchClass = -1)
     {
-        this.longPlayingNoteSamplers[this.whichIsPlayingIndex].triggerAttack(xcorr, pitch, yTopitchClass); 
+        let playedpitch : number = this.longPlayingNoteSamplers[this.whichIsPlayingIndex].triggerAttack(xcorr, pitch, yTopitchClass);
+
+        let msg : SoundMessage = new SoundMessage( this.longPlayingNoteSamplers[this.whichIsPlayingIndex].instrumentID, playedpitch );
+        if( playedpitch > -1 )
+        {
+            this.soundMessages.push( msg );
+        }
     }
 
     setVibrato(howLongTouch:number)
@@ -894,6 +983,15 @@ export class SonifierWithTuba {
             });
     }
 
+    getSoundMessages() : SoundMessage[]
+    {
+        return this.soundMessages; 
+    }
+
+    clearMessages() : void
+    {
+        this.soundMessages = [];
+    }
 
 }
 
@@ -1026,6 +1124,8 @@ export class TouchPhrasesEachBar
 
     lengthOfLoopInBars : number = 1;
     MAX_BARS_TO_LOOP : number = 8; 
+
+    soundMessages : SoundMessage[] = [];
  
 
 
@@ -1107,7 +1207,6 @@ export class TouchPhrasesEachBar
         {
             this.curRecordingBar.onset(yToPitchClass); 
         }
-
     }
 
     play()
