@@ -3,6 +3,7 @@ import { Midi } from '@tonejs/midi'
 import * as Scale from './scale.ts';
 import { isConstructorDeclaration } from 'typescript';
 import { getValidInputResolutionDimensions } from '@tensorflow-models/posenet/dist/util';
+import { SoundMessage, InstrumentID, SamplerWithID } from './xcorrSonify'
 
 //controls all the volumes. ALL sound needs to be connected to this before going to destination.
 export class MainVolume
@@ -11,7 +12,6 @@ export class MainVolume
     {
         this.mainVolume = new Tone.Volume(-150).toDestination(); //set a master global volume control.
         this.mainVolume.volume.mute = true; 
-
     }
 
     getVolume()
@@ -114,13 +114,12 @@ export class LoadMidiFile {
     }
 
 }
+
 /************************* */
 //super class for all midi files
 /************************* */
 
 export class DynamicMovementMidi extends LoadMidiFile {
-
-     
 
     constructor(mainVolume) {
         super();
@@ -136,7 +135,9 @@ export class DynamicMovementMidi extends LoadMidiFile {
         this.startTime = Tone.now();
         this.magneticLoopStarted = 0;
         this.midiIndex = 0; 
-        this.firstTimePlayed = true; 
+        this.firstTimePlayed = true;
+        
+        this.soundMessages = [];
 
     }
 
@@ -194,6 +195,15 @@ export class DynamicMovementMidi extends LoadMidiFile {
         this.startTime = curTime; 
         this.firstTimePlayed = true; 
     }
+
+    getSoundMessages() 
+    {
+        return this.soundMessages; 
+    }
+    clearMessages()
+    {
+        this.soundMessages = []; 
+    }
 }
 
 
@@ -237,53 +247,55 @@ export class Tango332Riffs extends DynamicMovementMidi {
         // }).connect(mainVolume.getVolume());
 
         this.playgroundSamplers = [
-            new Tone.Sampler({
+            new SamplerWithID({
                 urls: {
                 "G3" : "MC Set1.wav",
                 "A3" : "MC Set3.wav"
             },
             // release : 1,
             baseUrl : "./audio_samples/Muted Can/"
-            }).connect(mainVolume.getVolume()),
+            }).connect( mainVolume.getVolume() ),
 
-            new Tone.Sampler({
+            new SamplerWithID({
                 urls: {
                 "G3" : "MC Set1-01.wav",
                 "A3" : "MC Set3-01.wav"
             },
             // release : 1,
             baseUrl : "./audio_samples/Muted Can/"
-            }).connect(mainVolume.getVolume()),
+            }).connect( mainVolume.getVolume() ),
 
-            new Tone.Sampler({
+            new SamplerWithID({
                 urls: {
                 "G3" : "MC Set1-02.wav",
                 "A3" : "MC Set3-02.wav"
             },
             // release : 1,
             baseUrl : "./audio_samples/Muted Can/"
-            }).connect(mainVolume.getVolume()),
+            }).connect( mainVolume.getVolume() ),
 
-            new Tone.Sampler({
+            new SamplerWithID({
                 urls: {
                 "G3" : "MC Set1-03.wav",
                 "A3" : "MC Set3-03.wav"
             },
             // release : 1,
             baseUrl : "./audio_samples/Muted Can/"
-            }).connect(mainVolume.getVolume()),
+            }).connect( mainVolume.getVolume() ),
 
-            new Tone.Sampler({
+            new SamplerWithID({
                 urls: {
                 "G3" : "MC Set1-04.wav",
                 "A3" : "MC Set2-04.wav"
             },
             // release : 1,
             baseUrl : "./audio_samples/Muted Can/"
-            }).connect(mainVolume.getVolume())
+            }).connect( mainVolume.getVolume() )
         ];
 
-        
+        this.playgroundSamplers.forEach( (sampler) => {
+            sampler.id = InstrumentID.mutedcanPercussion; 
+        });
 
         this.synths.push(this.playgroundSamplers);
         window.players = this.players; 
@@ -296,8 +308,6 @@ export class Tango332Riffs extends DynamicMovementMidi {
         this.looping = false; 
         this.startTime = Tone.now(); 
         this.magneticLoopStarted = 0; 
-
-
     }
 
     parseAllFiles()
@@ -397,7 +407,9 @@ export class Tango332Riffs extends DynamicMovementMidi {
             {
                 return; 
             }
-            // console.log(midiIndex); 
+            // console.log(midiIndex);
+            let midiNoteEvents = []; 
+            let times = [];
             this.currentMidi[midiIndex].tracks.forEach((track) => {
 
                 //schedule all of the events
@@ -412,17 +424,35 @@ export class Tango332Riffs extends DynamicMovementMidi {
                     let samplerIndex = Scale.linear_scale( Math.random(), 0, 1, 0, this.playgroundSamplers.length-1 );
                     samplerIndex = Math.round( samplerIndex );
 
-                    this.playgroundSamplers[samplerIndex].triggerAttackRelease(
-                        Tone.Frequency(pitch, "midi").toNote(),
-                        note.duration,
-                        note.time + this.findStartTime( curTime ), //don't do magnetic
-                        note.velocity + humanize);
+                    let midiNoteEvent = new Tone.ToneEvent(((time, thisnote) => {
+                        // the chord as well as the exact time of the event
+                        // are passed in as arguments to the callback function
+                        let vel = note.velocity + humanize;
+                        this.playgroundSamplers[samplerIndex].triggerAttackRelease(thisnote, note.duration, time, vel);
+                        this.soundMessages.push( new SoundMessage( this.playgroundSamplers[samplerIndex].id, Tone.Frequency(pitch, "midi").toNote(), vel ) );
+                    }), [Tone.Frequency(pitch, "midi").toNote()]);
+                    midiNoteEvents.push(midiNoteEvent);
+                    times.push( note.time + this.findStartTime( curTime ) );
+
+                    // this.playgroundSamplers[samplerIndex].triggerAttackRelease(
+                    //     Tone.Frequency(pitch, "midi").toNote(),
+                    //     note.duration,
+                    //     note.time + this.findStartTime( curTime ), //don't do magnetic
+                    //     note.velocity + humanize);
 
                 });
+
+
+                for( let i=0; i<midiNoteEvents.length; i++ )
+                {
+                    midiNoteEvents[i].start( times[i] ) ;
+                }
                     
             });
             this.startTime = curTime; 
     }
+
+
 }
 
 
@@ -461,7 +491,7 @@ export class BodhranTango332 extends Tango332Riffs
         super(mainVolume);
         this.playgroundSamplers = []; 
         this.playgroundSamplers = [
-            new Tone.Sampler({
+            new SamplerWithID({
                 urls: {
                     "A4" : "Dumbek 1 c.wav",
                     "G4" : "Dumbek 1 d.wav",
@@ -470,7 +500,7 @@ export class BodhranTango332 extends Tango332Riffs
                 baseUrl : "./audio_samples/Dumbek/"
             }).connect(mainVolume.getVolume()),
 
-            new Tone.Sampler(
+            new SamplerWithID(
             {
                 urls: {
                     "A4" : "Dumbek 2 c.wav",
@@ -480,7 +510,7 @@ export class BodhranTango332 extends Tango332Riffs
                 baseUrl : "./audio_samples/Dumbek/"
             }).connect(mainVolume.getVolume()) ,
 
-            new Tone.Sampler({
+            new SamplerWithID({
                 urls: {
                     "A4" : "Dumbek 1 a.wav",
                     "G4" : "Dumbek 1 b.wav",
@@ -489,7 +519,7 @@ export class BodhranTango332 extends Tango332Riffs
                 baseUrl : "./audio_samples/Dumbek/"
             }).connect(mainVolume.getVolume()),
 
-            new Tone.Sampler({
+            new SamplerWithID({
                 urls: {
                     "A4" : "Dumbek 2 a.wav",
                     "G4" : "Dumbek 2 b.wav",
@@ -498,8 +528,11 @@ export class BodhranTango332 extends Tango332Riffs
                 baseUrl : "./audio_samples/Dumbek/"
             }).connect(mainVolume.getVolume())
 
-        ];  
-
+        ]; 
+        
+        this.playgroundSamplers.forEach( (sampler) => {
+            sampler.id = InstrumentID.dumbekPercussion; 
+        });
 
         //let it play out
         this.currentMidi.forEach( ( currentMidi ) =>{

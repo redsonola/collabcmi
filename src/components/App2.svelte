@@ -210,8 +210,6 @@
     });
     tubaSonfier.clearMessages(); 
 
-
-
   }
 
   let peerConnections: PeerConnections = {};
@@ -412,10 +410,12 @@
       if( tubaSonfier )
       {
         let soundMessages : SoundMessage[] = tubaSonfier.getSoundMessages(); 
+        soundMessages.push( ...touchMusicalPhrases.getSoundMessages() ); //added the percussion to the sound messages, '...' spreads the array, so it just adds all the values from the array at once
         soundMessages.forEach( (msg) => { 
           console.log(msg.toString());
         });
         tubaSonfier.clearMessages(); 
+        touchMusicalPhrases.clearMessages(); 
       }
 
     });

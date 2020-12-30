@@ -8,12 +8,13 @@
 */
 
 import * as Tone from "tone";
+import { Frequency } from "tone";
 import { AveragingFilter } from "./averagingFilterV2"; //this starts initialized. 
 import * as Scale from "./scale"
 import type { Participant } from "./participant"
 import * as PoseIndex from "./poseConstants"
 import type { DynamicMovementMidi, MainVolume } from "./midiConversion.js";
-import type { Time } from "tone/build/esm/core/type/Units";
+import type { NormalRange, Time } from "tone/build/esm/core/type/Units";
 
 
 
@@ -45,6 +46,8 @@ export class SoundMessage
     {
         return "SoundMessage --> id: " + this.id + " pitch: " + this.pitch ; 
     }
+
+
 
 }
 
@@ -103,7 +106,7 @@ export class TransportTime
 
 }
 
-class SamplerWithID extends Tone.Sampler
+export class SamplerWithID extends Tone.Sampler
 {
     id : InstrumentID = -1;
 }
@@ -1266,6 +1269,36 @@ export class TouchPhrasesEachBar
             this.percSoundFile[this.currentPercIndex].play( this.windowedvar, nowInSeconds );
 
         }
+        this.collectSoundMessagesFromMidi(this.percSoundFile);
+        this.collectSoundMessagesFromMidi(this.percSoundFileBass);
+
+
+    }
+
+    collectSoundMessagesFromMidi( midi : DynamicMovementMidi[] )
+    {
+        midi.forEach( ( mid ) => {
+            this.soundMessages.push( ...mid.getSoundMessages() ); 
+        });
+        this.clearMidiMessages( midi );
+    }
+
+    getSoundMessages() : SoundMessage[]
+    {
+        return this.soundMessages; 
+    }
+
+    clearMidiMessages( midi : DynamicMovementMidi[] )
+    {
+        midi.forEach( ( mid ) => {
+            mid.clearMessages(); 
+        }); 
+    }
+
+    clearMessages() : void
+    {
+
+        this.soundMessages = [];
     }
 }
 
