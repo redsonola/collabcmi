@@ -425,7 +425,7 @@ export class Tango332Riffs extends DynamicMovementMidi {
                     samplerIndex = Math.round( samplerIndex );
 
                     let midiNoteEvent = new Tone.ToneEvent(((time, thisnote) => {
-                        // the chord as well as the exact time of the event
+                        // the note as well as the exact time of the event
                         // are passed in as arguments to the callback function
                         let vel = note.velocity + humanize;
                         this.playgroundSamplers[samplerIndex].triggerAttackRelease(thisnote, note.duration, time, vel);

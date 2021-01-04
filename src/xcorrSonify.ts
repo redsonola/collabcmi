@@ -21,6 +21,7 @@ import type { NormalRange, Time } from "tone/build/esm/core/type/Units";
 export enum InstrumentID
 {
     tuba = 0,
+    longTuba,
     cello, 
     pluckedcello,
     clayDrum, 
@@ -28,12 +29,20 @@ export enum InstrumentID
     dumbekPercussion
 }
 
+export enum SoundMessageType
+{
+    noteOn = 0, 
+    amplitude
+}
+
 //note: these are all note-ons, no note-offs yet
+//basic one includes pitch, hmm ok -- it is noteOn
 export class SoundMessage
 {
     id : InstrumentID = 0 ; 
     pitch : number = 0;
     velocity : number = 0;
+    messageType : SoundMessageType = SoundMessageType.noteOn;
     
 
     constructor(id : InstrumentID, pitch : number, velocity : number = 0)
@@ -47,8 +56,21 @@ export class SoundMessage
         return "SoundMessage --> id: " + this.id + " pitch: " + this.pitch ; 
     }
 
+}
 
-
+export class AmplitudeSoundMessage extends SoundMessage
+{
+    amplitude : number; 
+    constructor(id : InstrumentID, amplitude: number)
+    {
+        super(id, -1, -1); 
+        this.amplitude = amplitude;
+        this.messageType = SoundMessageType.amplitude; 
+    }
+    toString() : string
+    {
+        return "SoundMessage --> id: " + this.id + " amplitude: " + this.amplitude ; 
+    }
 }
 
 
@@ -420,7 +442,8 @@ class LongPlayingNoteSampler
     longEnv : Tone.AmplitudeEnvelope[]; 
     longSampler : SamplerWithID[];
     compressors : Tone.Limiter[];
-    longVibrato : Tone.Vibrato[]; 
+    longVibrato : Tone.Vibrato[];
+    waveForms : Tone.Waveform[]; 
 
     curYToPitch : number = 0; 
 
@@ -434,12 +457,15 @@ class LongPlayingNoteSampler
 
     instrumentID : InstrumentID = -1; 
 
+    maxAmp: number = 0; 
+
+
     
     samplerFactory : SamplerFactory = new SamplerFactory(); 
 
     constructor( mainVolume : MainVolume, name:string ) 
     {
-        this.name = name; 
+        this.name = name;
 
         this.longSampler = [
             this.samplerFactory.loadSampler(this.name), 
@@ -447,6 +473,8 @@ class LongPlayingNoteSampler
             this.samplerFactory.loadSampler(this.name), 
             this.samplerFactory.loadSampler(this.name)
         ];
+        this.instrumentID = InstrumentID.longTuba;   
+
 
         this.compressors = 
         [
@@ -459,6 +487,7 @@ class LongPlayingNoteSampler
         this.longPlayingNote = []; 
         this.lastAttackTime = [];
         this.longVibrato = []; 
+        this.waveForms = [];
         this.longSampler.forEach(
             (tuba) =>
             {
@@ -467,12 +496,16 @@ class LongPlayingNoteSampler
                 this.longPlayingNote.push(-1); 
                 this.lastAttackTime.push(-1); 
                 let vib = new Tone.Vibrato(0, 1); 
-                this.longVibrato.push(vib); 
+                this.longVibrato.push(vib);
+                
+                let waveForm = new Tone.Waveform(); 
+                this.waveForms.push(waveForm); 
 
                 //new Tone.Convolver("./fan_sounds/fan4.wav"), new Tone.Convolver("./fan_sounds/cng_fan1.wav"), 
 
                 //TODO: convolve the tuba files offline with the fan files. 
                 tuba.chain(vib, newEnv, mainVolume.getVolume()); 
+                newEnv.connect( waveForm ); 
             }
         );
     }
@@ -655,6 +688,30 @@ class LongPlayingNoteSampler
         });
     }
 
+    getAmplitude() : number
+    {
+        let out = 0; 
+        for( let i=0; i<this.waveForms.length; i++ )
+        {
+            let outArray = this.waveForms[i].getValue();
+            let sum = 0;
+            for( let i=0; i<outArray.length; i++ )
+            {
+                sum += Math.abs( outArray[i] ); 
+            }
+            if( outArray.length <= 0 )
+            {
+                sum = 0;
+            }
+            else
+            {
+                sum /= outArray.length;
+                sum /= 2; //convert from -1 to 1 waveform to 0 to 1 amplitude
+            }
+            out += sum; 
+        }
+        return out; 
+    }
 
 }
 
@@ -663,7 +720,6 @@ class LongPlayingNoteTuba extends LongPlayingNoteSampler
     constructor( mainVolume : MainVolume )
     {
         super(mainVolume, "normal tuba"); 
-        this.instrumentID = InstrumentID.tuba;  
     }
 }
 
@@ -672,7 +728,6 @@ class LongPlayingNoteTubaSoft extends LongPlayingNoteSampler
     constructor( mainVolume : MainVolume )
     {
         super(mainVolume, "soft tuba"); 
-        this.instrumentID = InstrumentID.tuba;   
     }
 }
 
@@ -681,11 +736,10 @@ class LongPlayingNoteTubaLoud extends LongPlayingNoteSampler
     constructor( mainVolume : MainVolume )
     {
         super(mainVolume, "loud tuba");   
-        this.instrumentID = InstrumentID.tuba;       
     }
 }
 
-
+//************** Not using cello for long notes now ******************/
 class LongPlayingNoteCelloLoud extends LongPlayingNoteSampler
 {
     constructor( mainVolume : MainVolume )
@@ -694,7 +748,6 @@ class LongPlayingNoteCelloLoud extends LongPlayingNoteSampler
         this.TUBA_MAX_LENGTH = 2.5; //ok so its not a tuba anymore sue me.
         this.isCello = true; 
         this.instrumentID = InstrumentID.cello;  
-
     }
 }
 
@@ -709,28 +762,14 @@ class LongPlayingNoteCelloSoft extends LongPlayingNoteSampler
     }
 }
 
+//********************************************************************/
+
+
 export class SonifierWithTuba {
-
-    // lastCheckTime : number = 0;
-    // lastCheckTimeVolume: number = 0;
-    // loaded: boolean = false;
-    // noteIndex : number = 0;
-    // tubaNoteArray : string[][] = [];
-    // // fanSample1 : Tone.Player; 
-
-    // //have a different sample for each body part that is in synch
-    // tubaSamplers : Tone.Sampler[] = []; 
-    // convolver1s : Tone.Convolver[] =[];
-    // convolver2s : Tone.Convolver[] = [];
-    // compressors : Tone.Compressor[] = [];
-
-    // avgFilter : AveragingFilter[] = [];
-
-    // samplersLoaded : boolean = false; 
 
     participant : Participant;
     samplers : SamplerWithID[];
-    nonCanSamplerCountNumber : number; 
+    nonCanSamplerCountNumber : number; //not using can samplers for this now hmmm
 
     // tubeSampler2 :  Tone.Sampler; 
     masterCompressor : Tone.Compressor;
@@ -740,10 +779,6 @@ export class SonifierWithTuba {
     playingNote : number = -1;
 
     vibratos : Tone.Vibrato[];
-    // longVibrato : Tone.Vibrato[]; 
-    // feedbackDelay : Tone.FeedbackDelay; 
-
-    // testSynth : Tone.Synth; 
 
     ampEnvs : Tone.AmplitudeEnvelope[];
 
@@ -752,7 +787,8 @@ export class SonifierWithTuba {
     longPlayingNoteSamplers : LongPlayingNoteSampler[]; 
     whichIsPlayingIndex : number = 0; 
 
-    soundMessages : SoundMessage[] = []; 
+    soundMessages : SoundMessage[] = [];
+    amplitudeMessages : AmplitudeSoundMessage[] = [];  
 
 
     constructor( p : Participant, mainVolume : MainVolume ) {
@@ -772,20 +808,7 @@ export class SonifierWithTuba {
                                         new LongPlayingNoteTubaLoud(mainVolume), 
                                         new LongPlayingNoteTubaSoft(mainVolume)];
 
-        //create 4 to start
-        // this.longTuba = [
-        //     this.loadTubaSampler(), 
-        //     this.loadTubaSampler(),
-        //     this.loadTubaSampler(),
-        //     this.loadTubaSampler() ];
-
         this.masterCompressor = new Tone.Compressor(-20, 1);
-        // this.compressors = 
-        // [
-        //     new Tone.Limiter(-20),
-        //     new Tone.Limiter(-20),
-        //     new Tone.Limiter(-20)
-        // ];
         this.limiter = new Tone.Limiter(-6);
 
         this.ampEnvs = [];
@@ -844,10 +867,21 @@ export class SonifierWithTuba {
         });
     }
 
+    updateAmplitudeMessages()
+    {
+        let out = 0;
+        this.longPlayingNoteSamplers.forEach( (sampler) =>
+        {
+            out += sampler.getAmplitude(); 
+        }); 
+
+        this.amplitudeMessages.push( new AmplitudeSoundMessage( this.longPlayingNoteSamplers[0].instrumentID, out ) );
+    }
+
     //this is totally a cludge... I need to separate these 2 things into 2 different classes but ok.
     update(yToPitch : number, touchingXCorr : number, startedTouching : boolean, stoppedTouching : boolean, howLongTouch : number)
     {
-        this.soundMessages = []; //clear previous messages
+        // this.soundMessages = []; //clear previous messages
 
         let now : number = Tone.now(); 
 
@@ -868,7 +902,7 @@ export class SonifierWithTuba {
             }
         );
 
-
+        this.updateAmplitudeMessages();
     }
 
     triggerAttackRelease(pitch : number = -1, yToPitchClass=0, whichInstrument=0) : number[]
@@ -991,9 +1025,15 @@ export class SonifierWithTuba {
         return this.soundMessages; 
     }
 
+    getAmplitudeMessages() : AmplitudeSoundMessage[]
+    {
+        return this.amplitudeMessages; 
+    }
+
     clearMessages() : void
     {
         this.soundMessages = [];
+        this.amplitudeMessages = []; 
     }
 
 }

@@ -204,7 +204,8 @@
     }
 
     //********** get the music messages HERE ********************//
-    let soundMessages : SoundMessage[] = tubaSonfier.getSoundMessages(); 
+    let soundMessages : SoundMessage[] = tubaSonfier.getAmplitudeMessages(); //adds amplitude messages
+    soundMessages.push(...tubaSonfier.getSoundMessages() ); //adds sound messages
     soundMessages.forEach( (msg) => { 
       console.log(msg.toString());
     });
