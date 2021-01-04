@@ -18,7 +18,7 @@
   import * as Scale from '../scale'
   import { Tango332Riffs, FourFloorRiffs, MainVolume, DynamicMovementMidi, BodhranTango332 } from '../midiConversion'
   import { FPSTracker } from '../fpsMeasure'
-  import { SonifierWithTuba, SoundMessage, TouchPhrasesEachBar } from '../xcorrSonify'
+  import { AmplitudeSoundMessage, SonifierWithTuba, SoundMessage, TouchPhrasesEachBar } from '../xcorrSonify'
   import { SkeletionIntersection } from '../skeletonIntersection';
   import * as  Tone from 'tone';
   
@@ -206,9 +206,9 @@
     //********** get the music messages HERE ********************//
     let soundMessages : SoundMessage[] = tubaSonfier.getAmplitudeMessages(); //adds amplitude messages
     soundMessages.push(...tubaSonfier.getSoundMessages() ); //adds sound messages
-    soundMessages.forEach( (msg) => { 
-      console.log(msg.toString());
-    });
+    // soundMessages.forEach( (msg) => { 
+    //   console.log(msg.toString());
+    // });
     tubaSonfier.clearMessages(); 
 
   }
@@ -410,11 +410,16 @@
             //********** get the music messages HERE ********************//
       if( tubaSonfier )
       {
+        tubaSonfier.updateAmplitudeMessages();
+
         let soundMessages : SoundMessage[] = tubaSonfier.getSoundMessages(); 
         soundMessages.push( ...touchMusicalPhrases.getSoundMessages() ); //added the percussion to the sound messages, '...' spreads the array, so it just adds all the values from the array at once
-        soundMessages.forEach( (msg) => { 
-          console.log(msg.toString());
-        });
+        soundMessages.push( ...tubaSonfier.getAmplitudeMessages() );
+        soundMessages.push( ...touchMusicalPhrases.getAmplitudeMessages() );
+
+        // soundMessages.forEach( (msg) => { 
+        //     console.log(msg.toString());
+        // });
         tubaSonfier.clearMessages(); 
         touchMusicalPhrases.clearMessages(); 
       }

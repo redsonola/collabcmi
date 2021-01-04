@@ -3,7 +3,7 @@ import { Midi } from '@tonejs/midi'
 import * as Scale from './scale.ts';
 import { isConstructorDeclaration } from 'typescript';
 import { getValidInputResolutionDimensions } from '@tensorflow-models/posenet/dist/util';
-import { SoundMessage, InstrumentID, SamplerWithID } from './xcorrSonify'
+import { SoundMessage, InstrumentID, SamplerWithID, getAmplitude, AmplitudeSoundMessage } from './xcorrSonify'
 
 //controls all the volumes. ALL sound needs to be connected to this before going to destination.
 export class MainVolume
@@ -138,7 +138,8 @@ export class DynamicMovementMidi extends LoadMidiFile {
         this.firstTimePlayed = true;
         
         this.soundMessages = [];
-
+        this.amplitudeSoundMessages = [];
+        this.waveForms = [];
     }
 
     parseAllFiles() {
@@ -196,6 +197,27 @@ export class DynamicMovementMidi extends LoadMidiFile {
         this.firstTimePlayed = true; 
     }
 
+    getWaveForms() {
+        return this.waveForms;
+    }
+
+    updateAmplitude()
+    {
+        if(this.waveForms.length <= 0)
+        {
+            console.log("ERROR: Dynamic midi file has no waveform");
+            return; 
+        }
+
+        let out = getAmplitude( this.waveForms );
+        this.amplitudeSoundMessages.push( new AmplitudeSoundMessage( this.playgroundSamplers[0].id, out ) );
+    }
+
+    getAmplitudeSoundMessages()
+    {
+        return this.amplitudeSoundMessages; 
+    }
+
     getSoundMessages() 
     {
         return this.soundMessages; 
@@ -203,6 +225,7 @@ export class DynamicMovementMidi extends LoadMidiFile {
     clearMessages()
     {
         this.soundMessages = []; 
+        this.amplitudeSoundMessages = []; 
     }
 }
 
@@ -295,6 +318,9 @@ export class Tango332Riffs extends DynamicMovementMidi {
 
         this.playgroundSamplers.forEach( (sampler) => {
             sampler.id = InstrumentID.mutedcanPercussion; 
+            let waveForm = new Tone.Waveform(); 
+            this.waveForms.push( waveForm );
+            sampler.connect(waveForm); 
         });
 
         this.synths.push(this.playgroundSamplers);
@@ -531,8 +557,11 @@ export class BodhranTango332 extends Tango332Riffs
         ]; 
         
         this.playgroundSamplers.forEach( (sampler) => {
-            sampler.id = InstrumentID.dumbekPercussion; 
-        });
+            sampler.id = InstrumentID.dumbekPercussion;
+            let waveForm = new Tone.Waveform(); 
+            this.waveForms.push( waveForm );
+            sampler.connect(waveForm); 
+        }); 
 
         //let it play out
         this.currentMidi.forEach( ( currentMidi ) =>{

@@ -428,6 +428,33 @@ class SamplerFactory
     // }
 }
 
+//get amplitude from waveforms
+export function getAmplitude(waveForms : Tone.Waveform[]) : number
+{
+    let out = 0; 
+    for( let i=0; i<waveForms.length; i++ )
+    {
+        let outArray = waveForms[i].getValue();
+        let sum = 0;
+        for( let i=0; i<outArray.length; i++ )
+        {
+            sum += Math.abs( outArray[i] ); 
+        }
+        if( outArray.length <= 0 )
+        {
+            sum = 0;
+        }
+        else
+        {
+            sum /= outArray.length;
+            sum /= 2; //convert from -1 to 1 waveform to 0 to 1 amplitude
+        }
+        out += sum; 
+    }
+    return out; 
+}
+
+
 
 
 class LongPlayingNoteSampler
@@ -457,10 +484,8 @@ class LongPlayingNoteSampler
 
     instrumentID : InstrumentID = -1; 
 
-    maxAmp: number = 0; 
+    // maxAmp: number = 0; 
 
-
-    
     samplerFactory : SamplerFactory = new SamplerFactory(); 
 
     constructor( mainVolume : MainVolume, name:string ) 
@@ -690,27 +715,7 @@ class LongPlayingNoteSampler
 
     getAmplitude() : number
     {
-        let out = 0; 
-        for( let i=0; i<this.waveForms.length; i++ )
-        {
-            let outArray = this.waveForms[i].getValue();
-            let sum = 0;
-            for( let i=0; i<outArray.length; i++ )
-            {
-                sum += Math.abs( outArray[i] ); 
-            }
-            if( outArray.length <= 0 )
-            {
-                sum = 0;
-            }
-            else
-            {
-                sum /= outArray.length;
-                sum /= 2; //convert from -1 to 1 waveform to 0 to 1 amplitude
-            }
-            out += sum; 
-        }
-        return out; 
+        return getAmplitude(this.waveForms); 
     }
 
 }
@@ -769,6 +774,7 @@ export class SonifierWithTuba {
 
     participant : Participant;
     samplers : SamplerWithID[];
+    samplersWaveForms : Tone.Waveform[]; 
     nonCanSamplerCountNumber : number; //not using can samplers for this now hmmm
 
     // tubeSampler2 :  Tone.Sampler; 
@@ -814,6 +820,7 @@ export class SonifierWithTuba {
         this.ampEnvs = [];
         this.convolver1s = [];
         this.vibratos = [];
+        this.samplersWaveForms = []; 
         let i = 0;  
         this.samplers.forEach( (sampler)=>
         {
@@ -831,6 +838,11 @@ export class SonifierWithTuba {
 
             let vibrato = new Tone.Vibrato(0, 1);
             this.vibratos.push( vibrato );
+
+            //TODO: finish connections here -- separate instruments for convolved or not??
+            let waveForm = new Tone.Waveform(); 
+            this.samplersWaveForms.push( waveForm );
+
             if( i < this.nonCanSamplerCountNumber )
             {
                 sampler.chain(convolver1, vibrato, ampEnv, mainVolume.getVolume() );
@@ -839,18 +851,10 @@ export class SonifierWithTuba {
             {
                 sampler.chain(vibrato, ampEnv, mainVolume.getVolume() );
             }
+            ampEnv.connect( waveForm ); 
+
             i++; 
         });
-
-
-        //set up the signal chain for the fx/synthesis
-        // this.tubaSampler.chain(this.convolver1, this.convolver2, this.masterCompressor);
-        // this.feedbackDelay = new Tone.FeedbackDelay("8n", 0.25);
-
-        // this.tubaSampler.chain(this.convolver1, this.vibrato, this.feedbackDelay, this.masterCompressor);
-        // this.tubaSampler.chain(this.convolver1, this.vibrato, this.ampEnv, mainVolume.getVolume() );
-        // this.tubeSampler2.chain(this.ampEnv2, mainVolume.getVolume());
-        //this.longTuba.chain(this.convolver2, this.vibrato, this.longEnv, mainVolume.getVolume());
 
         this.masterCompressor.connect(mainVolume.getVolume());
         // this.testSynth = new Tone.Synth().connect(mainVolume.getVolume());
@@ -869,12 +873,27 @@ export class SonifierWithTuba {
 
     updateAmplitudeMessages()
     {
+        //this is kind of cludgy -- perhaps change this?
+        //this gets the amplitude messages of sequenced short notes
+        for( let i=0; i<this.nonCanSamplerCountNumber; i++  )
+        {
+            let out = 0;
+            out += getAmplitude( [this.samplersWaveForms[i]] ); 
+            out += getAmplitude( [this.samplersWaveForms[ i+this.nonCanSamplerCountNumber ]] );
+            this.amplitudeMessages.push( new AmplitudeSoundMessage( this.samplers[i].id, out ) );
+        }
+    }
+
+    updateLongSamplerAmplitudeMessages()
+    {
+        //update long playing notes
         let out = 0;
         this.longPlayingNoteSamplers.forEach( (sampler) =>
         {
             out += sampler.getAmplitude(); 
         }); 
 
+        //all long playing note samplers are the same instrument now
         this.amplitudeMessages.push( new AmplitudeSoundMessage( this.longPlayingNoteSamplers[0].instrumentID, out ) );
     }
 
@@ -902,7 +921,7 @@ export class SonifierWithTuba {
             }
         );
 
-        this.updateAmplitudeMessages();
+        this.updateLongSamplerAmplitudeMessages();
     }
 
     triggerAttackRelease(pitch : number = -1, yToPitchClass=0, whichInstrument=0) : number[]
@@ -1169,9 +1188,8 @@ export class TouchPhrasesEachBar
     MAX_BARS_TO_LOOP : number = 8; 
 
     soundMessages : SoundMessage[] = [];
+    amplitudeSoundMessages : AmplitudeSoundMessage[] = []; 
  
-
-
     constructor(tuba : SonifierWithTuba, percLoop : DynamicMovementMidi[], percBass : DynamicMovementMidi[] )
     {
         this.bars = []; 
@@ -1186,6 +1204,8 @@ export class TouchPhrasesEachBar
 
         this.percSoundFileBass = percBass; 
         this.currentPercIndexBass = 0;
+
+
 
     }
 
@@ -1312,13 +1332,15 @@ export class TouchPhrasesEachBar
         this.collectSoundMessagesFromMidi(this.percSoundFile);
         this.collectSoundMessagesFromMidi(this.percSoundFileBass);
 
-
     }
 
     collectSoundMessagesFromMidi( midi : DynamicMovementMidi[] )
     {
+
         midi.forEach( ( mid ) => {
+            mid.updateAmplitude(); 
             this.soundMessages.push( ...mid.getSoundMessages() ); 
+            this.amplitudeSoundMessages.push(  ...mid.getAmplitudeSoundMessages() )
         });
         this.clearMidiMessages( midi );
     }
@@ -1326,6 +1348,11 @@ export class TouchPhrasesEachBar
     getSoundMessages() : SoundMessage[]
     {
         return this.soundMessages; 
+    }
+
+    getAmplitudeMessages() : AmplitudeSoundMessage[]
+    {
+        return this.amplitudeSoundMessages; 
     }
 
     clearMidiMessages( midi : DynamicMovementMidi[] )
