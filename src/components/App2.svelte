@@ -82,8 +82,11 @@
   let midiFileBass : DynamicMovementMidi[];
 
   let mainVolume : MainVolume; 
+  let volumeMeterReading : number=0; 
+
   let tubaSonfier : SonifierWithTuba;
   let touchMusicalPhrases : TouchPhrasesEachBar; 
+
 
 
   let three: ThreeRenderer;
@@ -256,7 +259,7 @@
   async function init (suppliedId?: string) {
     let stopped = false;
 
-      mainVolume = new MainVolume()
+    mainVolume = new MainVolume((val) => { volumeMeterReading = val });
 
       //this is from my audiovisual project
       midiFile = [new Tango332Riffs(mainVolume), new FourFloorRiffs(mainVolume)]; 
@@ -473,6 +476,8 @@
   export function onChangeVolumeSlider( e ) {
       mainVolume.set( parseFloat( e.currentTarget.value ) );
     }
+
+
 </script>
 
 <style>
@@ -501,10 +506,22 @@
     top: 40px;
     left: 0; 
   }
+
+  .meter {
+    display: block;
+    position:relative; 
+    left: 50px; 
+    top: 10px; 
+  }
 </style>
 <div class="valueSliders">
 <label for="mainVolume">Volume:</label>
-<input type="range" min="0" max="1" class="slider1" id="mainVolume" step="0.01" value="0" on:input={onChangeVolumeSlider}><br/><br/>
+<input type="range" min="0" max="1" class="slider1" id="mainVolume" step="0.01" value="0" on:input={onChangeVolumeSlider}><br />
+<svg class="meter" xmlns="http://www.w3.org/2000/svg" width="50%" height="16" fill="none">
+  <rect width="100%" height="16" fill="#eee" rx="3" />
+  <rect width="{volumeMeterReading * 100}%" height="16" fill="#87CEFA" rx="3" />
+  <text>{volumeMeterReading}</text>
+<br/><br/>
 </div>
 
 <DebugPanel messages={messages} myId={myId} peerConnections={peerConnections}>

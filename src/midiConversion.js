@@ -8,10 +8,22 @@ import { SoundMessage, InstrumentID, SamplerWithID, getAmplitude, AmplitudeSound
 //controls all the volumes. ALL sound needs to be connected to this before going to destination.
 export class MainVolume
 {
-    constructor()
+    constructor(setVolMeter)
     {
         this.mainVolume = new Tone.Volume(-150).toDestination(); //set a master global volume control.
         this.mainVolume.volume.mute = true; 
+
+        this.meter = new Tone.Meter();
+        this.mainVolume.connect(this.meter);
+
+        const update = () => {
+            let val = Scale.linear_scale(this.meter.getValue(), -100, 10, 0, 1)
+            if (isFinite(val)) {
+                setVolMeter(val);
+            }
+            requestAnimationFrame(update);
+        }
+        update();        
     }
 
     getVolume()

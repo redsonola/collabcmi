@@ -41,7 +41,7 @@ export class SoundMessage
 {
     id : InstrumentID = 0 ; 
     pitch : number = 0;
-    velocity : number = 0;
+    velocity : number = 0; //this is not really implemented yet-
     messageType : SoundMessageType = SoundMessageType.noteOn;
     
 
