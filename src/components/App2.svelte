@@ -502,22 +502,22 @@
 
 .valueSliders {
     position: relative;
-    width:100%;
+    width:75%;
     top: 40px;
-    left: 0; 
+    left: 50px; 
   }
 
   .meter {
     display: block;
     position:relative; 
-    left: 50px; 
+    left: 60px; 
     top: 10px; 
   }
 </style>
 <div class="valueSliders">
 <label for="mainVolume">Volume:</label>
-<input type="range" min="0" max="1" class="slider1" id="mainVolume" step="0.01" value="0" on:input={onChangeVolumeSlider}><br />
-<svg class="meter" xmlns="http://www.w3.org/2000/svg" width="50%" height="16" fill="none">
+<input type="range" min="0" max="0.75" class="slider1" id="mainVolume" step="0.01" value="0" on:input={onChangeVolumeSlider}><br />
+<svg class="meter" xmlns="http://www.w3.org/2000/svg" width="75%" height="16" fill="none">
   <rect width="100%" height="16" fill="#eee" rx="3" />
   <rect width="{volumeMeterReading * 100}%" height="16" fill="#87CEFA" rx="3" />
   <text>{volumeMeterReading}</text>
