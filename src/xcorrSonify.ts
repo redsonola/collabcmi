@@ -1364,8 +1364,8 @@ export class TouchPhrasesEachBar
 
     clearMessages() : void
     {
-
         this.soundMessages = [];
+        this.amplitudeSoundMessages = []; 
     }
 }
 

@@ -156,7 +156,7 @@ class DrawHead extends DrawSkeletonIntersectLine {
 
     groupToDraw() : THREE.Group {
         const group = new THREE.Group();
-        let points : THREE.Vector3[] = []; 
+        let points : THREE.Vector2[] = []; 
 
         if  (this.geometry ) {
             this.geometry.dispose();
@@ -165,11 +165,18 @@ class DrawHead extends DrawSkeletonIntersectLine {
         if( this.center )
         {
             // 360 full circle will be drawn clockwise
-            let x_radius = this.radius; 
-            let y_radius = this.radius + (this.radius*0.2)
-            for(let i = 0; i <= 360; i++){
-                points.push(new THREE.Vector3(this.center.x + Math.sin(i*(Math.PI/180))*x_radius, this.center.y + Math.cos(i*(Math.PI/180))*y_radius, 0.9));
-            }
+            let x_radius : number = this.radius; 
+            let y_radius : number = this.radius + (this.radius*0.2)
+            const curve = new THREE.EllipseCurve(
+                this.center.x,  this.center.y,            // ax, aY
+                x_radius, y_radius,           // xRadius, yRadius
+                0,  2 * Math.PI,  // aStartAngle, aEndAngle
+                false,            // aClockwise
+                0                 // aRotation
+            );
+            
+            points = curve.getPoints( 30 );
+            // points2.forEach( ( point ) => { points.push( new THREE.Vector3( points2. ) ) } );
         }
 
         this.geometry = new THREE.BufferGeometry().setFromPoints(points); 
