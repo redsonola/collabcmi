@@ -40,7 +40,6 @@ export function threeRenderCode({
   } = createOrthographicCamera(canvas, window.innerWidth, window.innerHeight);
 
   const scene = new Scene();
-  scene.background = new Color(0xffffff);
 
   let participantJoints: Joints[] = [];
 
@@ -94,26 +93,28 @@ export function threeRenderCode({
       group.position.x = videoOverlapAmount * i + 0.5;
       group.position.y = 0.5;
 
-      const clippingPlanes: Plane[] = [];
-      // clip the right side if it's not the last video:
-      if (i !== videoGroups.length - 1) {
-        const plane = new Plane(new Vector3(-1, 0, 0), videoOverlapAmount * i + videoOverlapAmount);
-        clippingPlanes.push(plane);
-      }
+      //leaving the overlapped videos for now
 
-      // clip the left side if it's not the first video:
-      if (i !== 0) {
-        const plane = new Plane(new Vector3(1, 0, 0), -videoOverlapAmount * i - 1 + videoOverlapAmount);
-        clippingPlanes.push(plane);
-        // show where it's clipping for debugging:
-        // scene.add(new PlaneHelper(plane, 2, 0xff0000));
-      }
+      // const clippingPlanes: Plane[] = [];
+      // // clip the right side if it's not the last video:
+      // if (i !== videoGroups.length - 1) {
+      //   const plane = new Plane(new Vector3(-1, 0, 0), videoOverlapAmount * i + videoOverlapAmount);
+      //   clippingPlanes.push(plane);
+      // }
 
-      group.children
-        .filter(x => x.userData.isVideo)
-        .forEach((vid) => {
-          (vid as Mesh<any, MeshBasicMaterial>).material.clippingPlanes = clippingPlanes;
-        });
+      // // clip the left side if it's not the first video:
+      // if (i !== 0) {
+      //   const plane = new Plane(new Vector3(1, 0, 0), -videoOverlapAmount * i - 1 + videoOverlapAmount);
+      //   clippingPlanes.push(plane);
+      //   // show where it's clipping for debugging:
+      //   // scene.add(new PlaneHelper(plane, 2, 0xff0000));
+      // }
+
+      // group.children
+      //   .filter(x => x.userData.isVideo)
+      //   .forEach((vid) => {
+      //     (vid as Mesh<any, MeshBasicMaterial>).material.clippingPlanes = clippingPlanes;
+      //   });
     }
 
     lookAt(new Box3(

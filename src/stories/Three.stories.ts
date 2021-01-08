@@ -37,7 +37,7 @@ const threeStory1Setup: ThreeSetupFunction = ({ canvas, setDebugData }) => {
   let insetWidth = 0;
   let insetHeight = 0;
 
-  const renderer = new WebGLRenderer({ antialias: true, canvas });
+  const renderer = new WebGLRenderer({ antialias: true, canvas, alpha: true });
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setClearColor(0x000000, 0.0);
   renderer.setSize(width, height);

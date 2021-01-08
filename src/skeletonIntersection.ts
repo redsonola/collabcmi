@@ -4,6 +4,7 @@ import type { AverageFilteredKeyPoints } from './averagedKeypoints';
 import * as PoseIndex from './poseConstants'
 import { Box3, BufferGeometry, Mesh, MeshBasicMaterial, Vector3 } from 'three';
 import { number } from 'mathjs';
+import { NumberTuple } from '@tensorflow-models/posenet/dist/keypoints';
 
 //need to put in utilities space
 function distance(keypoints: any, poseIndex1: number, poseIndex2: number): number {
@@ -141,6 +142,43 @@ export class DrawSkeletonIntersectLine {
 
         return group;
     }
+}
+
+class DrawHead extends DrawSkeletonIntersectLine {
+    center : THREE.Vector3 | null  = null ; 
+    radius : number = 0;
+    
+    updateHead(center : THREE.Vector3, radius : number ) : void
+    {
+        this.center = center; 
+        this.radius = radius; 
+    }
+
+    groupToDraw() : THREE.Group {
+        const group = new THREE.Group();
+        let points : THREE.Vector3[] = []; 
+
+        if  (this.geometry ) {
+            this.geometry.dispose();
+        }    
+
+        if( this.center )
+        {
+            // 360 full circle will be drawn clockwise
+            let x_radius = this.radius; 
+            let y_radius = this.radius + (this.radius*0.2)
+            for(let i = 0; i <= 360; i++){
+                points.push(new THREE.Vector3(this.center.x + Math.sin(i*(Math.PI/180))*x_radius, this.center.y + Math.cos(i*(Math.PI/180))*y_radius, 0.9));
+            }
+        }
+
+        this.geometry = new THREE.BufferGeometry().setFromPoints(points); 
+        group.add(new THREE.Line(this.geometry, this.material));
+
+        return group;
+ 
+    }
+
 }
 
 export class LimbIntersect extends DetectIntersect {
@@ -609,6 +647,7 @@ class HeadIntersect extends BodyPartIntersect {
         this.sphere = new THREE.Sphere();
 
         this.index = [PoseIndex.nose, PoseIndex.leftEar, PoseIndex.rightEar, PoseIndex.leftEye, PoseIndex.rightEye];
+        this.drawSkeleton = new DrawHead(confidence, "");  
     }
 
     //return max instead of average. need to compensate for ears tho
@@ -659,7 +698,7 @@ class HeadIntersect extends BodyPartIntersect {
             leftY = keypoints[PoseIndex.leftEye].position.y ;
         }
 
-        let noseToEarDistance = (noseToEarDistance1 + noseToEarDistance2) / 2;
+        let noseToEarDistance : number = (noseToEarDistance1 + noseToEarDistance2) / 2;
         let xcenter = ( rightX + leftX ) / 2 ;
         let ycenter = ( rightY + leftY ) / 2 ;
 
@@ -675,7 +714,7 @@ class HeadIntersect extends BodyPartIntersect {
         this.updateBoundaries(box, this.getAvgScore(keypoints));
         this.line.geometry.setFromPoints(this.getVectors());
 
-        this.drawSkeleton.update(this.limbs);
+        (this.drawSkeleton as DrawHead).updateHead(headCenter, noseToEarDistance);
 
     }
 
@@ -701,7 +740,6 @@ export class SkeletionIntersection {
     parts: BodyPartIntersect[];
 
     shouldFlipSelf: boolean = false;
-
 
     friendSkeleton: any = undefined; // I find annoying that neither null or undefined can be assigned to defined type except via | which introduces even more freaking complexity. WTF.
 
