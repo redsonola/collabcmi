@@ -1074,6 +1074,7 @@ export class Participant {
         sTouch.removeAllTouches();
         if (whereTouch.isTouching) {
             sTouch.addWhereTouch(whereTouch); //TODO -- get these values from the skeleton
+            // console.log( whereTouch.toString() );
         }
 
         return sTouch;

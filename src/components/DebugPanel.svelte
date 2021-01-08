@@ -103,7 +103,7 @@
   .devPanel-container {
     font-size: 10px;
     line-height: 1.1em;
-    color: rgba(0,0,0,0.7);
+    color: rgba(241, 234, 234, 0.7);
     height: 1em;
     height: fit-content;
   }

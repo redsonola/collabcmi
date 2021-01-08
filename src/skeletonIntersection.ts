@@ -57,6 +57,16 @@ export class WhereTouch {
     myIndex : number []= []; 
     theirIndex : number[] = [];
 
+    toString() : string
+    {
+        let str : string = "";
+
+        str = "WhereTouch: Touching? " + this.isTouching + " myIndex: " + this.myIndex + " theirIndex: " + this.theirIndex ;
+        str += " intersectPoint: " + this.intersectPoint.x + ","+ this.intersectPoint.y ; 
+        str += "  distance: " + this.dist; 
+        return str; 
+    }
+
     ifDistIsLessReplace( wT: WhereTouch, myIndex:number[]=[], theirIndex: number[]=[] ): void {
         if (this.dist > wT.dist) {
             this.dist = wT.dist;
@@ -250,17 +260,28 @@ export class LimbIntersect extends DetectIntersect {
         return [this.limbLine.start, this.limbLine.end];
     }
 
+    //return minimum score instead of average score
     getScore(): number {
-        let avg: number = 0;
+        // let avg: number = 0;
+        // if (this.keypoints.length > 0) {
+        //     for (let i = 0; i < this.keypoints.length; i++) {
+        //         if (this.keypoints[i].score) {
+        //             avg += this.keypoints[i].score;
+        //         }
+        //     }
+        //     avg /= this.keypoints.length;
+        // }
+        // return avg;
+
+        let min: number = 1;
         if (this.keypoints.length > 0) {
             for (let i = 0; i < this.keypoints.length; i++) {
-                if (this.keypoints[i].score) {
-                    avg += this.keypoints[i].score;
+                if (!isNaN(this.keypoints[i].score)) {
+                    min = Math.min( min, this.keypoints[i].score )
                 }
             }
-            avg /= this.keypoints.length;
         }
-        return avg;
+        return min;
     }
 
     line() {
@@ -384,7 +405,6 @@ export class LimbIntersect extends DetectIntersect {
 
     findDistBetweenPointAndLine(v: THREE.Vector3, aLine: THREE.Line3): WhereTouch {
 
-
         let closestPoint = new THREE.Vector3();
         let whereIntersect = new WhereTouch();
 
@@ -397,8 +417,27 @@ export class LimbIntersect extends DetectIntersect {
         return whereIntersect;
     }
 
+    doLinesIntersectAtMidpoint ( linesegment1: THREE.Line3, line2: THREE.Line3, myIndices:number[], theirIndices:number[],  whereIntersect: WhereTouch, times : number ) : WhereTouch
+    {
+        let myMidPoint = new THREE.Vector3();
+        myMidPoint = linesegment1.getCenter(myMidPoint);
 
+        whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(myMidPoint, line2), myIndices, theirIndices);
 
+        if(times ===0 ){
+            return whereIntersect;
+        }
+        else
+        {
+            let line1 : THREE.Line3 = new THREE.Line3( linesegment1.start, myMidPoint );
+            let endline : THREE.Line3 = new THREE.Line3( myMidPoint, linesegment1.end );
+            
+            whereIntersect = this.doLinesIntersectAtMidpoint ( line1, line2, myIndices, theirIndices,  whereIntersect, times-1 );
+            return this.doLinesIntersectAtMidpoint ( endline, line2, myIndices, theirIndices,  whereIntersect, times-1 );
+        }
+    };
+
+    
 
     closeEnough(limb: LimbIntersect, whatIsEnough: number, whereIntersect: WhereTouch): WhereTouch {
         let myLine = this.scaleLine(this.line(), this.flip);
@@ -416,18 +455,27 @@ export class LimbIntersect extends DetectIntersect {
 
         //find the shortest distance btw each midpoint
 
-        let myMidPoint = new THREE.Vector3();
-        myMidPoint = myLine.getCenter(myMidPoint);
+        // let myMidPoint = new THREE.Vector3();
+        // myMidPoint = myLine.getCenter(myMidPoint);
 
-        let otherMidPoint = new THREE.Vector3();
-        otherMidPoint = otherLine.getCenter(otherMidPoint);
+        // let otherMidPoint = new THREE.Vector3();
+        // otherMidPoint = otherLine.getCenter(otherMidPoint);
 
-        whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(myMidPoint, otherLine), myIndices, theirIndices);
-        whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(otherMidPoint, myLine), myIndices, theirIndices);
-
-        whereIntersect.isTouching = whereIntersect.dist <= whatIsEnough;
+        // whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(myMidPoint, otherLine), myIndices, theirIndices);
+        // whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(otherMidPoint, myLine), myIndices, theirIndices);
 
         //TODO: find quarters & others in loop.
+
+        //find the midpoints & quarter points & eight points
+        const numberOfMidpointsEach : number = 2; // divide line into 8ths
+
+        let myLineSegment : THREE.Line3 = myLine;
+        let otherLineSegment : THREE.Line3 = otherLine;
+
+        whereIntersect = this.doLinesIntersectAtMidpoint( myLine, otherLine, myIndices, theirIndices, whereIntersect, 2 );
+        whereIntersect = this.doLinesIntersectAtMidpoint( otherLine, myLine, myIndices, theirIndices, whereIntersect, 2 );   
+
+        whereIntersect.isTouching = whereIntersect.dist <= whatIsEnough;
 
         //TODO create a whereTouch factory I guess. also pinpoint actually where and not just the skeletion key
         // let whereTouch : WhereTouch = new WhereTouch(); 
@@ -444,7 +492,7 @@ export class LimbIntersect extends DetectIntersect {
         this.h = h;
         let myLine = this.scaleLine(this.line(), this.flip);
         let otherLine = this.scaleLine(limb.line(), !this.flip);
-        const CLOSE_ENOUGH: number = 0.09;
+        const CLOSE_ENOUGH: number = 0.025;
         let whereIntersect: WhereTouch = new WhereTouch();
         whereIntersect.isTouching = false;
 
