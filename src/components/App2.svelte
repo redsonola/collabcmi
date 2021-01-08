@@ -906,7 +906,7 @@ animation:rad1 30s alternate linear infinite;
 <!-- <style lang="scss" href="mystyle.css"> -->
   <!-- <link rel="stylesheet" type="text/css" href="../css/background.css"> -->
 
-<div id="ball1"></div>
+<!-- <div id="ball1"></div>
 <div id="ball1b"></div>
 <div id="ball1c"></div>
 <div id="ball1d"></div> 
@@ -914,7 +914,7 @@ animation:rad1 30s alternate linear infinite;
 <div id="ball1f"></div> 
 <div id="ball1g"></div>
 <div id="rad"></div>
-<div id="rad2"></div>
+<div id="rad2"></div> -->
 
 
 <div class="valueSliders">
