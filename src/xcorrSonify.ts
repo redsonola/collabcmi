@@ -921,7 +921,8 @@ export class SonifierWithTuba {
             }
         );
 
-        this.updateLongSamplerAmplitudeMessages();
+        // disabled for now
+        // this.updateLongSamplerAmplitudeMessages();
     }
 
     triggerAttackRelease(pitch : number = -1, yToPitchClass=0, whichInstrument=0) : number[]
@@ -1329,8 +1330,8 @@ export class TouchPhrasesEachBar
             this.percSoundFile[this.currentPercIndex].play( this.windowedvar, nowInSeconds );
 
         }
-        this.collectSoundMessagesFromMidi(this.percSoundFile);
-        this.collectSoundMessagesFromMidi(this.percSoundFileBass);
+        // this.collectSoundMessagesFromMidi(this.percSoundFile);
+        // this.collectSoundMessagesFromMidi(this.percSoundFileBass);
 
     }
 

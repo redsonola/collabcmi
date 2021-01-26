@@ -87,8 +87,6 @@
   let tubaSonfier : SonifierWithTuba;
   let touchMusicalPhrases : TouchPhrasesEachBar; 
 
-
-
   let three: ThreeRenderer;
   $: if (canvas) {
     three?.cleanup();
@@ -207,12 +205,12 @@
     }
 
     //********** get the music messages HERE ********************//
-    let soundMessages : SoundMessage[] = tubaSonfier.getAmplitudeMessages(); //adds amplitude messages
-    soundMessages.push(...tubaSonfier.getSoundMessages() ); //adds sound messages
-    // soundMessages.forEach( (msg) => { 
-    //   console.log(msg.toString());
-    // });
-    tubaSonfier.clearMessages(); 
+    // let soundMessages : SoundMessage[] = tubaSonfier.getAmplitudeMessages(); //adds amplitude messages
+    // soundMessages.push(...tubaSonfier.getSoundMessages() ); //adds sound messages
+    // // soundMessages.forEach( (msg) => { 
+    // //   console.log(msg.toString());
+    // // });
+    // tubaSonfier.clearMessages(); 
 
   }
 
@@ -411,21 +409,21 @@
       }
 
             //********** get the music messages HERE ********************//
-      if( tubaSonfier )
-      {
-        tubaSonfier.updateAmplitudeMessages();
+      // if( tubaSonfier )
+      // {
+      //   tubaSonfier.updateAmplitudeMessages();
 
-        let soundMessages : SoundMessage[] = tubaSonfier.getSoundMessages(); 
-        soundMessages.push( ...touchMusicalPhrases.getSoundMessages() ); //added the percussion to the sound messages, '...' spreads the array, so it just adds all the values from the array at once
-        soundMessages.push( ...tubaSonfier.getAmplitudeMessages() );
-        soundMessages.push( ...touchMusicalPhrases.getAmplitudeMessages() );
+      //   let soundMessages : SoundMessage[] = tubaSonfier.getSoundMessages(); 
+      //   soundMessages.push( ...touchMusicalPhrases.getSoundMessages() ); //added the percussion to the sound messages, '...' spreads the array, so it just adds all the values from the array at once
+      //   soundMessages.push( ...tubaSonfier.getAmplitudeMessages() );
+      //   soundMessages.push( ...touchMusicalPhrases.getAmplitudeMessages() );
 
-        // soundMessages.forEach( (msg) => { 
-        //     console.log(msg.toString());
-        // });
-        tubaSonfier.clearMessages(); 
-        touchMusicalPhrases.clearMessages(); 
-      }
+      //   // soundMessages.forEach( (msg) => { 
+      //   //     console.log(msg.toString());
+      //   // });
+      //   tubaSonfier.clearMessages(); 
+      //   touchMusicalPhrases.clearMessages(); 
+      // }
 
     });
 

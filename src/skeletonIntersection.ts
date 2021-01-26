@@ -492,7 +492,7 @@ export class LimbIntersect extends DetectIntersect {
         this.h = h;
         let myLine = this.scaleLine(this.line(), this.flip);
         let otherLine = this.scaleLine(limb.line(), !this.flip);
-        const CLOSE_ENOUGH: number = 0.025;
+        const CLOSE_ENOUGH: number = 0.05;
         let whereIntersect: WhereTouch = new WhereTouch();
         whereIntersect.isTouching = false;
 
@@ -801,7 +801,7 @@ export class SkeletionIntersection {
     material: THREE.Material
 
 
-    constructor(participant_: Participant, minConfidence: number = 0.4, w: number = 1, h: number = 1) {
+    constructor(participant_: Participant, minConfidence: number = 0.3, w: number = 1, h: number = 1) {
         this.participant = participant_;
 
         this.material = new THREE.LineBasicMaterial({

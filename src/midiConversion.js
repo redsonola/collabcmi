@@ -600,7 +600,7 @@ export class BodhranTango332 extends Tango332Riffs
         super.play(windowedVarScore, curTime);
         this.playgroundSamplers.forEach( (sampler) =>
         {
-             sampler.volume.value = 7; 
+             sampler.volume.value = -10; 
         });
     }
 
