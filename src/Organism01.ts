@@ -33,7 +33,10 @@ import { VerletStick } from './PByte3/VerletStick';
 const scene: THREE.Scene = new THREE.Scene();
 const camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
     75, window.innerWidth / window.innerHeight, 0.001, 2000);
-const renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer( { alpha: true } );
+const canvas : HTMLCanvasElement | null = document.querySelector('#c');
+let renderer: THREE.WebGLRenderer;
+if( canvas ) renderer = new THREE.WebGLRenderer( {canvas, alpha: true } );
+else renderer = new THREE.WebGLRenderer( {alpha: true } );
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setClearColor(0x000000, 0);
 renderer.autoClear = true;
