@@ -519,8 +519,17 @@
     background-color:gray;
   }
 
-  canvas {
+  :global(canvas) {
     background-color: transparent;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+
+  .videoAndPoseCanvas {
+    z-index: -1;
   }
 
 </style>
@@ -566,7 +575,7 @@
   <PrintPose keypoints={corrData} />
 </DebugPanel>
 
-<canvas bind:this={canvas}
+<canvas class="videoAndPoseCanvas" bind:this={canvas}
   style={`width: 100%; height: 100vh`} />
 
 <div class="callPanel">

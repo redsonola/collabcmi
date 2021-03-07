@@ -36,6 +36,7 @@
   "scripts": {
     "mkcert": "mkcert -install && mkcert localhost",
     "start": "cross-env HTTPS=true SSL_CRT_FILE=localhost.pem craco start",
+    "pre-build": "rm -rf build || true",
     "build": "craco build",
     "test": "craco test",
     "eject": "craco eject",
