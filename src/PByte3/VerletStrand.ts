@@ -6,9 +6,9 @@
 // Creates Verlet Tendrils - motion/springing based on displacement
 
 import * as THREE from 'three';
-import { VerletNode } from './VerletNode.js';
-import { VerletStick } from './VerletStick.js';
-import { AnchorPoint, GeometryDetail } from './IJGUtils.js';
+import { VerletNode } from './VerletNode';
+import { VerletStick } from './VerletStick';
+import { AnchorPoint, GeometryDetail } from './IJGUtils';
 
 // helper customcurvepath
 // class TendrilCurve extends THREE.Curve {

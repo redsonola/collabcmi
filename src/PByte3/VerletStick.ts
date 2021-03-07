@@ -11,7 +11,7 @@
 //----------------------------------------------
 
 import * as THREE from 'three';
-import { VerletNode } from './VerletNode.js';
+import { VerletNode } from './VerletNode';
 
 
 export class VerletStick extends THREE.Group {

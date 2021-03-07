@@ -21,6 +21,7 @@
   import { AmplitudeSoundMessage, SonifierWithTuba, SoundMessage, TouchPhrasesEachBar } from '../xcorrSonify'
   import { SkeletionIntersection } from '../skeletonIntersection';
   import * as  Tone from 'tone';
+  import '../Organism01';
   
   const webcamVideo = videoSubscription();
   const videoSources = [

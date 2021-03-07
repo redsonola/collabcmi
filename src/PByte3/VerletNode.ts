@@ -10,7 +10,7 @@
 
 import * as THREE from 'three';
 //import * as THREE from 'three';
-import { GeometryDetail } from './IJGUtils.js';
+import { GeometryDetail } from './IJGUtils';
 
 export class VerletNode extends THREE.Mesh {
 

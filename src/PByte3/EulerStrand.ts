@@ -6,8 +6,8 @@
 // Creates Euler Tendrils - motion/springin based on speed
 
 import * as THREE from 'three';
-import { EulerNode } from './EulerNode.js';
-import { EulerStick } from './EulerStick.js';
+import { EulerNode } from './EulerNode';
+import { EulerStick } from './EulerStick';
 
 
 //const tendrilCount: number = 20;

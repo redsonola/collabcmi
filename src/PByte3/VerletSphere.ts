@@ -5,10 +5,10 @@
 
 import * as THREE from 'three';
 import { Color, Group, Vector2, Vector3 } from 'three';
-import { VerletNode } from './VerletNode.js';
-import { VerletStick } from './VerletStick.js';
-import { AnchorPoint, GeometryDetail } from './IJGUtils.js';
-import { VerletStrand } from './VerletStrand.js';
+import { VerletNode } from './VerletNode';
+import { VerletStick } from './VerletStick';
+import { AnchorPoint, GeometryDetail } from './IJGUtils';
+import { VerletStrand } from './VerletStrand';
 
 // Verlet Sphere, constructed of 
 // VerletNodes and VereltSticks
