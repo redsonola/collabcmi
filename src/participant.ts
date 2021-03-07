@@ -1003,6 +1003,11 @@ export class Participant {
         return this.scaleXcorr(this.xcorrTouchingMax.top()); 
     }
 
+    getTouch() : SkeletonTouch
+    {
+        return this.touch; 
+    }
+
     areTouching(): boolean {
         return this.touch.areTouching();
     }

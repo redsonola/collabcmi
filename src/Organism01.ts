@@ -29,14 +29,13 @@ import { EpidermalHood } from './PByte3/EpidermalHood';
 import { VerletSphere } from './PByte3/VerletSphere';
 import { VerletStick } from './PByte3/VerletStick';
 
+import { SkeletonTouch } from './SkeletonTouch'
+
 
 const scene: THREE.Scene = new THREE.Scene();
 const camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
     75, window.innerWidth / window.innerHeight, 0.001, 2000);
-const canvas : HTMLCanvasElement | null = document.querySelector('#c');
-let renderer: THREE.WebGLRenderer;
-if( canvas ) renderer = new THREE.WebGLRenderer( {canvas, alpha: true } );
-else renderer = new THREE.WebGLRenderer( {alpha: true } );
+let renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer( { alpha: true } );
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setClearColor(0x000000, 0);
 renderer.autoClear = true;
@@ -44,7 +43,7 @@ renderer.autoClear = true;
 scene.background = null; 
 document.body.appendChild(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
-document.addEventListener('click', onMouse, false);
+// document.addEventListener('click', onMouse, false);
 
 //test
 let globalCounter: number = 0;
@@ -519,7 +518,72 @@ function clearPickPosition() { }
 // END Touch events
 
 // many bad magic nums down here. shameful.
-function onMouse(event: MouseEvent) {
+// function onMouse(event: MouseEvent) {
+//     globalCounter++;
+//     // 1st mouse press
+//     // egg wifreame fades in
+//     if (globalCounter === 1) {
+//         isOvaBirth = true;
+//         // knot core fade in
+//     } else if (globalCounter === 2) {
+//         isEggBirth = true;
+//         // tethers fade in
+//     } else if (globalCounter === 3) {
+//         isOvaCiliaBirth = true;
+//     }
+
+//     if (globalCounter > 3) {
+
+//         // stage 1 - Tetrahedron core
+//         if (tetCounter < 11) {
+//             tet.setNode();
+
+//             if (tetCounter < 5) {
+//                 let eggToTetLineMaterial = new THREE.LineBasicMaterial({ color: 0x669966 });
+//                 eggToTetLineMaterial.transparent = true;
+//                 eggToTetLineMaterial.opacity = .25;
+//                 const points : THREE.Vector3[] = [];
+//                 points.push(egg.position);
+//                 points.push(tet.nodes[tetCounter].position);
+//                 let eggToTetLineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+//                 eggToTetLines.push(new THREE.Line(eggToTetLineGeometry, eggToTetLineMaterial))
+//                 scene.add(eggToTetLines[tetCounter]);
+//             }
+//             tetCounter++;
+//         }
+
+//         // stage 2 - tendrils
+//         if (tetCounter == 11 && tendrilCounter < 5) {
+//             const pos = getScreenPos(new THREE.Vector2(event.clientX, event.clientY))
+//             //addTendril(pos);
+//             addTendril(new Vector3(tet.position.x + tet.nodes[tendrilCounter].position.x,
+//                 tet.position.y + tet.nodes[tendrilCounter].position.y,
+//                 tet.position.z + tet.nodes[tendrilCounter].position.z));
+//             tendrilCounter++;
+//         }
+
+//         // stage 3 - cilia
+//         if (ciliaCounter++ == 15) {
+//             addCilia(3, .09, THREE.MathUtils.randFloat(.1, .7));
+//             isHoodReady = true;
+//         }
+
+//         if (isHoodReady && ciliaCounter > 16) {
+//             //addHood();
+//         }
+//     }
+// }
+
+    /*********************/
+
+    // many bad magic nums down here. shameful.
+export function onVirtualTouch(touch: SkeletonTouch) {
+
+    if( !touch.justStartedTouching() )
+    {
+        return; 
+    }
+
     globalCounter++;
     // 1st mouse press
     // egg wifreame fades in
@@ -555,7 +619,11 @@ function onMouse(event: MouseEvent) {
 
         // stage 2 - tendrils
         if (tetCounter == 11 && tendrilCounter < 5) {
-            const pos = getScreenPos(new THREE.Vector2(event.clientX, event.clientY))
+
+            let touchPos = touch.positionWhereTouch;
+
+            //note guessing the coordinates now.
+            const pos = getScreenPos(new THREE.Vector2(touchPos.x*window.innerHeight, touchPos.y*window.innerWidth))
             //addTendril(pos);
             addTendril(new Vector3(tet.position.x + tet.nodes[tendrilCounter].position.x,
                 tet.position.y + tet.nodes[tendrilCounter].position.y,
@@ -574,6 +642,6 @@ function onMouse(event: MouseEvent) {
         }
     }
 
-
-
 }
+
+

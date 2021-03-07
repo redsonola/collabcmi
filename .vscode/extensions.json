@@ -2,6 +2,7 @@
   "recommendations": [
     "eamodio.gitlens",
     "svelte.svelte-vscode",
+    "ardenivanov.svelte-intellisense",
     "christian-kohler.npm-intellisense",
     "bierner.docs-view"
   ]

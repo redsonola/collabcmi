@@ -1,0 +1,350 @@
+<!-- <style lang="scss" href="mystyle.css"> -->
+<!-- <link rel="stylesheet" type="text/css" href="../css/background.css"> -->
+
+<div id="ball1"></div>
+<div id="ball1b"></div>
+<div id="ball1c"></div>
+<div id="ball1d"></div> 
+<div id="ball1e"></div> 
+<div id="ball1f"></div> 
+<div id="ball1g"></div>
+<div id="rad"></div>
+<div id="rad2"></div>
+
+<style>
+    #ball1 {
+    position: absolute;
+    background:#0000ff; 
+    mix-blend-mode: hard-light;
+    top:10%;
+    left:80%;
+    border-radius: 20%;
+    -webkit-animation:ball1 25s alternate linear infinite; /* Chrome, Safari, Opera */
+    animation:ball1 25s alternate linear infinite;
+    }
+
+    @-webkit-keyframes ball1 {
+    0% {filter: hue-rotate(0) blur(55px) ;
+        border-radius: 50%; height:05%; width:30%; 
+        opacity: .1;}
+
+    50% { filter: hue-rotate(.1deg) blur(55px) ;
+        height:10%;  opacity: .3;}
+
+    100% {filter: hue-rotate(0) blur(75px); 
+        border-radius: 80%; height:75%; width:75%; 
+        opacity: .1;}
+    }
+
+    @keyframes ball1 {
+    0% {filter: hue-rotate(0) blur(55px) ;
+        border-radius: 50%; height:05%; width:30%; 
+        opacity: .1;}
+    50% { filter: hue-rotate(.1deg) blur(55px) ;
+        height:10%;  opacity: .3;}
+    100% {filter: hue-rotate(0) blur(75px); 
+        border-radius: 80%; height:75%; width:75%; 
+        opacity: .1;}
+    }
+
+    #ball1b {
+    position: absolute;
+    mix-blend-mode: hard-light;
+    top:0%; left:10%;
+    width:20%; height:20%;
+    -webkit-animation:ball1 33s alternate linear infinite; /* Chrome, Safari, Opera */
+    animation:ball1 33s alternate linear infinite;
+    }
+
+    #ball1c {
+    position: absolute;
+    background:#0000ff; 
+    mix-blend-mode: difference;
+    top:80%;left:55%;
+    width:5%; height:5%;
+    -webkit-animation:ball1c 42s alternate linear infinite; /* Chrome, Safari, Opera */
+    animation:ball1c 42s alternate linear infinite;
+    }
+
+    @-webkit-keyframes ball1c {
+    0% {filter: hue-rotate(0) blur(100px);
+        border-radius: 50%; 
+        top:80%;left:55%;
+        height:05%; width:30%; 
+        opacity: .2;}
+
+    50% {filter: hue-rotate(.1turn) blur(50px);
+        top:90%;left:40%;
+        height:10%;  
+        opacity: .3;}
+
+    100% {filter: hue-rotate(0) blur(100px); 
+        border-radius: 80%; 
+        top:80%;left:35%;
+        height:75%; width:75%; 
+        opacity: .2;}
+    }
+
+    @keyframes ball1c {
+    0% {filter: hue-rotate(0) blur(100px);
+        border-radius: 50%; 
+        top:80%;left:55%;
+        height:05%; width:30%; 
+        opacity: .2;}
+
+    50% {filter: hue-rotate(.1turn) blur(50px);
+        top:90%;left:40%;
+        height:10%;  
+        opacity: .3;}
+
+    100% {filter: hue-rotate(0) blur(100px); 
+        border-radius: 80%; 
+        top:80%;left:35%;
+        height:75%; width:75%; 
+        opacity: .2;}
+    }
+
+    #ball1d {
+    position: absolute;
+    background:#0000ff; 
+    top:20%;left:20%;
+    width:10%;
+    height:10%;
+    mix-blend-mode: exclusion;
+    -webkit-animation:ball2c 35s alternate linear infinite; /* Chrome, Safari, Opera */
+    animation:ball2c 35s alternate linear infinite;
+    }
+
+    @-webkit-keyframes ball2c {
+    0% {filter: hue-rotate(0) blur(100px) ;
+        border-radius: 50%; 
+        top:20%;left:20%;
+        height:15%; width:30%; 
+        opacity: .2;}
+
+    50% {filter: hue-rotate(.1turn) blur(75px) ;
+        top:30%;left:30%;
+        height:10%;  
+        opacity: .3;}
+
+    100% {filter: hue-rotate(0) blur(100px) ;
+        border-radius: 80%;
+        top:20%;left:20%;
+        top:80%;left:35%;
+        height:75%; width:75%; 
+        opacity: .2;}
+    }
+
+    @keyframes ball2c {
+    0% {filter: hue-rotate(0) blur(100px) ;
+        border-radius: 50%; 
+        top:20%;left:20%;
+        height:15%; width:30%; 
+        opacity: .2;}
+
+    50% {filter: hue-rotate(.1turn) blur(75px) ;
+        top:30%;left:30%;
+        height:10%;  
+        opacity: .3;}
+
+    100% {filter: hue-rotate(0) blur(100px) ;
+        border-radius: 80%;
+        top:20%;left:20%;
+        top:80%;left:35%;
+        height:75%; width:75%; 
+        opacity: .2;}
+    }
+
+    #ball1e {
+    position: absolute;
+    background:#0000ff;
+    top:20%;
+    left:80%;
+    width:10%;
+    height:10%;
+    mix-blend-mode: difference;
+    -webkit-animation:ball1e 50s alternate linear infinite; /* Chrome, Safari, Opera */
+    animation:ball1e 30s alternate linear infinite;
+    }
+
+    @-webkit-keyframes ball1e {
+    0% { filter: hue-rotate(0) blur(50px);
+        border-radius: 50%; height:40%; width:40%; 
+        top:90%; left:90%;
+        opacity: .05;}
+
+    50% {filter: hue-rotate(.2turn) blur(100px);
+        height:60%; 
+        top:50%;left:90%;
+        opacity: .7;}
+
+    100% {filter: hue-rotate(0) blur(75px); 
+        border-radius: 80%; height:75%; width:75%;
+        top:90%; left:90%; 
+        opacity: .05;}
+    }
+
+    @keyframes ball1e {
+    0% { filter: hue-rotate(0) blur(50px);
+        border-radius: 50%; height:40%; width:40%; 
+        top:90%; left:90%;
+        opacity: .05;}
+
+    50% {filter: hue-rotate(.2turn) blur(100px);
+        height:60%; 
+        top:50%;left:90%;
+        opacity: .7;}
+
+    100% {filter: hue-rotate(0) blur(75px); 
+        border-radius: 80%; height:75%; width:75%;
+        top:90%; left:90%; 
+        opacity: .05;}
+    }
+
+    #ball1f {
+    position: absolute;
+    background-image: radial-gradient(#1a1aff,  #0000ff, #000099);
+    top:10%;
+    left:10%;
+    width:40%;
+    height:40%;
+    mix-blend-mode: color-dodge;
+    -webkit-animation:ball1f 50s alternate linear infinite; /* Chrome, Safari, Opera */
+    animation:ball1f 50s alternate linear infinite;
+    }
+
+    @-webkit-keyframes ball1f {
+    0% {filter: hue-rotate(0) blur(25px);
+        border-radius: 50%; height:40%; width:40%; 
+        top:10%; left:10%;
+        opacity: .05;}
+
+    50% {filter: hue-rotate(.1turn); height:60%; 
+        top:20%;left:5%;
+        opacity: .9;}
+
+    100% {filter: hue-rotate(0) blur(100px); 
+        border-radius: 80%; height:75%; width:75%;
+        top:10%; left:10%; 
+        opacity: .05;}
+    }
+
+    @keyframes ball1f {
+    0% {filter: hue-rotate(0) blur(25px);
+        border-radius: 50%; height:40%; width:40%; 
+        top:10%; left:10%;
+        opacity: .05;}
+
+    50% {filter: hue-rotate(.1turn); height:60%; 
+        top:20%;left:5%;
+        opacity: .9;}
+
+    100% {filter: hue-rotate(0) blur(100px); 
+        border-radius: 80%; height:75%; width:75%;
+        top:10%; left:10%; 
+        opacity: .05;}
+    }
+
+
+
+    #ball1g {
+    position: absolute;
+    background-image: radial-gradient(#8000ff, #3333ff, #0000ff); 
+    top:30%;
+    left:30%;
+    width:40%;
+    height:40%;
+    mix-blend-mode: color-dodge;
+    -webkit-animation:ball1g 50s alternate linear infinite; /* Chrome, Safari, Opera */
+    animation:ball1f 30s alternate linear infinite;
+    }
+
+    @-webkit-keyframes ball1g {
+    0% {filter: hue-rotate(0) blur(50px);
+        border-radius: 50%; 
+        height:40%; width:40%; 
+        opacity: .05;}
+
+    50% {filter: hue-rotate(.1turn) blur(100px); 
+        border-radius: 80%; 
+        height:60%; opacity: .9;}
+
+    100% {filter: hue-rotate(0) blur(50px);
+        border-radius: 50%; 
+        height:75%; width:75%; 
+        opacity: .05;}
+    }
+
+    @keyframes ball1g {
+    0% {filter: hue-rotate(0) blur(50px);
+        border-radius: 50%; 
+        height:40%; width:40%; 
+        opacity: .05;}
+
+    50% {filter: hue-rotate(.1turn) blur(100px); 
+        border-radius: 80%; 
+        height:60%; opacity: .9;}
+
+    100% {filter: hue-rotate(0) blur(50px);
+        border-radius: 50%; 
+        height:75%; width:75%; 
+        opacity: .05;}
+    }
+
+
+    #rad {
+    position: absolute;
+    background-image: radial-gradient(#1a1aff, #8000ff, #0000cc);
+    top:30%;
+    left:30%;
+    width:40%;
+    height:40%;
+    mix-blend-mode: color-dodge;
+    -webkit-animation:rad1 50s alternate linear infinite; /* Chrome, Safari, Opera */
+    animation:rad1 50s alternate linear infinite;
+    }
+
+    @-webkit-keyframes rad1 {
+    0% {filter: hue-rotate(0) blur(25px);
+        border-radius: 50%; 
+        height:40%; width:40%; 
+        opacity: .05;}
+
+    50% {filter: hue-rotate(.1turn) blur(100px);
+        height:60%; 
+        opacity: .9;}
+
+    100% {filter: hue-rotate(0) blur(25px);
+        border-radius: 80%; 
+        height:75%; width:75%; 
+        opacity: .05;}
+    }
+
+    @keyframes rad1 {
+    0% {filter: hue-rotate(0) blur(25px);
+        border-radius: 50%; 
+        height:40%; width:40%; 
+        opacity: .05;}
+
+    50% {filter: hue-rotate(.1turn) blur(100px);
+        height:60%; 
+        opacity: .9;}
+
+    100% {filter: hue-rotate(0) blur(25px);
+        border-radius: 80%; 
+        height:75%; width:75%; 
+        opacity: .05;}
+    }
+
+    #rad2 {
+    background-image: radial-gradient(#0000e6, #000080, #5500ff);
+    position: absolute;
+    top:70%;
+    left:0%;
+    width:20%;
+    height:20%;
+    mix-blend-mode: soft-light;
+    -webkit-animation:rad1 50s alternate linear infinite; /* Chrome, Safari, Opera */
+    animation:rad1 30s alternate linear infinite;
+    }
+</style>

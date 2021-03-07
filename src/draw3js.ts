@@ -1,4 +1,5 @@
-import { Matrix4, Quaternion, Vector3, Group, DirectionalLight, Scene, Color, PlaneBufferGeometry, Mesh, MeshPhongMaterial, Box3, Line, MeshBasicMaterial, Plane, PlaneHelper } from 'three';
+import { Matrix4, Quaternion, Vector3, Group, DirectionalLight, Scene, PlaneBufferGeometry, Mesh, MeshPhongMaterial, Box3, Line, MeshBasicMaterial, Plane, PlaneHelper } from 'three';
+import * as THREE from 'three';
 
 import { videoRect } from './threejs/videoRect';
 import { Joints } from './threejs/brentDrawSkeleton';
@@ -29,9 +30,14 @@ export interface ThreeRenderer {
 
 export type MakeThreeRenderer = (props: ThreeRenderProps) => ThreeRenderer;
 
+const textureLoader = new THREE.TextureLoader();
+const map0 = textureLoader.load('/circle.jpg');
+
 export function threeRenderCode({
   canvas,
 }: ThreeRenderProps): ThreeRenderer {
+  let running = true;
+
   const {
     camera,
     renderer,
@@ -39,7 +45,84 @@ export function threeRenderCode({
     lookAt
   } = createOrthographicCamera(canvas, window.innerWidth, window.innerHeight);
 
+  setTimeout(() => {
+    console.log("camera", camera);
+  })
+
   const scene = new Scene();
+
+  const circles: THREE.Mesh[] = [];
+
+  const circleColors = [
+    0x000080,
+    0x000099,
+    0x0000cc,
+    0x0000e6,
+    0x0000ff,
+    0x1a1aff,
+    0x3333ff,
+    0x5500ff,
+    0x8000ff,
+  ];
+
+  function randomPoints() {
+    const max = Math.floor(Math.random() * 10) + 5;
+    const points: THREE.Vector2[] = [];
+    for (let i = 0; i <= max; i++) {
+      points.push(new THREE.Vector2(
+        Math.random() * 3 - 1,
+        Math.random() * 3 - 1
+      ));
+    }
+    // points.push(points[0]);
+    return points;
+  }
+
+  function randomPath() {
+    return new THREE.SplineCurve(randomPoints());
+  }
+
+  function updatePath(origPath: THREE.SplineCurve) {
+    const points = origPath.points.slice(-3);
+    const newPath = [
+      ...points,
+      ...randomPoints()
+    ];
+    return new THREE.SplineCurve(newPath);
+  }
+
+
+  circleColors.forEach(color => {
+    const geometry = new THREE.CircleGeometry(Math.random() * 2 + 0.5, 16);
+    // const geometry = new THREE.CircleGeometry(0.5, 16);
+    const material = new THREE.MeshPhongMaterial({
+      color,
+      transparent: true,
+      map: map0,
+      blending: THREE.AdditiveBlending,
+    });
+    const circle = new THREE.Mesh(geometry, material);
+
+    circle.userData.distance = 0;
+    circle.userData.path = randomPath();
+
+    circles.push(circle);
+    scene.add(circle);
+  });
+
+  function updateCircle(delta: number) {
+    circles.forEach(circle => {
+      const distance = circle.userData.distance as number;
+      const path = circle.userData.path as THREE.SplineCurve;
+      circle.userData.distance += delta * 0.000015;
+      if (circle.userData.distance >= 1) {
+        circle.userData.distance = 0;
+        circle.userData.path = updatePath(circle.userData.path);
+      }
+      const { x, y } = path.getPointAt(distance);
+      circle.position.set(x, y, 0);
+    });
+  }
 
   let participantJoints: Joints[] = [];
 
@@ -47,8 +130,6 @@ export function threeRenderCode({
   const light = new DirectionalLight(0xff99cc, 1);
   light.position.set(1, 1, 1).normalize();
   scene.add(light);
-
-  let running = true;
 
   const allVideosGroup = new Group(); //TODO: kill videoGroups & only use AllVideoGroups -- good times.
   scene.add(allVideosGroup);
@@ -123,11 +204,19 @@ export function threeRenderCode({
     ));
   }
 
+
+  let lastUpdate = performance.now();
   function animate() {
     if (running) {
       updateSize(canvas.clientWidth, canvas.clientHeight);
 
+      const now = performance.now();
+      const delta = now - lastUpdate;
+
+      updateCircle(delta);
       renderer.render(scene, camera);
+
+      lastUpdate = now;
       requestAnimationFrame(animate);
     }
   }
