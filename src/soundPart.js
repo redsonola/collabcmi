@@ -5,7 +5,7 @@ import * as math from 'mathjs';
 var fatOsc = null;
 const hiCloseUp = 10.0; 
 var volume = new Tone.Volume(-12);
-var synth = new Tone.Synth().toMaster();
+var synth = new Tone.Synth().toDestination();
 var samplesToChangeVol = 6; 
 var curSamples = 0; 
 
@@ -23,7 +23,7 @@ export function startSound()
 
     // curPitch = "Ab3"; 
     // synth = new Tone.Synth().toMaster();
-    synth = new Tone.FatOscillator("Ab3", "sine", 2).toMaster();
+    synth = new Tone.FatOscillator("Ab3", "sine", 2).toDestination();
     // norm = new Tone.Normalize(-35, 60);
     // expNormVol = new Tone.ScaleExp(-35, 60, 1);
     // volumeSignal = new Tone.Signal(0).connect(expNormVol); 
