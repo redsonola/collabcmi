@@ -488,8 +488,9 @@
 
   .callPanel {
     position: absolute;
-    top: 0;
-    left: 0;
+    top: 15px;
+    right: 35px;
+    width: 200px; 
   }
 
   .slider1 {
@@ -507,17 +508,18 @@
 
 .valueSliders {
     position: relative;
-    width:75%;
-    top: 40px;
-    left: 50px; 
+    /* position: absolute; */
+    width:45%;
+    top: 15px;
+    left: 25px; 
     color: #928888;
   }
 
   .meter {
     display: block;
     position:relative; 
-    left: 60px; 
-    top: 10px; 
+    left: 0px; /* before 60 */
+    top: 8px; 
     background-color:gray;
   }
 
@@ -537,16 +539,18 @@
 </style>
 
 <div class="valueSliders">
-<label for="mainVolume">Volume:</label>
+  <label for="mainVolume">Volume:</label>
 <input type="range" min="0" max="0.75" class="slider1" id="mainVolume" step="0.01" value="0" on:input={onChangeVolumeSlider}><br />
-<svg class="meter" xmlns="http://www.w3.org/2000/svg" width="75%" height="16" fill="none">
+<svg class="meter" xmlns="http://www.w3.org/2000/svg" width="87%" height="16" fill="none">
   <rect width="100%" height="16" fill="gray" rx="3" />
   <rect width="{volumeMeterReading * 100}%" height="16" fill="#87CEFA" rx="3" />
-  <text>{volumeMeterReading}</text>
-<br/><br/>
+</svg><br/>
+
+  <!-- <text>{volumeMeterReading}</text> -->
+<!-- <br/><br/> -->
 </div>
 
-<DebugPanel messages={messages} myId={myId} peerConnections={peerConnections}>
+<!-- <DebugPanel messages={messages} myId={myId} peerConnections={peerConnections}> -->
   <!--
     anything passed in here will be in the Passed in tab
     you can move it to the DebugPanel.svelte file if it will
@@ -554,12 +558,12 @@
   -->
 
   <!-- TODO: make it replace the video it sends to the peer when switching -->
-  {#each videoSources as source}
+  <!-- {#each videoSources as source}
     <input type="button" on:click={() => webcamVideo.setSource(source)} value="{source}" />
   {/each}
-  <br/>
+  <br/> -->
 
-  <ScoreBar label="skeleton touching:" score={skeletonTouching} />
+  <!-- <ScoreBar label="skeleton touching:" score={skeletonTouching} />
   <ScoreBar label="how long touching:" score={howLongTouch} />
   <ScoreBar label="how much touching:" score={howMuchTouch} />
   <ScoreBar label="match score:" score={matchScore} />
@@ -575,7 +579,7 @@
   <ScoreBar label="windowed var right leg:"score={windowedVarianceRightLeg} />
 
   <PrintPose keypoints={corrData} />
-</DebugPanel>
+</DebugPanel> --> -->
 
 <canvas class="videoAndPoseCanvas" bind:this={canvas}
   style={`width: 100%; height: 100vh`} />

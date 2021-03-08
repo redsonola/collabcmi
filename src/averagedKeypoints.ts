@@ -103,9 +103,9 @@ export class AverageFilteredKeyPoints
 
         for(let i=0; i<PoseIndex.posePointCount; i++)
         {
-            this.x.push(new AveragingFilter(avgSz, avgOutBufferSize));
-            this.y.push(new AveragingFilter(avgSz, avgOutBufferSize));
-            this.score.push(new AveragingFilter(avgSz, avgOutBufferSize));
+            this.x.push(new AveragingFilter(1, avgOutBufferSize));
+            this.y.push(new AveragingFilter(1, avgOutBufferSize));
+            this.score.push(new AveragingFilter(1, avgOutBufferSize));
             this.part.push(""); 
 
             this.xDx.push(new Derivative(avgSz, avgOutBufferSize));
@@ -166,9 +166,9 @@ export class AverageFilteredKeyPoints
         
         for(let i=0; i<PoseIndex.posePointCount; i++)
         {
-            this.x[i].setWindowSize(sz, buffer2Size); 
-            this.y[i].setWindowSize(sz, buffer2Size); 
-            this.score[i].setWindowSize(sz, buffer2Size); 
+            this.x[i].setWindowSize(1, buffer2Size); 
+            this.y[i].setWindowSize(1, buffer2Size); 
+            this.score[i].setWindowSize(1, buffer2Size); 
 
             this.xDx[i].setWindowSize(sz, buffer2Size); 
             this.yDx[i].setWindowSize(sz, buffer2Size); 

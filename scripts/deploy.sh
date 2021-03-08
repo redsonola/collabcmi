@@ -1,4 +1,4 @@
-./scripts/build.sh
+#./scripts/build.sh
 
 NODE_ENV=production
 

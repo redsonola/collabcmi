@@ -43,7 +43,7 @@ renderer.autoClear = true;
 scene.background = null; 
 document.body.appendChild(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
-// document.addEventListener('click', onMouse, false);
+document.addEventListener('click', onMouse, false);
 
 //test
 let globalCounter: number = 0;
@@ -91,8 +91,8 @@ createCubeConstraints(tetBounds, false);
 
 
 setLighting();
-camera.position.y = .05;
-camera.position.z = 3;
+camera.position.y = .07;
+camera.position.z = 1.8;
 
 
 window.addEventListener('resize', onWindowResize, false);
@@ -518,61 +518,61 @@ function clearPickPosition() { }
 // END Touch events
 
 // many bad magic nums down here. shameful.
-// function onMouse(event: MouseEvent) {
-//     globalCounter++;
-//     // 1st mouse press
-//     // egg wifreame fades in
-//     if (globalCounter === 1) {
-//         isOvaBirth = true;
-//         // knot core fade in
-//     } else if (globalCounter === 2) {
-//         isEggBirth = true;
-//         // tethers fade in
-//     } else if (globalCounter === 3) {
-//         isOvaCiliaBirth = true;
-//     }
+function onMouse(event: MouseEvent) {
+    globalCounter++;
+    // 1st mouse press
+    // egg wifreame fades in
+    if (globalCounter === 1) {
+        isOvaBirth = true;
+        // knot core fade in
+    } else if (globalCounter === 2) {
+        isEggBirth = true;
+        // tethers fade in
+    } else if (globalCounter === 3) {
+        isOvaCiliaBirth = true;
+    }
 
-//     if (globalCounter > 3) {
+    if (globalCounter > 3) {
 
-//         // stage 1 - Tetrahedron core
-//         if (tetCounter < 11) {
-//             tet.setNode();
+        // stage 1 - Tetrahedron core
+        if (tetCounter < 11) {
+            tet.setNode();
 
-//             if (tetCounter < 5) {
-//                 let eggToTetLineMaterial = new THREE.LineBasicMaterial({ color: 0x669966 });
-//                 eggToTetLineMaterial.transparent = true;
-//                 eggToTetLineMaterial.opacity = .25;
-//                 const points : THREE.Vector3[] = [];
-//                 points.push(egg.position);
-//                 points.push(tet.nodes[tetCounter].position);
-//                 let eggToTetLineGeometry = new THREE.BufferGeometry().setFromPoints(points);
-//                 eggToTetLines.push(new THREE.Line(eggToTetLineGeometry, eggToTetLineMaterial))
-//                 scene.add(eggToTetLines[tetCounter]);
-//             }
-//             tetCounter++;
-//         }
+            if (tetCounter < 5) {
+                let eggToTetLineMaterial = new THREE.LineBasicMaterial({ color: 0x669966 });
+                eggToTetLineMaterial.transparent = true;
+                eggToTetLineMaterial.opacity = .25;
+                const points : THREE.Vector3[] = [];
+                points.push(egg.position);
+                points.push(tet.nodes[tetCounter].position);
+                let eggToTetLineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+                eggToTetLines.push(new THREE.Line(eggToTetLineGeometry, eggToTetLineMaterial))
+                scene.add(eggToTetLines[tetCounter]);
+            }
+            tetCounter++;
+        }
 
-//         // stage 2 - tendrils
-//         if (tetCounter == 11 && tendrilCounter < 5) {
-//             const pos = getScreenPos(new THREE.Vector2(event.clientX, event.clientY))
-//             //addTendril(pos);
-//             addTendril(new Vector3(tet.position.x + tet.nodes[tendrilCounter].position.x,
-//                 tet.position.y + tet.nodes[tendrilCounter].position.y,
-//                 tet.position.z + tet.nodes[tendrilCounter].position.z));
-//             tendrilCounter++;
-//         }
+        // stage 2 - tendrils
+        if (tetCounter == 11 && tendrilCounter < 5) {
+            const pos = getScreenPos(new THREE.Vector2(event.clientX, event.clientY))
+            //addTendril(pos);
+            addTendril(new Vector3(tet.position.x + tet.nodes[tendrilCounter].position.x,
+                tet.position.y + tet.nodes[tendrilCounter].position.y,
+                tet.position.z + tet.nodes[tendrilCounter].position.z));
+            tendrilCounter++;
+        }
 
-//         // stage 3 - cilia
-//         if (ciliaCounter++ == 15) {
-//             addCilia(3, .09, THREE.MathUtils.randFloat(.1, .7));
-//             isHoodReady = true;
-//         }
+        // stage 3 - cilia
+        if (ciliaCounter++ == 15) {
+            addCilia(3, .09, THREE.MathUtils.randFloat(.1, .7));
+            isHoodReady = true;
+        }
 
-//         if (isHoodReady && ciliaCounter > 16) {
-//             //addHood();
-//         }
-//     }
-// }
+        if (isHoodReady && ciliaCounter > 16) {
+            //addHood();
+        }
+    }
+}
 
     /*********************/
 

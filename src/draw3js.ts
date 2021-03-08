@@ -169,10 +169,17 @@ export function threeRenderCode({
     vid.applyMatrix4(new Matrix4().makeScale(scaleNum, scaleNum, 1))
 
     group.add(vid);
+
+    let leftMargin : number = 0.67; 
+    if( videoGroups.length <= 1 )
+    {
+      leftMargin = 0.5; 
+    }
+
     for (let i = 0; i < videoGroups.length; i++) {
       const group = videoGroups[i];
-      group.position.x = videoOverlapAmount * i + 0.5;
-      group.position.y = 0.5;
+      group.position.x = ( videoOverlapAmount * i ) + leftMargin;
+      group.position.y = 0.35;
 
       //leaving the overlapped videos for now
 

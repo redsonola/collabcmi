@@ -481,6 +481,8 @@ class LongPlayingNoteSampler
     playing : boolean = false; 
 
     LOWEST_WHILST_TOUCHING : number = -15;
+    HIGH_VOL_FOR_SCALE : number = 18; 
+    VOLUME_CAP : number = 15; 
 
     instrumentID : InstrumentID = -1; 
 
@@ -556,7 +558,10 @@ class LongPlayingNoteSampler
         {
             this.longSampler.forEach( (sampler)=>
             {
-                sampler.volume.rampTo( Scale.linear_scale( touchingXCorr, 0.099, 0.66, this.LOWEST_WHILST_TOUCHING, 20 ) );
+                let vol = Scale.linear_scale( touchingXCorr, 0.099, 0.66, this.LOWEST_WHILST_TOUCHING, this.HIGH_VOL_FOR_SCALE );
+                vol = Math.min( vol, this.VOLUME_CAP ); //try capping at 15
+                sampler.volume.rampTo( vol );
+                
                 // console.log( "touchingXCorr: " + touchingXCorr + " volume :" + sampler.volume.value );
             });
 
@@ -851,7 +856,9 @@ export class SonifierWithTuba {
             {
                 sampler.chain(vibrato, ampEnv, mainVolume.getVolume() );
             }
-            ampEnv.connect( waveForm ); 
+            ampEnv.connect( waveForm );
+            const SEQUENCER_VOLUME_VALUE = 9; //move to top
+            sampler.volume.value = SEQUENCER_VOLUME_VALUE;  
 
             i++; 
         });

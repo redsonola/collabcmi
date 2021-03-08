@@ -43,10 +43,10 @@ export function createOrthographicCamera(canvas, _width, _height) {
     updateSize(width, height) {
       const aspect = width / height;
 
-      camera.left = frustumSize * aspect / -2;
-      camera.right = frustumSize * aspect / 2;
-      camera.top = frustumSize / 2;
-      camera.bottom = frustumSize / -2;
+      camera.left = (frustumSize * aspect / -2)*0.75;
+      camera.right = (frustumSize * aspect / 2)*0.75;;
+      camera.top = (frustumSize / 2)*0.75;
+      camera.bottom = (frustumSize / -2)*0.75;
 
       camera.updateProjectionMatrix();
 
