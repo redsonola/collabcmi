@@ -263,7 +263,7 @@ export function createMessagingPeer<T>(mySuppliedId: string | undefined, serverP
         }
 
         case "ConnectToPeer": {
-          const conn = peer.connect(command.theirId);
+          const conn = peer.connect(command.theirId, { label: command.theirId, serialization: 'json' });
           listenToDataConnection(conn);
           break;
         }
