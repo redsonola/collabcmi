@@ -185,7 +185,7 @@ class DrawHead extends DrawSkeletonIntersectLine {
                 0                 // aRotation
             );
             
-            points = curve.getPoints( 50 );
+            points = curve.getPoints( 25 );
             // points2.forEach( ( point ) => { points.push( new THREE.Vector3( points2. ) ) } );
         }
 
