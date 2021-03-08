@@ -478,6 +478,7 @@
       if (!video) return;
 
       posenet.updateVideo(video);
+
       three.dispatch({ type: "AddVideo", personId: myId, video });
 
       if (idToCall) {
@@ -608,7 +609,6 @@
 
   <PrintPose keypoints={corrData} />
 </DebugPanel> -->
--->
 
 <canvas
   class="videoAndPoseCanvas"

@@ -114,7 +114,7 @@ export class DrawSkeletonIntersectLine {
     constructor(minConfidence:number =0.4, personId: string = "") {
         this.geometry = new THREE.BufferGeometry();
         this.mesh = null; 
-        this.material = new THREE.LineBasicMaterial({ color: 0x5050ff, transparent:true, opacity:0.5});
+        this.material = new THREE.LineBasicMaterial({ color: 0x505055, transparent:true, opacity:0.75});
         this.personId = personId;
         this.limbs = [];
         this.minConfidence = minConfidence; 
@@ -157,7 +157,7 @@ export class DrawSkeletonIntersectLine {
 class DrawHead extends DrawSkeletonIntersectLine {
     center : THREE.Vector3 | null  = null ; 
     radius : number = 0;
-    ellipseCurve : THREE.EllipseCurve = new THREE.EllipseCurve(0,0,0,0, 0, 0, false, 0); 
+    ellipseCurve : THREE.EllipseCurve = new THREE.EllipseCurve(0, 0, 0, 0, 0, 0, false, 0); 
     
     updateHead(center : THREE.Vector3, radius : number ) : void
     {
@@ -182,7 +182,6 @@ class DrawHead extends DrawSkeletonIntersectLine {
             this.ellipseCurve.aEndAngle = 2 * Math.PI; 
             this.ellipseCurve.aClockwise = false;
             this.ellipseCurve.aRotation = 0;
-
 
             // const curve = new THREE.EllipseCurve(
             //     this.center.x,  this.center.y,            // ax, aY
