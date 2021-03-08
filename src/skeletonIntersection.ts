@@ -112,7 +112,7 @@ export class DrawSkeletonIntersectLine {
     constructor(minConfidence:number =0.4, personId: string = "") {
         this.geometry = null;
         this.mesh = null; 
-        this.material = new THREE.LineBasicMaterial({ color: 0xff55ff });
+        this.material = new THREE.LineBasicMaterial({ color: #8080ff });
         this.personId = personId;
         this.limbs = [];
         this.minConfidence = minConfidence; 
