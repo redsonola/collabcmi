@@ -179,7 +179,7 @@ export function threeRenderCode({
     for (let i = 0; i < videoGroups.length; i++) {
       const group = videoGroups[i];
       group.position.x = ( videoOverlapAmount * i ) + leftMargin;
-      group.position.y = 0.35;
+      group.position.y = 0.3;
 
       //leaving the overlapped videos for now
 

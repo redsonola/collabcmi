@@ -43,7 +43,7 @@ renderer.autoClear = true;
 scene.background = null; 
 document.body.appendChild(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
-document.addEventListener('click', onMouse, false);
+// document.addEventListener('click', onMouse, false);
 
 //test
 let globalCounter: number = 0;
