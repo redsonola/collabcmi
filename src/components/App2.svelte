@@ -541,6 +541,7 @@
   <rect width="100%" height="16" fill="gray" rx="3" />
   <rect width="{volumeMeterReading * 100}%" height="16" fill="#87CEFA" rx="3" />
 </svg><br/>
+Turn up the volume to hear sound.
 
   <!-- <text>{volumeMeterReading}</text> -->
 <!-- <br/><br/> -->
