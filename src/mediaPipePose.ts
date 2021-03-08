@@ -105,7 +105,8 @@ export abstract class PoseClass {
 }
 
 const defaultGetPoseParams: PoseParams = {
-  locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+  locateFile: (file) => `/mediapipe/${file}`
+  // locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
 }
 
 export const getPose = (p?: Partial<PoseParams>) => {

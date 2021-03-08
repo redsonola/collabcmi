@@ -36,6 +36,7 @@
     "uuid": "^8.3.2"
   },
   "scripts": {
+    "postinstall": "rm -rf public/mediapipe || true; cp -R node_modules/@mediapipe/pose public/mediapipe",
     "mkcert": "mkcert -install && mkcert localhost",
     "start": "cross-env HTTPS=true SSL_CRT_FILE=localhost.pem craco start",
     "pre-build": "rm -rf build || true",
