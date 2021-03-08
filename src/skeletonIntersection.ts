@@ -101,16 +101,18 @@ export class WhereTouch {
 
 export class DrawSkeletonIntersectLine {
 
-    geometry: BufferGeometry | null;
+    geometry: BufferGeometry = new THREE.BufferGeometry(); ;
     material: THREE.LineBasicMaterial;
     personId: string;
     limbs: LimbIntersect[];
     mesh : THREE.Mesh | null;
     minConfidence : number; 
+    line : THREE.Line = new THREE.Line();
+
 
 
     constructor(minConfidence:number =0.4, personId: string = "") {
-        this.geometry = null;
+        this.geometry = new THREE.BufferGeometry();
         this.mesh = null; 
         this.material = new THREE.LineBasicMaterial({ color: 0x5050ff, transparent:true, opacity:0.5});
         this.personId = personId;
@@ -132,10 +134,6 @@ export class DrawSkeletonIntersectLine {
         const group = new THREE.Group();
         let points : THREE.Vector3[] = []; 
 
-        if  (this.geometry ) {
-            this.geometry.dispose();
-        }
-
         this.limbs.forEach(limb => {
             const keypoints = limb.getKeypoints(); 
             if( keypoints[0].position.x && keypoints[0].position.y && keypoints[1].position.x && keypoints[1].position.y &&
@@ -147,8 +145,10 @@ export class DrawSkeletonIntersectLine {
                     // console.log( "here:" + keypoints[0].position.x + "," + keypoints[0].position.y + " to " + keypoints[1].position.x + "," + keypoints[1].position.y  );
             } });
 
-        this.geometry = new THREE.BufferGeometry().setFromPoints(points); 
-        group.add(new THREE.Line(this.geometry, this.material));
+            this.geometry.setFromPoints(points);
+            this.line.geometry = this.geometry; 
+            this.line.material = this.material; 
+            group.add(this.line);
 
         return group;
     }
@@ -157,6 +157,7 @@ export class DrawSkeletonIntersectLine {
 class DrawHead extends DrawSkeletonIntersectLine {
     center : THREE.Vector3 | null  = null ; 
     radius : number = 0;
+    ellipseCurve : THREE.EllipseCurve = new THREE.EllipseCurve(0,0,0,0, 0, 0, false, 0); 
     
     updateHead(center : THREE.Vector3, radius : number ) : void
     {
@@ -168,32 +169,39 @@ class DrawHead extends DrawSkeletonIntersectLine {
         const group = new THREE.Group();
         let points : THREE.Vector2[] = []; 
 
-        if  (this.geometry ) {
-            this.geometry.dispose();
-        }    
-
         if( this.center )
         {
             // 360 full circle will be drawn clockwise
             let x_radius : number = this.radius; 
             let y_radius : number = this.radius + (this.radius*0.2)
-            const curve = new THREE.EllipseCurve(
-                this.center.x,  this.center.y,            // ax, aY
-                x_radius, y_radius,           // xRadius, yRadius
-                0,  2 * Math.PI,  // aStartAngle, aEndAngle
-                false,            // aClockwise
-                0                 // aRotation
-            );
+            this.ellipseCurve.aX = this.center.x; 
+            this.ellipseCurve.aY = this.center.y; 
+            this.ellipseCurve.xRadius = x_radius; 
+            this.ellipseCurve.yRadius = y_radius; 
+            this.ellipseCurve.aStartAngle = 0; 
+            this.ellipseCurve.aEndAngle = 2 * Math.PI; 
+            this.ellipseCurve.aClockwise = false;
+            this.ellipseCurve.aRotation = 0;
+
+
+            // const curve = new THREE.EllipseCurve(
+            //     this.center.x,  this.center.y,            // ax, aY
+            //     x_radius, y_radius,           // xRadius, yRadius
+            //     0,  2 * Math.PI,  // aStartAngle, aEndAngle
+            //     false,            // aClockwise
+            //     0                 // aRotation
+            // );
             
-            points = curve.getPoints( 25 );
+            points = this.ellipseCurve.getPoints( 30 );
             // points2.forEach( ( point ) => { points.push( new THREE.Vector3( points2. ) ) } );
         }
 
-        this.geometry = new THREE.BufferGeometry().setFromPoints(points); 
-        group.add(new THREE.Line(this.geometry, this.material));
+        this.geometry.setFromPoints(points);
+        this.line.geometry = this.geometry; 
+        this.line.material = this.material; 
+        group.add(this.line);
 
         return group;
- 
     }
 
 }
