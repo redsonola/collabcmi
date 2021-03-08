@@ -6,7 +6,7 @@
 
   import { videoSubscription } from '../threejs/cameraVideoElement';
   import { goLoop, sleep } from '../threejs/promiseHelpers';
-  import { initPosenet, PosenetSetup } from "../threejs/posenet";
+  import { initPosenet, PosenetSetup } from "../threejs/mediapipePose";
   import { createMessagingPeer, getServerParams, PeerCommands, PeerMessageReceived } from '../peerJs';
 
   // import Balls from "./Balls.svelte";
@@ -383,6 +383,7 @@
     });
 
     let posenet: PosenetSetup | undefined;
+;
     const myVideoUnsubscribe = webcamVideo.subscribe(async video => {
       if (!video) return;
 
@@ -390,6 +391,26 @@
         posenet.updateVideo(video);
       } else {
         posenet = await initPosenet(video);
+        posenet.onResults(pose => {
+          fpsTracker.refreshLoop();
+
+          const size = (posenet as PosenetSetup).getSize();
+          participant.setSize(size.width, size.height);
+          participant.addKeypoint(pose.keypoints);
+          keypointsUpdated(myId, pose, size);
+          
+          // send to peers w/ data connections
+          peerIds
+            .filter(theirId => peerConnections[theirId]?.data === true)
+            .forEach(theirId => {
+              dispatchToPeer({
+                type: 'SendPeerMessage',
+                message: { type: "Pose", pose, size },
+                myId,
+                theirId
+              });
+          });
+        });
       }
       three.dispatch({ type: 'AddVideo', personId: myId, video });
 
@@ -428,31 +449,6 @@
       //   touchMusicalPhrases.clearMessages(); 
       // }
 
-    });
-
-    goLoop(async () => {
-      if (stopped) return goLoop.STOP_LOOP;
-      if (!myId || !posenet) return sleep(100);
-      fpsTracker.refreshLoop();
-
-      const pose = await posenet.getPose();
-      const size = posenet.getSize();
-      participant.setSize(size.width, size.height);
-      participant.addKeypoint(pose.keypoints);
-      keypointsUpdated(myId, pose, size);
-
-      
-      // send to peers w/ data connections
-      peerIds
-        .filter(theirId => peerConnections[theirId]?.data === true)
-        .forEach(theirId => {
-          dispatchToPeer({
-            type: 'SendPeerMessage',
-            message: { type: "Pose", pose, size },
-            myId,
-            theirId
-          });
-      });
     });
 
     return () => {
