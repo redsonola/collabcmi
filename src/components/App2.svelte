@@ -4,6 +4,7 @@
   import DebugPanel from "./DebugPanel.svelte";
   import PrintPose from "./PrintPose.svelte";
   import Loading from "./Loading.svelte";
+  import { interceptFileRequest } from "../hackXhrInterceptor";
 
   import { videoSubscription } from "../threejs/cameraVideoElement";
   import { goLoop, sleep } from "../threejs/promiseHelpers";
@@ -71,6 +72,16 @@
   export const useDevPeerServer = false;
 
   let loading = true;
+  let progress = "0%";
+  interceptFileRequest(
+    "/mediapipe/pose_solution_packed_assets.data",
+    (req: XMLHttpRequest) => {
+      req.addEventListener("progress", (e) => {
+        progress = Math.round((e.loaded / e.total) * 100) + "%";
+        if (progress === "100%") progress = "starting";
+      });
+    }
+  );
 
   const messages = peerMessageStore();
 
@@ -622,7 +633,7 @@
 </div>
 
 {#if loading}
-  <Loading />
+  <Loading {progress} />
 {/if}
 
 <!-- <Balls /> -->
