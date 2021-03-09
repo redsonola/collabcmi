@@ -12,6 +12,16 @@ import * as THREE from 'three';
 //import * as THREE from 'three';
 import { GeometryDetail } from './IJGUtils';
 
+//will clean this up later -- optimizing like an mf --CDB
+export function addVertToPositions( pos : any, curIndex:number, v : THREE.Vector3 ) : number
+{
+    pos[ curIndex++ ] = v.x;
+    pos[ curIndex++ ] = v.y;
+    pos[ curIndex++ ] = v.z;
+
+    return curIndex; 
+}
+
 export class VerletNode extends THREE.Mesh {
 
   private posOld: THREE.Vector3;

@@ -35,7 +35,7 @@ import { SkeletonTouch } from './SkeletonTouch'
 const scene: THREE.Scene = new THREE.Scene();
 const camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
     75, window.innerWidth / window.innerHeight, 0.001, 2000);
-let renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer( { alpha: true } );
+let renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer( { alpha: true, powerPreference: "high-performance" } );
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setClearColor(0x000000, 0);
 renderer.autoClear = true;
@@ -43,7 +43,7 @@ renderer.autoClear = true;
 scene.background = null; 
 document.body.appendChild(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
-// document.addEventListener('click', onMouse, false);
+document.addEventListener('click', onMouse, false);
 
 //test
 let globalCounter: number = 0;

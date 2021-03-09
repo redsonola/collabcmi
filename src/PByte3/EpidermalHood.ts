@@ -28,7 +28,7 @@ export class EpidermalHood extends THREE.Group {
     // cross slices
     slices: VerletStick[];
     sliceLines: THREE.Line[];
-    sliceGeoms: THREE.Geometry[];
+    sliceGeoms: THREE.BufferGeometry[];
     sliceMats: THREE.MeshBasicMaterial[];
 
     // hanging tendrils
