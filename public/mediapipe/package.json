@@ -1,12 +1,40 @@
 {
-  "name": "@mediapipe/pose",
+  "_from": "@mediapipe/pose@^0.2.1614787780",
+  "_id": "@mediapipe/pose@0.2.1614787780",
+  "_inBundle": false,
+  "_integrity": "sha512-RI7LqVTapst0JanuY4ZbGpsYM/oqog+6Bb3OjBHeIY0rN4ZiBZr4FLWzrEWLghOsPcrtbUzqjwx3CXPi019onA==",
+  "_location": "/@mediapipe/pose",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "range",
+    "registry": true,
+    "raw": "@mediapipe/pose@^0.2.1614787780",
+    "name": "@mediapipe/pose",
+    "escapedName": "@mediapipe%2fpose",
+    "scope": "@mediapipe",
+    "rawSpec": "^0.2.1614787780",
+    "saveSpec": null,
+    "fetchSpec": "^0.2.1614787780"
+  },
+  "_requiredBy": [
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/@mediapipe/pose/-/pose-0.2.1614787780.tgz",
+  "_shasum": "0627fc235b1d435304ff7121ca0ad640357e742d",
+  "_spec": "@mediapipe/pose@^0.2.1614787780",
+  "_where": "/Users/brent/code/collabcmi",
+  "author": {
+    "name": "mhays@google.com"
+  },
+  "bundleDependencies": false,
+  "deprecated": false,
   "description": "Mediapipe Pose Solution",
-  "version": "0.2.1614787780",
-  "author": "mhays@google.com",
-  "license": "Apache-2.0",
   "homepage": "https://google.github.io/mediapipe/solutions/pose",
+  "license": "Apache-2.0",
   "main": "",
+  "name": "@mediapipe/pose",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
-  }
+  },
+  "version": "0.2.1614787780"
 }
