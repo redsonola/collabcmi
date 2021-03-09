@@ -11,7 +11,7 @@
   import { initPosenet, PosenetSetup } from "../threejs/mediapipePose";
   import {
     createMessagingPeer,
-    getServerParams,
+    peerServerParams,
     PeerCommands,
     PeerMessageReceived,
   } from "../peerJs";
@@ -69,7 +69,6 @@
   // or, for the storybook app, you can just say this app is making the call or not.
   export let idToCall: string | null = querystringCallId || null;
   export let size: { width: number; height: number };
-  export const useDevPeerServer = false;
 
   let loading = true;
   let progress = "0%";
@@ -344,7 +343,7 @@
 
     const peer = createMessagingPeer<PoseMessage>(
       suppliedId,
-      getServerParams(useDevPeerServer)
+      peerServerParams
     );
     const dispatchToPeer = (x: PeerCommands<any>) => {
       messages.peerCommand(x);

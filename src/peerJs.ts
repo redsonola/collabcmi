@@ -2,25 +2,13 @@ import Peer from 'peerjs';
 import type { DataConnection, MediaConnection } from 'peerjs';
 import { waitFor } from './threejs/promiseHelpers';
 
-export function getServerParams(useDev = false) {
-  //const serverParams = {host:'peerjs-server.herokuapp.com', secure:false};
-  if (useDev) {
-    return {
-      host: window.location.hostname,
-      secure: true,
-      port: 9000,
-      path: '/peerServer',
-      iceTransportPolicy: "relay"
-    };
-  } else {
-    return {
-      host: 'spacebtw-peerserver.herokuapp.com',
-      secure: true,
-      port: 443,
-      path: '/'
-    };
-  }
-}
+export const peerServerParams: Peer.PeerJSOption = {
+  host: process.env.REACT_APP_PEER_SERVER_HOST || window.location.hostname,
+  port: process.env.REACT_APP_PEER_SERVER_PORT ? parseInt(process.env.REACT_APP_PEER_SERVER_PORT) : 9000,
+  path: process.env.REACT_APP_PEER_SERVER_PATH || "/",
+  secure: true,
+  // iceTransportPolicy: "relay"
+};
 
 export interface MyId {
   myId: string;
