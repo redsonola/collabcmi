@@ -111,8 +111,7 @@ const defaultGetPoseParams: PoseParams = {
 
 export const getPose = (p?: Partial<PoseParams>) => {
   const params = { ...defaultGetPoseParams, ...p };
-  const instance = new pose.Pose(params) as PoseClass;
-  return instance.initialize().then(() => instance);
+  return new pose.Pose(params) as PoseClass;
 };
 
 export const getPoseConnections: () => Readonly<number[][]> = () => pose.POSE_CONNECTIONS;

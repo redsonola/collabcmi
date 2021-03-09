@@ -46,22 +46,29 @@ const defaultConfig: pose.PoseOptions = {
   minTrackingConfidence: 0.5,
 };
 
-export async function initPosenet(
-  _vid: CameraVideo,
+export function initPosenet(
+  // _vid?: CameraVideo,
   config = defaultConfig
-): Promise<PosenetSetup> {
-  let running = true;
+): PosenetSetup {
+  let running = false;
   const timestamp = Date.now();
-  console.log('starting posenet', timestamp);
+  console.log('starting mediapipe', timestamp);
 
   // deactivate after disposing, until it's replaced
-  let vid = _vid;
+  let vid: CameraVideo | undefined;
 
-  const net = await pose.getPose();
-  net.setOptions(config);
+  const net = pose.getPose();
+  const inited = net.initialize().then(() => {
+    running = true;
+    nextPose();
+    net.setOptions(config);
+  })
 
   function updateVideo(_vid: CameraVideo) {
     vid = _vid;
+    if (!running) {
+      nextPose();
+    }
     const { width, height } = vid.getSize();
     if (!width || !height) throw new Error(`Video track needs dimensions, but was (${width}x${height}).`);
 
@@ -70,29 +77,34 @@ export async function initPosenet(
   }
 
   async function nextPose() {
-    if (!running) return;
-    await net.send({ image: _vid.videoElement });
+    if (!running || !vid) {
+      return;
+    };
+    await net.send({ image: vid.videoElement });
     setTimeout(nextPose);
   }
-  nextPose();
 
   async function updateConfig(config: pose.PoseOptions) {
+    await inited;
     net.setOptions(config);
   }
 
-  updateVideo(_vid);
+  // if (_vid) updateVideo(_vid);
   updateConfig(config);
 
+
+  function getSize() {
+    return vid?.getSize() || { width: 0, height: 0 };
+  }
+
   return {
-    getSize() {
-      return vid.getSize();
-    },
+    getSize,
     updateVideo,
     updateConfig,
     onResults: (handler) => {
       net.onResults(result => {
         const mapping = posenetToMediapipeIndices();
-        const { width, height } = vid.getSize();
+        const { width, height } = getSize();
         if (pose.resultHasLandmarks(result)) {
           let keypoints: posenet.Keypoint[] = []
           for (let i = 0; i < poseConstants.posePointCount; i++) {

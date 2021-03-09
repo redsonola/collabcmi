@@ -315,6 +315,7 @@
 
   async function init(suppliedId?: string) {
     let stopped = false;
+    const posenet: PosenetSetup = initPosenet();
 
     mainVolume = new MainVolume((val) => {
       volumeMeterReading = val;
@@ -341,10 +342,7 @@
       midiFileBass
     );
 
-    const peer = createMessagingPeer<PoseMessage>(
-      suppliedId,
-      peerServerParams
-    );
+    const peer = createMessagingPeer<PoseMessage>(suppliedId, peerServerParams);
     const dispatchToPeer = (x: PeerCommands<any>) => {
       messages.peerCommand(x);
       return peer.dispatch(x);
@@ -454,36 +452,32 @@
       }
     });
 
-    let posenet: PosenetSetup | undefined;
+    posenet.onResults((pose) => {
+      loading = false;
+      fpsTracker.refreshLoop();
+
+      const size = (posenet as PosenetSetup).getSize();
+      participant.setSize(size.width, size.height);
+      participant.addKeypoint(pose.keypoints);
+      keypointsUpdated(myId, pose, size);
+
+      // send to peers w/ data connections
+      peerIds
+        .filter((theirId) => peerConnections[theirId]?.data === true)
+        .forEach((theirId) => {
+          dispatchToPeer({
+            type: "SendPeerMessage",
+            message: { type: "Pose", pose, size },
+            myId,
+            theirId,
+          });
+        });
+    });
+
     const myVideoUnsubscribe = webcamVideo.subscribe(async (video) => {
       if (!video) return;
 
-      if (posenet) {
-        posenet.updateVideo(video);
-      } else {
-        posenet = await initPosenet(video);
-        posenet.onResults((pose) => {
-          loading = false;
-          fpsTracker.refreshLoop();
-
-          const size = (posenet as PosenetSetup).getSize();
-          participant.setSize(size.width, size.height);
-          participant.addKeypoint(pose.keypoints);
-          keypointsUpdated(myId, pose, size);
-
-          // send to peers w/ data connections
-          peerIds
-            .filter((theirId) => peerConnections[theirId]?.data === true)
-            .forEach((theirId) => {
-              dispatchToPeer({
-                type: "SendPeerMessage",
-                message: { type: "Pose", pose, size },
-                myId,
-                theirId,
-              });
-            });
-        });
-      }
+      posenet.updateVideo(video);
       three.dispatch({ type: "AddVideo", personId: myId, video });
 
       if (idToCall) {
