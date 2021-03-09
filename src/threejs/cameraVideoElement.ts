@@ -4,9 +4,9 @@ import { waitUntil } from "./promiseHelpers";
 
 function startCamera(videoElement: HTMLVideoElement): Promise<MediaStream> {
   if (navigator.mediaDevices.getUserMedia) {
-    return navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 }, audio: true })
+    return navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 }, audio: false })
       .then((stream) => {
-        videoElement.srcObject = stream;        
+        videoElement.srcObject = stream;
         return stream;
       })
       .catch((err0r) => {
