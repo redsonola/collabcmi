@@ -21,6 +21,17 @@ module.exports = {
       rule.oneOf = [svelteRule, ...rule.oneOf];
       // webpackConfig.module.rules[2].oneOf.push(svelteRule);
       // webpackConfig.module.rules = [svelteRule, ...webpackConfig.module.rules];
+      // fs.writeFileSync('webpackConfig.json',JSON.stringify(webpackConfig, null, '    '))
+      // return;
+      // webpackConfig.mode = "development";
+      // webpackConfig.plugins[2].NODE_ENV = "development";
+      // webpackConfig.plugins[4].definitions["process.env"].NODE_ENV = "\"development\"";
+
+      // webpackConfig.optimization = false;
+      webpackConfig.optimization.minimize = false;
+      webpackConfig.optimization.runtimeChunk = false;
+      webpackConfig.optimization.splitChunks = false;
+
       return webpackConfig;
     }
   }

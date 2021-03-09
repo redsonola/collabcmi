@@ -331,8 +331,7 @@ function render() {
     renderer.clearDepth();
 }
 
-var animate = function () {
-    requestAnimationFrame(animate);
+function animate() {
     renderer.clear();
     // controls.autoRotate = true;
     camera.lookAt(scene.position); //0,0,0
@@ -429,6 +428,8 @@ var animate = function () {
     // controls.update()
     updateNodes();
     render();
+
+    requestAnimationFrame(animate);
 };
 
 //note: call this in the main -- App2.svelte
