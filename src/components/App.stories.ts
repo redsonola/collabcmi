@@ -1,4 +1,3 @@
-import AppComponent from './App.svelte';
 import App2Component from './App2.svelte';
 import App2ComponentX2 from './2Apps.svelte';
 import CallComponent from './Call.svelte';
@@ -9,9 +8,6 @@ export default {
 
 export const AppX2 = () => ({
   Component: App2ComponentX2
-});
-export const App = () => ({
-  Component: AppComponent
 });
 
 export const App2 = () => ({

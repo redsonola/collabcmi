@@ -1,3 +1,3 @@
 rm -rf ./build
 npm run build
-npm run build-storybook
+# npm run build-storybook
