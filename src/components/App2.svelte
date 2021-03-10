@@ -4,11 +4,12 @@
   // import DebugPanel from "./DebugPanel.svelte";
   // import PrintPose from "./PrintPose.svelte";
   import Loading from "./Loading.svelte";
-  import { interceptFileRequest } from "../hackXhrInterceptor";
+  // import { interceptFileRequest } from "../hackXhrInterceptor";
 
   import { videoSubscription } from "../threejs/cameraVideoElement";
   import { goLoop, sleep } from "../threejs/promiseHelpers";
-  import { initPosenet } from "../threejs/mediapipePose";
+  import { initPosenet } from "../threejs/posenetcopy";
+  // import { initPosenet } from "../threejs/mediapipePose";
   import type { PosenetSetup } from "../threejs/mediapipePose";
   import {
     createMessagingPeer,
@@ -75,16 +76,26 @@
   export let size: { width: number; height: number };
 
   let loading = true;
+  let progressNumber = 0;
   let progress = "0%";
-  interceptFileRequest(
-    "/@mediapipe/pose/pose_solution_packed_assets.data",
-    (req: XMLHttpRequest) => {
-      req.addEventListener("progress", (e) => {
-        progress = Math.round((e.loaded / (e.total || 17002032)) * 100) + "%";
-        if (progress === "100%") progress = "starting";
-      });
-    }
-  );
+  $: progress = Math.min(Math.ceil(progressNumber), 100) + "%";
+
+  const loadInterval = setInterval(() => {
+    if (!loading)
+      clearInterval(loadInterval);
+    else
+      progressNumber = progressNumber + Math.random() * 2;
+  }, 5);
+
+  // interceptFileRequest(
+  //   "/@mediapipe/pose/pose_solution_packed_assets.data",
+  //   (req: XMLHttpRequest) => {
+  //     req.addEventListener("progress", (e) => {
+  //       progress = Math.round((e.loaded / (e.total || 17002032)) * 100) + "%";
+  //       if (progress === "100%") progress = "starting";
+  //     });
+  //   }
+  // );
 
   const messages = peerMessageStore();
 
@@ -322,7 +333,7 @@
 
   async function init(suppliedId?: string) {
     let stopped = false;
-    const posenet: PosenetSetup = initPosenet();
+    const posenet: PosenetSetup<any> = initPosenet();
 
     mainVolume = new MainVolume((val) => {
       volumeMeterReading = val;
@@ -463,7 +474,7 @@
       loading = false;
       fpsTracker.refreshLoop();
 
-      const size = (posenet as PosenetSetup).getSize();
+      const size = posenet.getSize();
       participant.setSize(size.width, size.height);
       participant.addKeypoint(pose.keypoints);
       keypointsUpdated(myId, pose, size);
@@ -533,6 +544,7 @@
       console.log(`Cleaning up app for ${myId}`);
       stopped = true;
       three.cleanup();
+      posenet.cleanup()
       callVideoUnsubscribe();
       myVideoUnsubscribe();
       dispatchToPeer({ type: "DisconnectEverything" });

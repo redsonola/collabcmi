@@ -132,6 +132,7 @@ async function getPoseNet(w, h) {
 }
 
 async function getPose(vid, net, w, h) {
+  throw new Error("getPose in main shouldn't run")
   //must add the following
   vid.width = w;
   vid.height = h;

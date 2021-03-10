@@ -31,11 +31,11 @@ const posenetToMediapipeIndices = () => {
   };
 };
 
-export interface PosenetSetup {
+export interface PosenetSetup<T> {
   cleanup: () => void;
   onResults: (handler: (results: posenet.Pose) => void) => void;
   getSize: () => { width: number, height: number };
-  updateConfig: (config: pose.PoseOptions) => void;
+  updateConfig: (config: T) => void;
   updateVideo: (CameraVideo) => void;
 }
 
@@ -49,7 +49,7 @@ const defaultConfig: pose.PoseOptions = {
 export function initPosenet(
   // _vid?: CameraVideo,
   config = defaultConfig
-): PosenetSetup {
+): PosenetSetup<pose.PoseOptions> {
   let running = false;
   const timestamp = Date.now();
   console.log('starting mediapipe', timestamp);

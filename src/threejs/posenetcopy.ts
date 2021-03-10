@@ -1,14 +1,8 @@
 import * as posenet from '@tensorflow-models/posenet';
-import type { CameraVideo } from '../threejs/cameraVideoElement';
-import { waitUntil } from './promiseHelpers';
+import type { CameraVideo } from './cameraVideoElement';
+import type { PosenetSetup } from './mediapipePose';
 
-export interface PosenetSetup {
-  cleanup: () => void;
-  getPose: () => Promise<posenet.Pose>;
-  getSize: () => { width: number, height: number };
-  updateConfig: (config: posenet.ModelConfig) => void;
-  updateVideo: (CameraVideo) => void;
-}
+// posenet.ModelConfig
 
 const defaultConfig: posenet.ModelConfig = {
   architecture: 'MobileNetV1',
@@ -28,28 +22,31 @@ const defaultConfig: posenet.ModelConfig = {
 //   inputResolution: { width: w, height: h },
 // }
 
-export async function initPosenet(
-  _vid: CameraVideo,
+export function initPosenet(
+  // _vid: CameraVideo,
   _config = defaultConfig
-): Promise<PosenetSetup> {
+): PosenetSetup<posenet.ModelConfig> {
   const timestamp = Date.now();
   console.log('starting posenet', timestamp);
 
   // deactivate after disposing, until it's replaced
   let active = true;
 
-  let vid = _vid;
+  let vid: CameraVideo | undefined;
   let config = _config;
 
-  let net = await posenet.load(config);
+  let net: posenet.PoseNet | undefined;
+  posenet.load(config).then(_net => {
+    net = _net
+  });
 
   function updateVideo(_vid: CameraVideo) {
     vid = _vid;
     const { width, height } = vid.getSize();
     if (!width || !height) throw new Error(`Video track needs dimensions, but was (${width}x${height}).`);
 
-    vid.videoElement.width = width;
-    vid.videoElement.height = height;
+    _vid.videoElement.width = width;
+    _vid.videoElement.height = height;
   }
 
   async function updateConfig(_config: posenet.ModelConfig) {
@@ -57,28 +54,41 @@ export async function initPosenet(
     const lastNet = net;
     net = await posenet.load(config);
     active = true;
-    lastNet.dispose();
+    lastNet?.dispose();
   }
 
-  updateVideo(_vid);
   updateConfig(_config);
+
+  const listeners: ((results: posenet.Pose) => void)[] = [];
+  async function getPose() {
+    if (!net || !vid) {
+      setTimeout(getPose, 100);
+    } else if (active) {
+      const pose = await net.estimateSinglePose(vid.videoElement, {
+        flipHorizontal: false
+      });
+      listeners.forEach(listener => listener(pose));
+      setTimeout(getPose);
+    }
+  }
+  getPose();
 
   return {
     getSize() {
-      return vid.getSize();
+      if (vid)
+        return vid.getSize();
+      else
+        return { width: 0, height: 0 };
     },
     updateVideo,
     updateConfig,
-    async getPose() {
-      await waitUntil(() => active);
-      return await net.estimateSinglePose(vid.videoElement, {
-        flipHorizontal: false
-      });
+    onResults: (listener) => {
+      listeners.push(listener);
     },
     cleanup() {
       console.log('stopping posenet', timestamp);
       active = false;
-      net.dispose();
+      net?.dispose();
     }
   };
 }

@@ -15,7 +15,7 @@ export const videoOverlapAmount = 0.66;
 
 export interface PoseVideo {
   video: CameraVideo;
-  posenet?: PosenetSetup;
+  posenet?: PosenetSetup<any>;
 }
 
 export interface ThreeRenderProps {
