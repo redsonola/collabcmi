@@ -1,5 +1,5 @@
 const preprocess = require('svelte-preprocess')();
-const nodePolyfills = require('rollup-plugin-node-polyfills');
+// const nodePolyfills = require('rollup-plugin-node-polyfills');
 
 /** @type {import("snowpack").SnowpackUserConfig } */
 module.exports = {

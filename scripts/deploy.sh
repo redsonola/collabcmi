@@ -1,4 +1,4 @@
-#./scripts/build.sh
+NODE_ENV=production  npm run build
 
 # https://s3.console.aws.amazon.com/s3/buckets/courtney-web-apps/?region=us-east-1&tab=overview
 aws s3 sync ./build s3://courtney-web-apps --delete
