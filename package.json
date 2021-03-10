@@ -24,7 +24,7 @@
     "three": "^0.120.1",
     "tone": "^14.7.58",
     "uuid": "^8.3.2",
-    "yrv": "0.0.35"
+    "yrv": "^0.0.38"
   },
   "scripts": {
     "start": "snowpack dev --secure",

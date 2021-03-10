@@ -2,7 +2,7 @@
 // import '@tensorflow/tfjs-backend-cpu';
 
 import { Buffer } from "buffer";
-import App from "./components/App2.svelte";
+import App from "./components/App.svelte";
 
 (window as any).Buffer = Buffer;
 

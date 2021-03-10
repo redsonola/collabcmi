@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import type { RouterState } from "yrv";
   import Call from "./Call.svelte";
   // import DebugPanel from "./DebugPanel.svelte";
   // import PrintPose from "./PrintPose.svelte";
@@ -54,8 +55,11 @@
   import "../Organism01";
   import { onVirtualTouch } from "../Organism01";
 
+  export let router: RouterState;
+  console.log({router})
+
   const webcamVideo = videoSubscription();
-  const videoSources = ["webcam", "/spacebtwTest.mp4", "/synchTestVideo.mp4"];
+  // const videoSources = ["webcam", "/spacebtwTest.mp4", "/synchTestVideo.mp4"];
 
   export let myId: string | undefined =
     new URL(window.location.href).searchParams.get("myid") || undefined;
