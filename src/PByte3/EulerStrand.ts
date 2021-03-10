@@ -8,7 +8,6 @@
 import * as THREE from 'three';
 import { EulerNode } from './EulerNode';
 import { EulerStick } from './EulerStick';
-import { addVertToPositions } from './VerletNode'; //lol
 
 //const tendrilCount: number = 20;
 export class EulerStrand extends THREE.Group {
@@ -22,12 +21,9 @@ export class EulerStrand extends THREE.Group {
     // controls spring tension between adjacent nodes
     elasticity: number;
     damping: number
-    geometry = new THREE.BufferGeometry();
+    geometry = new THREE.Geometry();
     material = new THREE.MeshBasicMaterial({ color: 0xffffff, });
     public tendril: THREE.Line;
-    vertices : THREE.Vector3[] = []; 
-    positions : Float32Array; 
-
 
 
     constructor(head: THREE.Vector3, tail: THREE.Vector3, segmentCount: number, elasticity: number = .5, damping: number = .725) {
@@ -42,7 +38,6 @@ export class EulerStrand extends THREE.Group {
         this.damping = damping;
         // encapsulaes stick data
         this.tendril = new THREE.Line();
-
 
 
         // local vars for segment calcuations
@@ -63,23 +58,9 @@ export class EulerStrand extends THREE.Group {
 
         for (var i = 0; i < this.segments.length; i++) {
             this.segments[i] = new EulerStick(this.nodes[i], this.nodes[i + 1], this.elasticity, this.damping);
-            this.vertices.push( this.segments[i].start.position );
-            if (i === this.segments.length - 1) { this.vertices.push(this.segments[i].end.position) }
+            this.geometry.vertices.push(this.segments[i].start.position);
+            if (i === this.segments.length - 1) { this.geometry.vertices.push(this.segments[i].end.position) }
         }
-
-
-        const MAX_POINTS = this.vertices.length; 
-        this.positions = new Float32Array( MAX_POINTS * 3 ); // 3 vertices per point
-        this.geometry.setAttribute( 'position', new THREE.BufferAttribute( this.positions, 3 ) );
-        this.geometry.setDrawRange( 0, MAX_POINTS ); 
-        let curIndex : number = 0;
-
-        const positions = this.geometry.attributes.positions.array; 
-        for(let i=0; i<this.vertices.length; i++)
-        {
-            curIndex = addVertToPositions( positions, curIndex, this.vertices[i] );
-        }
-        this.geometry.attributes.position.needsUpdate = true; 
 
         let lineMaterial = new THREE.LineBasicMaterial({ color: 0x22ff22, linewidth: 5 });
         this.tendril = new THREE.Line(this.geometry, lineMaterial);
@@ -104,15 +85,7 @@ export class EulerStrand extends THREE.Group {
         for (var i = 0; i < this.segmentCount; i++) {
             this.segments[i].constrainLen();
         }
-        // this.geometry.verticesNeedUpdate = true;
-
-        const positions = this.geometry.attributes.position.array; 
-        let curIndex : number = 0; 
-        for(let i=0; i<this.vertices.length; i++)
-        {
-            curIndex = addVertToPositions( positions, curIndex, this.vertices[i] );
-        }
-        this.geometry.attributes.position.needsUpdate = true; 
+        this.geometry.verticesNeedUpdate = true;
     }
 
     public constrainBounds(bounds: THREE.Vector3): void {

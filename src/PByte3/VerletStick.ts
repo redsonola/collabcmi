@@ -24,11 +24,9 @@ export class VerletStick extends THREE.Group {
   end: VerletNode;
   len: number;
   line: THREE.Line
-  lineGeometry = new THREE.BufferGeometry();
+  lineGeometry = new THREE.Geometry();
   lineMaterial: THREE.LineBasicMaterial;
   isVisible: boolean
-  vertices : THREE.Vector3[] = []; 
-  positions : Float32Array; 
 
 
   constructor(start: VerletNode, end: VerletNode, stickTension: number = .4, anchorTerminal: number = 0, isVisible: boolean = true) {
@@ -40,26 +38,8 @@ export class VerletStick extends THREE.Group {
     this.anchorTerminal = anchorTerminal;
     this.isVisible = isVisible;
     this.lineMaterial = new THREE.LineBasicMaterial({ color: 0xcc55cc });
-
-    //this can be re-factored optimizing like an mf
-    this.vertices.push(this.start.position);
-    this.vertices.push(this.end.position);
-
-    const MAX_POINTS = 2; 
-    this.positions = new Float32Array( MAX_POINTS * 3 ); // 3 vertices per point
-    this.lineGeometry.setAttribute( 'position', new THREE.BufferAttribute( this.positions, 3 ) );
-    this.lineGeometry.setDrawRange( 0, MAX_POINTS ); 
-
-
-    let curIndex : number = 0; 
-    const positions = this.lineGeometry.attributes.position.array; 
-    for(let i=0; i<this.vertices.length; i++)
-    {
-        curIndex = addVertToPositions( positions, curIndex, this.vertices[i] );
-    }
-    this.lineGeometry.attributes.position.needsUpdate = true; 
-    /*******/ 
-
+    this.lineGeometry.vertices.push(this.start.position);
+    this.lineGeometry.vertices.push(this.end.position);
     this.lineMaterial = new THREE.LineBasicMaterial({ color: 0xcc55cc });
     this.line = new THREE.Line(this.lineGeometry, this.lineMaterial);
     this.lineMaterial.transparent = true;
@@ -105,15 +85,7 @@ export class VerletStick extends THREE.Group {
       this.end.position.y -= delta.y * (node2ConstrainFactor * this.stickTension * difference);
       this.end.position.z -= delta.z * (node2ConstrainFactor * this.stickTension * difference);
     }
-    // this.lineGeometry.verticesNeedUpdate = true;
-
-    let positions = this.lineGeometry.attributes.position.array; 
-    let curIndex : number = 0; 
-    for(let i=0; i<this.vertices.length; i++)
-    {
-        curIndex = addVertToPositions( positions, curIndex, this.vertices[i] );
-    }
-    this.lineGeometry.attributes.position.needsUpdate = true;  
+    this.lineGeometry.verticesNeedUpdate = true;
     this.lineMaterial.needsUpdate = true;
 
     if (!this.isVisible) {
