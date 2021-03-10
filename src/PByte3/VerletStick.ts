@@ -11,7 +11,8 @@
 //----------------------------------------------
 
 import * as THREE from 'three';
-import { VerletNode, addVertToPositions } from './VerletNode';
+import { addVertToPositions } from './VerletNode';
+import type { VerletNode } from './VerletNode';
 
 
 export class VerletStick extends THREE.Group {

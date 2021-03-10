@@ -265,17 +265,17 @@ class SamplerFactory
 
         sampler = new SamplerWithID({
 
-            "C1": "Cello loudC1.wav",
-            "A1": "Cello loudA1.wav",
-            "C2": "Cello loudC2.wav",
-            "A2": "Cello loudA2.wav",
-            "C3": "Cello loudC3.wav",
-            "A3": "Cello loudA3.wav",
-            "C4": "Cello loudC4.wav",
-            "A4": "Cello loudA4.wav"
+            "C1": "Cello_loudC1.wav",
+            "A1": "Cello_loudA1.wav",
+            "C2": "Cello_loudC2.wav",
+            "A2": "Cello_loudA2.wav",
+            "C3": "Cello_loudC3.wav",
+            "A3": "Cello_loudA3.wav",
+            "C4": "Cello_loudC4.wav",
+            "A4": "Cello_loudA4.wav"
         },
         {
-            baseUrl: "./audio_samples/Cello Loud/"
+            baseUrl: "./audio_samples/Cello_Loud/"
         });
         sampler.id = InstrumentID.cello;
 
@@ -288,17 +288,17 @@ class SamplerFactory
 
         sampler = new SamplerWithID({
 
-            "C1": "Cello softC1.wav",
-            "A1": "Cello softA1.wav",
-            "C2": "Cello softC2.wav",
-            "A2": "Cello softA2.wav",
-            "C3": "Cello softC3.wav",
-            "A3": "Cello softA3.wav",
-            "C4": "Cello softC4.wav",
-            "A4": "Cello softA4.wav"
+            "C1": "Cello_softC1.wav",
+            "A1": "Cello_softA1.wav",
+            "C2": "Cello_softC2.wav",
+            "A2": "Cello_softA2.wav",
+            "C3": "Cello_softC3.wav",
+            "A3": "Cello_softA3.wav",
+            "C4": "Cello_softC4.wav",
+            "A4": "Cello_softA4.wav"
         },
         {
-            baseUrl: "./audio_samples/Cello Soft/"
+            baseUrl: "./audio_samples/Cello_Soft/"
         });
         sampler.id = InstrumentID.cello;
 
@@ -312,17 +312,17 @@ class SamplerFactory
 
         sampler = new SamplerWithID({
 
-            "C1": "Cello stabsC1.wav",
-            "A1": "Cello stabsA1.wav",
-            "C2": "Cello stabsC2.wav",
-            "A2": "Cello stabsA2.wav",
-            "C3": "Cello stabsC3.wav",
-            "A3": "Cello stabsA3.wav",
-            "C4": "Cello stabsC4.wav",
-            "A4": "Cello stabsA4.wav"
+            "C1": "Cello_stabsC1.wav",
+            "A1": "Cello_stabsA1.wav",
+            "C2": "Cello_stabsC2.wav",
+            "A2": "Cello_stabsA2.wav",
+            "C3": "Cello_stabsC3.wav",
+            "A3": "Cello_stabsA3.wav",
+            "C4": "Cello_stabsC4.wav",
+            "A4": "Cello_stabsA4.wav"
         },
         {
-            baseUrl: "./audio_samples/Cello Stabs/"
+            baseUrl: "./audio_samples/Cello_Stabs/"
         });
         sampler.id = InstrumentID.cello;
 
@@ -336,15 +336,15 @@ class SamplerFactory
 
         sampler = new SamplerWithID({
 
-            "C1": "Large Clay Drum Mute 1.wav",
-            "A1": "Large Clay Drum Mute 2.wav",
-            "C2": "Large Clay Drum Mute 3.wav",
-            "A2": "Large Clay Drum Mute 4.wav",
-            "C3": "Large Clay Drum 2.wav",
-            "C4": "Large Clay Drum 3.wav",
+            "C1": "Large_Clay_Drum_Mute_1.wav",
+            "A1": "Large_Clay_Drum_Mute_2.wav",
+            "C2": "Large_Clay_Drum_Mute_3.wav",
+            "A2": "Large_Clay_Drum_Mute_4.wav",
+            "C3": "Large_Clay_Drum_2.wav",
+            "C4": "Large_Clay_Drum_3.wav",
         },
         {
-            baseUrl: "./audio_samples/Large Clay Drum/"
+            baseUrl: "./audio_samples/Large_Clay_Drum/"
         });
         sampler.id = InstrumentID.clayDrum;
 
@@ -357,17 +357,17 @@ class SamplerFactory
         let sampler : SamplerWithID; 
 
         sampler = new SamplerWithID({
-            "C1": "Cello pluckC1.wav",
-            "A1": "Cello pluckA1.wav",
-            "C2": "Cello pluckC2.wav",
-            "A2": "Cello pluckA2.wav",
-            "C3": "Cello pluckC3.wav",
-            "A3": "Cello pluckA3.wav",
-            "C4": "Cello pluckC4.wav",
-            "A4": "Cello pluckA4.wav"
+            "C1": "Cello_pluckC1.wav",
+            "A1": "Cello_pluckA1.wav",
+            "C2": "Cello_pluckC2.wav",
+            "A2": "Cello_pluckA2.wav",
+            "C3": "Cello_pluckC3.wav",
+            "A3": "Cello_pluckA3.wav",
+            "C4": "Cello_pluckC4.wav",
+            "A4": "Cello_pluckA4.wav"
         },
         {
-            baseUrl: "./audio_samples/Cello Pluck/"
+            baseUrl: "./audio_samples/Cello_Pluck/"
         });
         sampler.id = InstrumentID.pluckedcello;
 

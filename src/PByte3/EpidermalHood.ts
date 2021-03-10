@@ -6,11 +6,11 @@
 // Creates Jellyfish like epidermal hood, powered by verlet strands
 
 import * as THREE from 'three';
-import { VerletNode } from './VerletNode';
 import { VerletStick } from './VerletStick';
 import { VerletStrand } from './VerletStrand';
 import { AnchorPoint, Propulsion, VerletMaterials, GeometryDetail } from './IJGUtils';
-import { Color, Vector3 } from 'three';
+import { Vector3 } from 'three';
+import type { VerletNode } from './VerletNode';
 
 export class EpidermalHood extends THREE.Group {
 

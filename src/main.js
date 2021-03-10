@@ -13,8 +13,6 @@ import * as posenet from '@tensorflow-models/posenet';
 import * as Tone from "tone";
 import * as soundDesign from './soundDesignSpaceBtwSketch1.js';
 
-import * as poseMoAnalysis from "./skeletonMotionAnalysis.js";
-
 import Peer from 'peerjs/dist/peerjs.js';
 
 import * as SpaceBtwMessage from "./SpaceBtwMessage.js";
@@ -22,11 +20,8 @@ import { Participant } from "./participant.ts"
 
 import { SonifierWithTuba } from "./xcorrSonify.ts";
 
-import * as PoseIndex from './poseConstants.js';
 import * as Scale from './scale.ts';
-import * as PoseMatch from './poseMatching.ts';
 
-import { SkeletonHatchedLines } from './HatchedLines';
 import * as THREE from 'three';
 
 import { Tango332Riffs } from './midiConversion'
@@ -85,6 +80,7 @@ let renderer = null;
 
 function startThreeJS(w, h)
 {
+  throw new Error('startThreeJS main.js???')
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera( 75, w / h, 0.1, 1000 );
 

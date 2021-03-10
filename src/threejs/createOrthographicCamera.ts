@@ -30,7 +30,7 @@ export function createOrthographicCamera(canvas, _width, _height) {
 
   camera.lookAt(new Vector3(100, 100, 0));
   camera.updateMatrixWorld();
-  const renderer = new WebGLRenderer({ canvas, alpha: true, antialias: true });
+  const renderer = new WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "low-power" });
   renderer.setClearColor(0x000000, 0);
   renderer.localClippingEnabled = true;
   renderer.setPixelRatio(window.devicePixelRatio);

@@ -2,8 +2,7 @@
 //Note: 8/12/2020 OK, found a pose matching algorithm from above, so I think I can just use this to estimate poses IRL
 
 // Great npm package for computing cosine similarity  
-const similarity = require('compute-cosine-similarity');
-var l2norm = require( 'compute-l2norm' );
+import l2norm from 'compute-l2norm';
 
 
 //This didn't work as well.....

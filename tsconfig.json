@@ -1,30 +1,33 @@
 {
-  "extends": "@tsconfig/svelte/tsconfig.json",
-  "compilerOptions": {
-    "target": "es6",
-    "downlevelIteration": true,
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "ESNext"
-    ],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": false,
-    "module": "esnext",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react",
-    "noImplicitAny": false,
-    "checkJs": false,
-    "importsNotUsedAsValues": "preserve"
-  },
-  "include": [
-    "src"
-  ]
+	"extends": "@tsconfig/svelte/tsconfig.json",
+	"compilerOptions": {
+		"lib": ["DOM", "ES2017", "ESNext", "WebWorker"],
+		"types": ["svelte", "node"],
+		"strictFunctionTypes": false,
+		"importsNotUsedAsValues": "preserve"
+	},
+	"include": ["src/**/*", "src/node_modules/**/*"],
+	"exclude": ["node_modules/*", "__sapper__/*", "static/*"],
+	"target": "esnext",
+
+	"downlevelIteration": true,
+	"lib": [
+		"node",
+		"dom",
+		"dom.iterable",
+		"ESNext"
+	],
+	"allowJs": true,
+	"skipLibCheck": true,
+	"esModuleInterop": true,
+	"allowSyntheticDefaultImports": true,
+	"strict": false,
+	"forceConsistentCasingInFileNames": false,
+	"module": "esnext",
+	"resolveJsonModule": true,
+	"isolatedModules": true,
+	"noEmit": true,
+	"jsx": "react",
+	"noImplicitAny": false,
+	"checkJs": false,
 }

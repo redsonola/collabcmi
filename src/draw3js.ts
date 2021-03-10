@@ -8,7 +8,6 @@ import { createOrthographicCamera } from './threejs/createOrthographicCamera';
 import type { CameraVideo } from './threejs/cameraVideoElement';
 import type { PosenetSetup } from './threejs/mediapipePose';
 import type { Pose } from '@tensorflow-models/posenet';
-import type { Size } from './components/PoseMessages';
 import { orderParticipantID } from './participant'
 import type { SkeletionIntersection } from './skeletonIntersection';
 

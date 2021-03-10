@@ -1,61 +1,11 @@
 /**
  * @mediapipe/pose doesn't have types. It just loads shiz into the
  * global window object.
- * google's example: https://codepen.io/mediapipe/pen/jOMbvxw
+ * google's example: https://codepen.io/mediapipe/pen/RwGWYJw
  */
-import * as pose from "@mediapipe/pose/pose";
+import "@mediapipe/pose/pose";
 import { Vector3 } from "three";
 
-export type PoseLandmarkLeft =
-  | "LEFT_ANKLE"
-  | "LEFT_EAR"
-  | "LEFT_ELBOW"
-  | "LEFT_EYE"
-  | "LEFT_EYE_INNER"
-  | "LEFT_EYE_OUTER"
-  | "LEFT_FOOT_INDEX"
-  | "LEFT_HEEL"
-  | "LEFT_HIP"
-  | "LEFT_INDEX"
-  | "LEFT_KNEE"
-  | "LEFT_PINKY"
-  | "LEFT_RIGHT"
-  | "LEFT_SHOULDER"
-  | "LEFT_THUMB"
-  | "LEFT_WRIST";
-
-export type PoseLandmarkNeutral =
-  | "NOSE";
-
-export type PoseLandmarkRight =
-  | "RIGHT_ANKLE"
-  | "RIGHT_EAR"
-  | "RIGHT_ELBOW"
-  | "RIGHT_EYE"
-  | "RIGHT_EYE_INNER"
-  | "RIGHT_EYE_OUTER"
-  | "RIGHT_FOOT_INDEX"
-  | "RIGHT_HEEL"
-  | "RIGHT_HIP"
-  | "RIGHT_INDEX"
-  | "RIGHT_KNEE"
-  | "RIGHT_LEFT"
-  | "RIGHT_PINKY"
-  | "RIGHT_SHOULDER"
-  | "RIGHT_THUMB"
-  | "RIGHT_WRIST";
-
-export interface LandmarkPoint {
-  x: number;
-  y: number;
-  z: number;
-  visibility: number;
-}
-
-export type PoseLandmark =
-  | PoseLandmarkLeft
-  | PoseLandmarkNeutral
-  | PoseLandmarkRight;
 export class LandmarkVector3 extends Vector3 {
   label: PoseLandmark | undefined;
   visibility: number = 0;
@@ -64,6 +14,13 @@ export class LandmarkVector3 extends Vector3 {
     this.label = label;
     this.visibility = landmark.visibility;
   }
+}
+
+export interface LandmarkPoint {
+  x: number;
+  y: number;
+  z: number;
+  visibility: number;
 }
 
 export interface PoseResultEmpty {
@@ -104,21 +61,67 @@ export abstract class PoseClass {
   abstract close: () => void;
 }
 
+export type PoseLandmarkLeft =
+  | "LEFT_ANKLE"
+  | "LEFT_EAR"
+  | "LEFT_ELBOW"
+  | "LEFT_EYE"
+  | "LEFT_EYE_INNER"
+  | "LEFT_EYE_OUTER"
+  | "LEFT_FOOT_INDEX"
+  | "LEFT_HEEL"
+  | "LEFT_HIP"
+  | "LEFT_INDEX"
+  | "LEFT_KNEE"
+  | "LEFT_PINKY"
+  | "LEFT_RIGHT"
+  | "LEFT_SHOULDER"
+  | "LEFT_THUMB"
+  | "LEFT_WRIST";
+
+export type PoseLandmarkNeutral =
+  | "NOSE";
+
+export type PoseLandmarkRight =
+  | "RIGHT_ANKLE"
+  | "RIGHT_EAR"
+  | "RIGHT_ELBOW"
+  | "RIGHT_EYE"
+  | "RIGHT_EYE_INNER"
+  | "RIGHT_EYE_OUTER"
+  | "RIGHT_FOOT_INDEX"
+  | "RIGHT_HEEL"
+  | "RIGHT_HIP"
+  | "RIGHT_INDEX"
+  | "RIGHT_KNEE"
+  | "RIGHT_LEFT"
+  | "RIGHT_PINKY"
+  | "RIGHT_SHOULDER"
+  | "RIGHT_THUMB"
+  | "RIGHT_WRIST";
+
+export type PoseLandmark =
+  | PoseLandmarkLeft
+  | PoseLandmarkNeutral
+  | PoseLandmarkRight;
+
 const defaultGetPoseParams: PoseParams = {
-  locateFile: (file) => `/mediapipe/${file}`
-  // locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+  locateFile: (file) => {
+    // return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
+    return `/@mediapipe/pose/${file}`;
+  },
 }
 
 export const getPose = (p?: Partial<PoseParams>) => {
   const params = { ...defaultGetPoseParams, ...p };
-  return new pose.Pose(params) as PoseClass;
+  return new (window as any).Pose(params) as PoseClass;
 };
 
-export const getPoseConnections: () => Readonly<number[][]> = () => pose.POSE_CONNECTIONS;
-export const getPoseLandmarks: () => Readonly<Record<PoseLandmark, number>> = () => pose.POSE_LANDMARKS;
-export const getPoseLandmarksLeft: () => Readonly<Record<PoseLandmarkLeft, number>> = () => pose.POSE_LANDMARKS_LEFT;
-export const getPoseLandmarksNeutral: () => Readonly<Record<PoseLandmarkNeutral, number>> = () => pose.POSE_LANDMARKS_NEUTRAL;
-export const getPoseLandmarksRight: () => Readonly<Record<PoseLandmarkRight, number>> = () => pose.POSE_LANDMARKS_RIGHT;
+export const getPoseConnections: () => Readonly<[number, number][]> = () => (window as any).POSE_CONNECTIONS;
+export const getPoseLandmarks: () => Readonly<Record<PoseLandmark, number>> = () => (window as any).POSE_LANDMARKS;
+export const getPoseLandmarksLeft: () => Readonly<Record<PoseLandmarkLeft, number>> = () => (window as any).POSE_LANDMARKS_LEFT;
+export const getPoseLandmarksNeutral: () => Readonly<Record<PoseLandmarkNeutral, number>> = () => (window as any).POSE_LANDMARKS_NEUTRAL;
+export const getPoseLandmarksRight: () => Readonly<Record<PoseLandmarkRight, number>> = () => (window as any).POSE_LANDMARKS_RIGHT;
 
 export function updateOrCreateLandmarkArray(landmarkVectors: LandmarkVector3[] = [], result?: PoseResult) {
   if (resultHasLandmarks(result)) {

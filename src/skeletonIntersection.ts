@@ -1,10 +1,7 @@
 import * as THREE from 'three';
 import type { Participant } from './participant';
-import type { AverageFilteredKeyPoints } from './averagedKeypoints';
 import * as PoseIndex from './poseConstants'
-import { Box3, BufferGeometry, Mesh, MeshBasicMaterial, Vector3 } from 'three';
-import { number } from 'mathjs';
-import { NumberTuple } from '@tensorflow-models/posenet/dist/keypoints';
+import type { BufferGeometry } from 'three';
 
 //need to put in utilities space
 function distance(keypoints: any, poseIndex1: number, poseIndex2: number): number {

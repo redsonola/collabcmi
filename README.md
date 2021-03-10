@@ -1,12 +1,35 @@
 # collabcmi
 
+> ✨ Bootstrapped with Create Snowpack App (CSA).
+
+## Available Scripts
+
+### npm start
+
+Runs the app in the development mode.
+Open https://localhost:8080 to view it in the browser.
+
+The page will reload if you make edits.
+You will also see any lint errors in the console.
+
+### npm run build
+
+Builds a static copy of your site to the `build/` folder.
+Your app is ready to be deployed!
+
+**For the best production performance:** Add a build bundler plugin like [@snowpack/plugin-webpack](https://github.com/snowpackjs/snowpack/tree/main/plugins/plugin-webpack) or [snowpack-plugin-rollup-bundle](https://github.com/ParamagicDev/snowpack-plugin-rollup-bundle) to your `snowpack.config.json` config file.
+
+### Q: What about Eject?
+
+No eject needed! Snowpack guarantees zero lock-in, and CSA strives for the same.
+
 ## Dependencies
 
-NodeJS
+### NodeJS
+
 NPM version 6.* or 7.1.2 or greater (or less than 7 -- [Husky](https://www.npmjs.com/package/husky) doesn't work with npm 7.0.0 to 7.1.1)
 
-
-Using nvm as a package manager. 
+### Using nvm as a package manager. 
 
 If on Windows, use (& follow instructions here): https://github.com/coreybutler/nvm-windows
 Update: apparently better to just use from nodejs website:https://nodejs.org/en/
@@ -18,7 +41,7 @@ https://github.com/nvm-sh/nvm#install--update-script
 
 nvm install 15.1.0 //only on OS X. It should come with windows install.
 
-Install mkcert
+### Install mkcert
 eg. on OS X -- brew install mkcert
 If you have homebrew, which I recommend. 
 
@@ -35,6 +58,9 @@ Then, to run/build:
 
 npm run start
 
+
+## Code
+
 Main js file is: '/components/App2.svelte'. 
 goLoop(async ()) -- is the main update function, calling the keypointsUpdated() function. In keypointsUpdated, motion analysis measures get updated & inside also the three?.dispatch(etc. etc.) is calling the threejs drawing code.
 
@@ -45,12 +71,6 @@ participant.ts: holds all the synchroncity measures and data for each participan
 Note: Currently, it still has all the code for my audiovisual instrument so it will play a bit of music when it is opened if you move enough.
 
 Note: There is an old main.js file but that is depreciated. & no longer used.
-
-Brent has been using storybook to do prototyping, so if you like that:
-
-npm run storybook
-
-will run the the storybook files and you can use that.
 
 if you run
 

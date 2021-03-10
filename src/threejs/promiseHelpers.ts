@@ -1,6 +1,6 @@
 // import { promisify } from 'util';
 
-export const nextTick = () => new Promise(process.nextTick);
+export const nextTick = () => new Promise(ok => setTimeout(ok, 0));
 export const timeout = (t = 0, args = []) => new Promise(ok => setTimeout(ok, t, ...args));
 
 /**

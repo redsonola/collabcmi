@@ -2,10 +2,14 @@ import Peer from 'peerjs';
 import type { DataConnection, MediaConnection } from 'peerjs';
 import { waitFor } from './threejs/promiseHelpers';
 
+const REACT_APP_PEER_SERVER_HOST = "spacebtw-peerserver.herokuapp.com";
+const REACT_APP_PEER_SERVER_PORT = "443";
+const REACT_APP_PEER_SERVER_PATH = "/";
+
 export const peerServerParams: Peer.PeerJSOption = {
-  host: process.env.REACT_APP_PEER_SERVER_HOST || window.location.hostname,
-  port: process.env.REACT_APP_PEER_SERVER_PORT ? parseInt(process.env.REACT_APP_PEER_SERVER_PORT) : 9000,
-  path: process.env.REACT_APP_PEER_SERVER_PATH || "/",
+  host: REACT_APP_PEER_SERVER_HOST || window.location.hostname,
+  port: REACT_APP_PEER_SERVER_PORT ? parseInt(REACT_APP_PEER_SERVER_PORT) : 9000,
+  path: REACT_APP_PEER_SERVER_PATH || "/",
   secure: true,
   // iceTransportPolicy: "relay"
 };

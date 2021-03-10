@@ -2,6 +2,7 @@
 
 *.pem
 *.crt
+*.key
 
 # dependencies
 /node_modules
@@ -24,3 +25,6 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+.snowpack
+.DS_Store

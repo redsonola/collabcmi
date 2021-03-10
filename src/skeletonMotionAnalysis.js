@@ -1,6 +1,6 @@
-import * as posenet from '@tensorflow-models/posenet';
+// import * as posenet from '@tensorflow-models/posenet';
 import * as math from 'mathjs';
-import * as XCorr from 'abr-xcorr'; 
+// import * as XCorr from 'abr-xcorr'; 
 
 //TODO: Separate out the limbs, etc. & give those values for windowed var
 //perhaps change sound based on what limb?

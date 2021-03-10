@@ -1,35 +1,41 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import Call from "./Call.svelte";
-  import DebugPanel from "./DebugPanel.svelte";
-  import PrintPose from "./PrintPose.svelte";
+  // import DebugPanel from "./DebugPanel.svelte";
+  // import PrintPose from "./PrintPose.svelte";
   import Loading from "./Loading.svelte";
   import { interceptFileRequest } from "../hackXhrInterceptor";
 
   import { videoSubscription } from "../threejs/cameraVideoElement";
   import { goLoop, sleep } from "../threejs/promiseHelpers";
-  import { initPosenet, PosenetSetup } from "../threejs/mediapipePose";
+  import { initPosenet } from "../threejs/mediapipePose";
+  import type { PosenetSetup } from "../threejs/mediapipePose";
   import {
     createMessagingPeer,
     peerServerParams,
+  } from "../peerJs";
+  import type {
     PeerCommands,
     PeerMessageReceived,
   } from "../peerJs";
 
   // import Balls from "./Balls.svelte";
-  import { threeRenderCode, ThreeRenderer } from "../draw3js";
+  import { threeRenderCode } from "../draw3js";
+  import type { ThreeRenderer } from "../draw3js";
   import {
+    peerMessageStore,
+  } from "./PoseMessages";
+  import type {
+    Size,
     PeerConnections,
     PeerConnection,
     PoseMessage,
     PeerMessage,
-    peerMessageStore,
-    Size,
   } from "./PoseMessages";
   import { Participant } from "../participant";
   import { findRadiusOfKeypoint } from "../main";
   import type { Keypoint, Pose } from "@tensorflow-models/posenet";
-  import ScoreBar from "./scoreBar.svelte";
+  // import ScoreBar from "./scoreBar.svelte";
   import * as Scale from "../scale";
   import {
     Tango332Riffs,
@@ -40,9 +46,7 @@
   } from "../midiConversion";
   import { FPSTracker } from "../fpsMeasure";
   import {
-    AmplitudeSoundMessage,
     SonifierWithTuba,
-    SoundMessage,
     TouchPhrasesEachBar,
   } from "../xcorrSonify";
   import * as Tone from "tone";
@@ -73,10 +77,10 @@
   let loading = true;
   let progress = "0%";
   interceptFileRequest(
-    "/mediapipe/pose_solution_packed_assets.data",
+    "/@mediapipe/pose/pose_solution_packed_assets.data",
     (req: XMLHttpRequest) => {
       req.addEventListener("progress", (e) => {
-        progress = Math.round((e.loaded / e.total) * 100) + "%";
+        progress = Math.round((e.loaded / (e.total || 17002032)) * 100) + "%";
         if (progress === "100%") progress = "starting";
       });
     }
@@ -258,8 +262,11 @@
         yposOfTouch,
         combinedWindowedScore
       );
+
     } catch (ex) {
-      console.warn(ex);
+      console.error("***** FIXME *****");
+      console.error("***** check if there's one participant and don't let this break *****");
+      console.error(ex);
     }
 
     //********** get the music messages HERE ********************//

@@ -1,10 +1,8 @@
-
 import { CircularBuffer } from './circularBuffer';
 import { AveragingFilter, Derivative } from './averagingFilterV2';
-import * as PoseAngle from './anglesFromKeypoints';
 import * as PoseIndex from './poseConstants.js';
-import * as XCorr from 'abr-xcorr';
-import * as GetMethods from './getMethods.js';
+import { Xcorr } from './abr-xcorr/xcorr.js';
+// import * as GetMethods from './getMethods.js';
 import * as math from 'mathjs';
 import type { Keypoint } from '@tensorflow-models/posenet';
 import { AverageFilteredKeyPoints } from './averagedKeypoints';
@@ -12,8 +10,8 @@ import * as PoseMatch from './poseMatching';
 import * as Scale from './scale'
 import { SkeletionIntersection } from './skeletonIntersection'
 import { SkeletonTouch } from './SkeletonTouch'
-import type { AnyARecord } from 'dns';
 
+// import { Buffer } from "buffer";
 
 /* TODO:
 
@@ -483,7 +481,7 @@ export class Participant {
     //             }
     //             this.xcorriMaxPos[i].update(xcorr_out.iMax); 
 
-    //             let xcorr_out2 = XCorr.Xcorr(sig3, sig4);
+    //             let xcorr_out2 = Xcorr(sig3, sig4);
     //             if( !isNaN(xcorr_out2.xcorrMax)  )
     //             {
     //                 this.xcorrMaxPosY[i].update(xcorr_out2.xcorrMax);
@@ -539,7 +537,7 @@ export class Participant {
     //     //     const sig1 = Buffer.from( buffermeX[i] );
     //     //     const sig2 = Buffer.from( bufferotherX[i] );
 
-    //     //     let xcorr_out = XCorr.Xcorr(sig1, sig2);
+    //     //     let xcorr_out = Xcorr(sig1, sig2);
     //     //     if( !isNaN(xcorr_out.xcorrMax)  )
     //     //     {
     //     //         this.xcorrMaxPos[i].update(xcorr_out.xcorrMax);
@@ -607,8 +605,8 @@ export class Participant {
                 if (this.getAvgScore(i) >= this.minConfidenceScore && otherParticipant.getAvgScore(i) >= this.minConfidenceScore
                     && sig1X.length == sig2X.length && sig1Y.length == sig2Y.length) {
 
-                    let xcorr_outX = XCorr.Xcorr(sig1X, sig2X);
-                    let xcorr_outY = XCorr.Xcorr(sig1Y, sig2Y);
+                    let xcorr_outX = Xcorr(sig1X, sig2X);
+                    let xcorr_outY = Xcorr(sig1Y, sig2Y);
 
 
                     if (!isNaN(xcorr_outX.xcorrMax)) {
@@ -721,7 +719,7 @@ export class Participant {
             }
             console.assert(otherAnglesArray[i].length == myAnglesArray[i].length);
 
-            let xcorr_out = XCorr.Xcorr(sig1, sig2);
+            let xcorr_out = Xcorr(sig1, sig2);
 
             if (!isNaN(xcorr_out.xcorrMax)) {
                 this.xcorrMax[i].update(xcorr_out.xcorrMax);
@@ -1131,8 +1129,8 @@ export class Participant {
             if (this.getAvgScore(myIndex) >= this.minConfidenceScore && this.friendParticipant.getAvgScore(theirIndex) >= minConfidence
                 && sig1X.length == sig2X.length && sig1Y.length == sig2Y.length) {
 
-                let xcorr_outX = XCorr.Xcorr(sig1X, sig2X);
-                let xcorr_outY = XCorr.Xcorr(sig1Y, sig2Y);
+                let xcorr_outX = Xcorr(sig1X, sig2X);
+                let xcorr_outY = Xcorr(sig1Y, sig2Y);
 
                 if (!isNaN(xcorr_outX.xcorrMax)) {
                     maxXCorrBtwMeAndFriend += xcorr_outX.xcorrMax;

@@ -1,8 +1,6 @@
 import * as Tone from 'tone';
 import { Midi } from '@tonejs/midi'
 import * as Scale from './scale.ts';
-import { isConstructorDeclaration } from 'typescript';
-import { getValidInputResolutionDimensions } from '@tensorflow-models/posenet/dist/util';
 import { SoundMessage, InstrumentID, SamplerWithID, getAmplitude, AmplitudeSoundMessage } from './xcorrSonify'
 
 //controls all the volumes. ALL sound needs to be connected to this before going to destination.
@@ -284,47 +282,47 @@ export class Tango332Riffs extends DynamicMovementMidi {
         this.playgroundSamplers = [
             new SamplerWithID({
                 urls: {
-                "G3" : "MC Set1.wav",
-                "A3" : "MC Set3.wav"
+                "G3" : "MC_Set1.wav",
+                "A3" : "MC_Set3.wav"
             },
             // release : 1,
-            baseUrl : "./audio_samples/Muted Can/"
+            baseUrl : "./audio_samples/Muted_Can/"
             }).connect( mainVolume.getVolume() ),
 
             new SamplerWithID({
                 urls: {
-                "G3" : "MC Set1-01.wav",
-                "A3" : "MC Set3-01.wav"
+                "G3" : "MC_Set1-01.wav",
+                "A3" : "MC_Set3-01.wav"
             },
             // release : 1,
-            baseUrl : "./audio_samples/Muted Can/"
+            baseUrl : "./audio_samples/Muted_Can/"
             }).connect( mainVolume.getVolume() ),
 
             new SamplerWithID({
                 urls: {
-                "G3" : "MC Set1-02.wav",
-                "A3" : "MC Set3-02.wav"
+                "G3" : "MC_Set1-02.wav",
+                "A3" : "MC_Set3-02.wav"
             },
             // release : 1,
-            baseUrl : "./audio_samples/Muted Can/"
+            baseUrl : "./audio_samples/Muted_Can/"
             }).connect( mainVolume.getVolume() ),
 
             new SamplerWithID({
                 urls: {
-                "G3" : "MC Set1-03.wav",
-                "A3" : "MC Set3-03.wav"
+                "G3" : "MC_Set1-03.wav",
+                "A3" : "MC_Set3-03.wav"
             },
             // release : 1,
-            baseUrl : "./audio_samples/Muted Can/"
+            baseUrl : "./audio_samples/Muted_Can/"
             }).connect( mainVolume.getVolume() ),
 
             new SamplerWithID({
                 urls: {
-                "G3" : "MC Set1-04.wav",
-                "A3" : "MC Set2-04.wav"
+                "G3" : "MC_Set1-04.wav",
+                "A3" : "MC_Set2-04.wav"
             },
             // release : 1,
-            baseUrl : "./audio_samples/Muted Can/"
+            baseUrl : "./audio_samples/Muted_Can/"
             }).connect( mainVolume.getVolume() )
         ];
 
@@ -531,8 +529,8 @@ export class BodhranTango332 extends Tango332Riffs
         this.playgroundSamplers = [
             new SamplerWithID({
                 urls: {
-                    "A4" : "Dumbek 1 c.wav",
-                    "G4" : "Dumbek 1 d.wav",
+                    "A4" : "Dumbek_1_c.wav",
+                    "G4" : "Dumbek_1_d.wav",
                 },
                 // release : 1,
                 baseUrl : "./audio_samples/Dumbek/"
@@ -541,8 +539,8 @@ export class BodhranTango332 extends Tango332Riffs
             new SamplerWithID(
             {
                 urls: {
-                    "A4" : "Dumbek 2 c.wav",
-                    "G4" : "Dumbek 2 d.wav",
+                    "A4" : "Dumbek_2_c.wav",
+                    "G4" : "Dumbek_2_d.wav",
                 },
                 // release : 1,
                 baseUrl : "./audio_samples/Dumbek/"
@@ -550,8 +548,8 @@ export class BodhranTango332 extends Tango332Riffs
 
             new SamplerWithID({
                 urls: {
-                    "A4" : "Dumbek 1 a.wav",
-                    "G4" : "Dumbek 1 b.wav",
+                    "A4" : "Dumbek_1_a.wav",
+                    "G4" : "Dumbek_1_b.wav",
                 },
                 // release : 1,
                 baseUrl : "./audio_samples/Dumbek/"
@@ -559,8 +557,8 @@ export class BodhranTango332 extends Tango332Riffs
 
             new SamplerWithID({
                 urls: {
-                    "A4" : "Dumbek 2 a.wav",
-                    "G4" : "Dumbek 2 b.wav",
+                    "A4" : "Dumbek_2_a.wav",
+                    "G4" : "Dumbek_2_b.wav",
                 },
                 // release : 1,
                 baseUrl : "./audio_samples/Dumbek/"

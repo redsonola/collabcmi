@@ -1,7 +1,11 @@
 // import '@tensorflow/tfjs-backend-webgl';
 // import '@tensorflow/tfjs-backend-cpu';
 
-import App from './components/App2.svelte';
+import { Buffer } from "buffer";
+import App from "./components/App2.svelte";
+
+(window as any).Buffer = Buffer;
+
 
 const app = new App({
 	target: document.body,

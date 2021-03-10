@@ -29,13 +29,13 @@ import { EpidermalHood } from './PByte3/EpidermalHood';
 import { VerletSphere } from './PByte3/VerletSphere';
 import { VerletStick } from './PByte3/VerletStick';
 
-import { SkeletonTouch } from './SkeletonTouch'
+import type { SkeletonTouch } from './SkeletonTouch'
 
 
 const scene: THREE.Scene = new THREE.Scene();
 const camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(
     75, window.innerWidth / window.innerHeight, 0.001, 2000);
-let renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer( { alpha: true, powerPreference: "high-performance" } );
+let renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer({ alpha: true, powerPreference: "high-performance" });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setClearColor(0x000000, 0);
 renderer.autoClear = true;
