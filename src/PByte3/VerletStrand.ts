@@ -166,7 +166,8 @@ export class VerletStrand extends THREE.Group {
         this.geometry.setAttribute( 'position', new THREE.BufferAttribute( this.positions, 3 ) );
         this.geometry.setDrawRange( 0, MAX_POINTS ); 
 
-        let curIndex : number = 0; 
+        let curIndex : number = 0;
+        const positions = this.geometry.attributes.position.array; 
         for(let i=0; i<this.vertices.length; i++)
         {
             curIndex = addVertToPositions( this.positions, curIndex, this.vertices[i] );

@@ -52,9 +52,10 @@ export class VerletStick extends THREE.Group {
 
 
     let curIndex : number = 0; 
+    const positions = this.lineGeometry.attributes.position.array; 
     for(let i=0; i<this.vertices.length; i++)
     {
-        curIndex = addVertToPositions( this.positions, curIndex, this.vertices[i] );
+        curIndex = addVertToPositions( positions, curIndex, this.vertices[i] );
     }
     this.lineGeometry.attributes.position.needsUpdate = true; 
     /*******/ 

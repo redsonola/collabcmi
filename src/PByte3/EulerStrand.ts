@@ -65,9 +65,6 @@ export class EulerStrand extends THREE.Group {
             this.segments[i] = new EulerStick(this.nodes[i], this.nodes[i + 1], this.elasticity, this.damping);
             this.vertices.push( this.segments[i].start.position );
             if (i === this.segments.length - 1) { this.vertices.push(this.segments[i].end.position) }
-
-            // this.geometry.vertices.push(this.segments[i].start.position);
-            // if (i === this.segments.length - 1) { this.geometry.vertices.push(this.segments[i].end.position) }
         }
 
 
@@ -80,7 +77,7 @@ export class EulerStrand extends THREE.Group {
         const positions = this.geometry.attributes.positions.array; 
         for(let i=0; i<this.vertices.length; i++)
         {
-            curIndex = addVertToPositions( this.positions, curIndex, this.vertices[i] );
+            curIndex = addVertToPositions( positions, curIndex, this.vertices[i] );
         }
         this.geometry.attributes.position.needsUpdate = true; 
 
