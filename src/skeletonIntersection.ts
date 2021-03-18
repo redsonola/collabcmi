@@ -144,7 +144,8 @@ export class DrawSkeletonIntersectLine {
 
             this.geometry.setFromPoints(points);
             this.line.geometry = this.geometry; 
-            this.line.material = this.material; 
+            this.line.material = this.material;
+            this.line.frustumCulled = false;  
             group.add(this.line);
 
         return group;
@@ -195,6 +196,7 @@ class DrawHead extends DrawSkeletonIntersectLine {
         this.geometry.setFromPoints(points);
         this.line.geometry = this.geometry; 
         this.line.material = this.material; 
+        this.line.frustumCulled = false; 
         group.add(this.line);
 
         return group;
