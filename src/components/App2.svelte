@@ -517,6 +517,11 @@
           });
         }
       }
+      else
+      {
+        let theirId = ""; 
+        dispatchToPeer( {type: "ChatRouletteFindPartner", myId, theirId } );
+      }
     });
 
     goLoop(async () => {

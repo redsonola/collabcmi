@@ -73,7 +73,8 @@ export class AmplitudeSoundMessage extends SoundMessage
     }
 }
 
-
+//this class is a helper class that translates between different Tone.Transport time values.
+//it also will quantize the given time & test if incoming time is the same beat as current.
 export class TransportTime
 {
     bars : number =0; 
@@ -128,6 +129,7 @@ export class TransportTime
 
 }
 
+//this just allows sampliers to have a unique id 
 export class SamplerWithID extends Tone.Sampler
 {
     id : InstrumentID = -1;
@@ -374,58 +376,6 @@ class SamplerFactory
 
         return sampler; 
     }
-
-    //not using now
-    // loadCanSamplers() : Tone.Sampler[]
-    // {
-    //     let samplers = [
-    //         new Tone.Sampler({
-    //             urls: {
-    //             "G3" : "MC Set1.wav",
-    //             "A3" : "MC Set3.wav"
-    //         },
-    //         // release : 1,
-    //         baseUrl : "./audio_samples/Muted Can/"
-    //         }),
-
-    //         new Tone.Sampler({
-    //             urls: {
-    //             "G3" : "MC Set1-01.wav",
-    //             "A3" : "MC Set3-01.wav"
-    //         },
-    //         // release : 1,
-    //         baseUrl : "./audio_samples/Muted Can/"
-    //         }),
-    //         new Tone.Sampler({
-    //             urls: {
-    //             "G3" : "MC Set1-02.wav",
-    //             "A3" : "MC Set3-02.wav"
-    //         },
-    //         // release : 1,
-    //         baseUrl : "./audio_samples/Muted Can/"
-    //         }),
-
-    //         new Tone.Sampler({
-    //             urls: {
-    //             "G3" : "MC Set1-03.wav",
-    //             "A3" : "MC Set3-03.wav"
-    //         },
-    //         // release : 1,
-    //         baseUrl : "./audio_samples/Muted Can/"
-    //         }),
-
-    //         new Tone.Sampler({
-    //             urls: {
-    //             "G3" : "MC Set1-04.wav",
-    //             "A3" : "MC Set2-04.wav"
-    //         },
-    //         // release : 1,
-    //         baseUrl : "./audio_samples/Muted Can/"
-    //         }) ];
-
-    //     return samplers;
-
-    // }
 }
 
 //get amplitude from waveforms
@@ -456,7 +406,7 @@ export function getAmplitude(waveForms : Tone.Waveform[]) : number
 
 
 
-
+//this is the long note when participants touch
 class LongPlayingNoteSampler
 {
 
@@ -775,6 +725,7 @@ class LongPlayingNoteCelloSoft extends LongPlayingNoteSampler
 //********************************************************************/
 
 
+//This class manages sound creation - manages the long note samplers and also manages to some extent, the short-playing notes.
 export class SonifierWithTuba {
 
     participant : Participant;
@@ -1065,6 +1016,7 @@ export class SonifierWithTuba {
 
 }
 
+//one short note onset in the sequencer. 
 class PitchOnset extends TransportTime
 {
     pitch : number; 
@@ -1094,6 +1046,7 @@ class PitchOnset extends TransportTime
     }
 }
 
+//one recorded loop of variable measures of pitch onsets playing in the sequencer 
 export class MusicSequencerLoop
 {
     onsets : PitchOnset[]; 

@@ -1,16 +1,51 @@
 import Peer from 'peerjs';
 import type { DataConnection, MediaConnection } from 'peerjs';
 import { waitFor } from './threejs/promiseHelpers';
+import axios from 'axios'; //TODO: https://github.com/axios/axios
 
-const REACT_APP_PEER_SERVER_HOST = "spacebtw-peerserver.herokuapp.com";
+// const REACT_APP_PEER_SERVER_HOST = "spacebtw-peerserver.herokuapp.com";
+// const REACT_APP_PEER_SERVER_PORT = "443";
+// const REACT_APP_PEER_SERVER_PATH = "/";
+
+const REACT_APP_PEER_SERVER_HOST = "skinhunger-peerserver.herokuapp.com";
 const REACT_APP_PEER_SERVER_PORT = "443";
-const REACT_APP_PEER_SERVER_PATH = "/";
+const REACT_APP_PEER_SERVER_PATH = "/signaling";
 
+// const REACT_APP_PEER_SERVER_HOST = "localhost";
+// const REACT_APP_PEER_SERVER_PORT = "9000";
+
+function ajaxRequestObject()
+{
+  var request; 
+  if(window.XMLHttpRequest)
+  {
+  request = new XMLHttpRequest();
+  }
+  //is this for internet explorer? hmm
+  // else if(window.ActiveXObject)
+  // {
+  // try
+  // {
+  //   request = new ActiveXObject('Msxml2.XMLHTTP');
+  // }
+  // catch (e)
+  // {
+  // request = new ActiveXObject('Microsoft.XMLHTTP');
+  // }
+// }
+
+  return new XMLHttpRequest();
+}
+
+
+//TODO: will need to make the express server secure
 export const peerServerParams: Peer.PeerJSOption = {
   host: REACT_APP_PEER_SERVER_HOST || window.location.hostname,
   port: REACT_APP_PEER_SERVER_PORT ? parseInt(REACT_APP_PEER_SERVER_PORT) : 9000,
   path: REACT_APP_PEER_SERVER_PATH || "/",
   secure: true,
+
+  // secure: true,
   // iceTransportPolicy: "relay"
 };
 
@@ -73,6 +108,12 @@ export interface PeerMessageReceived<T> extends PeerIdPair {
   message: T;
 }
 
+export interface ChatRouletteFindPartner extends PeerIdPair
+{
+  type: 'ChatRouletteFindPartner'; 
+}
+
+
 
 export interface DisconnectData extends TheirId {
   type: 'DisconnectData';
@@ -100,6 +141,7 @@ export interface CallEnded extends PeerIdPair {
   type: 'CallEnded';
 }
 
+
 export type PeerCommands<T> =
   | SendPeerMessage<T>
   | CallPeer
@@ -107,8 +149,11 @@ export type PeerCommands<T> =
   | AnswerCall
   | DisconnectData
   | DisconnectMedia
-  | DisconnectEverything;
+  | DisconnectEverything
+  | ChatRouletteFindPartner
+  ;
 
+  //TODO we: receive the disconnect event and try to reconnect when that happens or have some UI about asking user what to do.
 export type PeerEvents<T> =
   | PeerOpen
   | ConnectingToPeer
@@ -263,6 +308,35 @@ export function createMessagingPeer<T>(mySuppliedId: string | undefined, serverP
         case "CallPeer": {
           const call = peer.call(command.theirId, command.mediaStream);
           listenToMediaConnection(call);
+          break;
+        }
+
+        case "ChatRouletteFindPartner":
+        {
+          console.log("calling chat roulette.....")
+
+          //just to test......
+          // var request = ajaxRequestObject(); 
+          axios({
+            method: 'get',
+            url: "https://skinhunger-peerserver.herokuapp.com/find?id=" + command.myId,
+            responseType: 'text'
+          })
+            .then(function (response) {
+              console.log("Got their id! :" + response.data);
+            });
+          // request.open("GET", url);
+          // request.addEventListener("load", function()
+          // { 
+          //   if(request.readyState === 4)
+          //   {
+          //     if(request.status === 200)
+          //     {
+          //       let theirID = request.responseText;
+          //       console.log("Got their id! :" + theirID);
+          //     }
+          //   }
+          // });
           break;
         }
       }
