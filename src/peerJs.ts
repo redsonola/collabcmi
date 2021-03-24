@@ -2,6 +2,7 @@ import Peer from 'peerjs';
 import type { DataConnection, MediaConnection } from 'peerjs';
 import { waitFor } from './threejs/promiseHelpers';
 import axios from 'axios'; //TODO: https://github.com/axios/axios
+import { peerMessageStore, PoseMessage } from './components/PoseMessages'
 
 // const REACT_APP_PEER_SERVER_HOST = "spacebtw-peerserver.herokuapp.com";
 // const REACT_APP_PEER_SERVER_PORT = "443";
@@ -110,7 +111,8 @@ export interface PeerMessageReceived<T> extends PeerIdPair {
 
 export interface ChatRouletteFindPartner extends PeerIdPair
 {
-  type: 'ChatRouletteFindPartner'; 
+  type: 'ChatRouletteFindPartner';
+  mediaStream: MediaStream;
 }
 
 
@@ -310,36 +312,31 @@ export function createMessagingPeer<T>(mySuppliedId: string | undefined, serverP
           listenToMediaConnection(call);
           break;
         }
-
-        case "ChatRouletteFindPartner":
-        {
-          console.log("calling chat roulette.....")
-
-          //just to test......
-          // var request = ajaxRequestObject(); 
-          axios({
-            method: 'get',
-            url: "https://skinhunger-peerserver.herokuapp.com/find?id=" + command.myId,
-            responseType: 'text'
-          })
-            .then(function (response) {
-              console.log("Got their id! :" + response.data);
-            });
-          // request.open("GET", url);
-          // request.addEventListener("load", function()
-          // { 
-          //   if(request.readyState === 4)
-          //   {
-          //     if(request.status === 200)
-          //     {
-          //       let theirID = request.responseText;
-          //       console.log("Got their id! :" + theirID);
-          //     }
-          //   }
-          // });
-          break;
-        }
       }
     }
   }
+}
+
+//just gonna have to ignore this framework... -- this is called to find a chat partner
+export  function findChatRoulettePartner( myId : string ) : Promise<string | null>
+{
+  console.log("calling chat roulette.....")
+   
+  return axios({
+    method: 'get',
+    url: "https://skinhunger-peerserver.herokuapp.com/find?id=" + myId,
+    responseType: 'text'
+  })
+    .then(function (response) {
+    
+      const theirID = response.data;
+      console.log("Got their id! :" + theirID);
+      return theirID; 
+    })
+    .catch(function (error) {
+      // handle error
+      console.log(error);
+      return null;
+    });
+
 }

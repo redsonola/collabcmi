@@ -15,6 +15,7 @@
   import {
     createMessagingPeer,
     peerServerParams,
+    findChatRoulettePartner
   } from "../peerJs";
   import type {
     PeerCommands,
@@ -141,6 +142,8 @@
 
   let tubaSonfier: SonifierWithTuba;
   let touchMusicalPhrases: TouchPhrasesEachBar;
+
+  var connectToRandomPartner = (e) => {}; //function to connect to a random partner
 
   let three: ThreeRenderer;
   $: if (canvas) {
@@ -517,11 +520,6 @@
           });
         }
       }
-      else
-      {
-        let theirId = ""; 
-        dispatchToPeer( {type: "ChatRouletteFindPartner", myId, theirId } );
-      }
     });
 
     goLoop(async () => {
@@ -549,6 +547,47 @@
       // }
     });
 
+    connectToRandomPartner = async (e) => {
+      if( myId )
+      {
+        let theirId = await findChatRoulettePartner( myId );
+        if( theirId )
+        {
+          console.log("received id");
+          const myVideoUnsubscribe = webcamVideo.subscribe(async (video) => 
+          {
+            if(!video){
+              console.log("video is undefined")
+              return; 
+            }
+
+            if(!theirId){
+              console.log("theirId is now undefined??")
+              return; 
+            }
+            dispatchToPeer({ type: "DisconnectMedia", theirId });
+            dispatchToPeer({ type: "ConnectToPeer", myId, theirId });
+
+            if (video.stream) 
+            {
+              if(!theirId)
+                return; 
+              
+              console.log("calling peer");
+              dispatchToPeer(
+              {
+                type: "CallPeer",
+                myId,
+                theirId,
+                mediaStream: video.stream,
+              });
+            }
+          });
+        }
+      }
+    }
+
+
     return () => {
       console.log(`Cleaning up app for ${myId}`);
       stopped = true;
@@ -558,6 +597,10 @@
       myVideoUnsubscribe();
       dispatchToPeer({ type: "DisconnectEverything" });
     };
+
+
+
+
   }
 
   onMount(() => {
@@ -572,6 +615,7 @@
   export function onChangeVolumeSlider(e) {
     mainVolume.set(parseFloat(e.currentTarget.value));
   }
+
 </script>
 
 <div class="valueSliders">
@@ -647,10 +691,13 @@
 <div class="callPanel">
   {#if peerIds.length === 0 && idToCall === null}
     <Call {myId} />
+    <br/>
+    <button type="button" class="chatRouletteButton" on:click={connectToRandomPartner}>Connect to a random partner!</button>
   {:else if !myId}
     Preparing to answer<br />
     {idToCall}
   {/if}
+
 </div>
 
 {#if loading}
@@ -683,6 +730,13 @@
     align-self: center;
   }
 
+  .chatRouletteButton
+  {
+    z-index: 1;
+    position: relative; 
+    top: 8px;  
+  }
+
   .valueSliders {
     position: relative;
     /* position: absolute; */
@@ -690,6 +744,7 @@
     top: 15px;
     left: 25px;
     color: #928888;
+    z-index: 1;
   }
 
   .meter {
