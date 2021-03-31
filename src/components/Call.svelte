@@ -1,5 +1,6 @@
 <script lang="ts">
   export let myId;
+  export let turnUpVolume;
 
   let linkUrl;
   let inputElement;
@@ -17,6 +18,8 @@
   let lastTimeout;
 
   function copyToClipboard(e) {
+    turnUpVolume();//not sure if this will stay here... hmm... gah
+
     console.log("copying");
     inputElement.focus();
     inputElement.select();

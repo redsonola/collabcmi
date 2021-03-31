@@ -9,8 +9,8 @@
 
   import { videoSubscription } from "../threejs/cameraVideoElement";
   import { goLoop, sleep } from "../threejs/promiseHelpers";
-  import { initPosenet } from "../threejs/posenetcopy";
-  // import { initPosenet } from "../threejs/mediapipePose";
+  // import { initPosenet } from "../threejs/posenetcopy";
+  import { initPosenet } from "../threejs/mediapipePose";
   import type { PosenetSetup } from "../threejs/mediapipePose";
   import {
     createMessagingPeer,
@@ -144,6 +144,8 @@
   let touchMusicalPhrases: TouchPhrasesEachBar;
 
   var connectToRandomPartner = (e) => {}; //function to connect to a random partner
+  var turnUpVolume = () => {}; //turn up the volume when connected to another user
+  const BEGINNING_VOLUME = 0.66; 
 
   let three: ThreeRenderer;
   $: if (canvas) {
@@ -375,6 +377,16 @@
     const myId = await peer.getId();
     setMyId(myId);
 
+    turnUpVolume = () => 
+    {
+      const volSlider : HTMLInputElement | null = document.getElementById("mainVolume") as HTMLInputElement; 
+      if( volSlider )
+      {
+          volSlider.value = BEGINNING_VOLUME.toString();
+      }
+      mainVolume.set(BEGINNING_VOLUME);
+    };
+
     function handlePeerMessage(event: PeerMessageReceived<PeerMessage>) {
       const { message } = event;
       switch (message.type) {
@@ -584,6 +596,13 @@
             }
           });
         }
+        else
+        {
+          const status = document.getElementById("chatStatus"); 
+          if( status )
+            status.innerText = "Waiting for a chat partner..."
+        }
+        turnUpVolume();
       }
     }
 
@@ -616,6 +635,15 @@
     mainVolume.set(parseFloat(e.currentTarget.value));
   }
 
+  //not used but could become useful later if need to seriously remix sounds
+  export function updateLabel( e, l ) {
+      let label = document.getElementById(l);
+      if( label )
+      {
+        label.innerText = e.currentTarget.value 
+      }
+    }
+
 </script>
 
 <div class="valueSliders">
@@ -644,7 +672,7 @@
       fill="#87CEFA"
       rx="3"
     />
-  </svg><br />
+  </svg><br /> 
   Turn up the volume to hear sound.
 
   <!-- <text>{volumeMeterReading}</text> -->
@@ -690,15 +718,16 @@
 
 <div class="callPanel">
   {#if peerIds.length === 0 && idToCall === null}
-    <Call {myId} />
-    <br/>
+    <Call {myId} {turnUpVolume} />
+    <br/><br/><div class="callText">or<br/></div>
     <button type="button" class="chatRouletteButton" on:click={connectToRandomPartner}>Connect to a random partner!</button>
+    <br /><br />
+    <div class="callText"><label id="chatStatus"></label></div>
   {:else if !myId}
     Preparing to answer<br />
     {idToCall}
   {/if}
-
-</div>
+</div>  
 
 {#if loading}
   <Loading {progress} />
@@ -730,11 +759,16 @@
     align-self: center;
   }
 
+  .callText
+  {
+    color: #928888;
+  }
+
   .chatRouletteButton
   {
     z-index: 1;
     position: relative; 
-    top: 8px;  
+    top: 10px;  
   }
 
   .valueSliders {
