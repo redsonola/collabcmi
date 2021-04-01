@@ -3,7 +3,7 @@ const preprocess = require('svelte-preprocess')();
 
 /** @type {import("snowpack").SnowpackUserConfig } */
 module.exports = {
-  exclude: ['**/node_modules/**/*', '**/LICENSE'],
+  exclude: ['**/node_modules/**/*', '**/makefile', '**/LICENSE'],
   mount: {
     "node_modules/@mediapipe/pose": { url: "/@mediapipe/pose", static: true, resolve: false },
     public: { url: '/', static: true, resolve: false },
