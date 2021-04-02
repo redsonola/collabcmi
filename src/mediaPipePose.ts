@@ -3,7 +3,7 @@
  * global window object.
  * google's example: https://codepen.io/mediapipe/pen/RwGWYJw
  */
-import "@mediapipe/pose/pose";
+import "mediapipe/pose/pose";
 import { Vector3 } from "three";
 
 export class LandmarkVector3 extends Vector3 {
