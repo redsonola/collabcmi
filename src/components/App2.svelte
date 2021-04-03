@@ -744,6 +744,7 @@
     top: 15px;
     right: 35px;
     width: 200px;
+    z-index: 1; 
   }
 
   .slider1 {
