@@ -6,7 +6,6 @@ import App from "./components/App.svelte";
 
 (window as any).Buffer = Buffer;
 
-
 const app = new App({
 	target: document.body,
 });

@@ -3,16 +3,9 @@
 </script>
 
 <Router>
-  <!-- <Route
-    path="/:myid/:theirid"
-    component={import("./App2.svelte")}
-    let:router
-  /> -->
-  <Route
-    fallback
-    component={import("./App2.svelte")}
-    let:router
-  />
+  <!-- <Route exact fallback component={() => import("./SkinHunger.svelte")} /> -->
+  <Route exact fallback path="/" component={() => import("./App2.svelte")} let:router />
+  <Route exact path="/call" component={() => import("./CallScreen.svelte")} let:router />
 </Router>
 
 <style>
@@ -23,5 +16,4 @@
   :global(*) {
     box-sizing: inherit;
   }
-
 </style>
