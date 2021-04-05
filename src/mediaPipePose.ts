@@ -109,7 +109,7 @@ const defaultGetPoseParams: PoseParams = {
   locateFile: (file) => {
     // return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
     //  return `/@mediapipe/pose/${file}`;
-    return `/mediapipe/pose/${file}`;
+    return `/@mediapipe/pose/${file}`;
 
   },
 }
