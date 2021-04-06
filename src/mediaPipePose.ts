@@ -106,8 +106,8 @@ export type PoseLandmark =
   | PoseLandmarkRight;
 
 const defaultGetPoseParams: PoseParams = {
-  locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
-  // locateFile: (file) => `/@mediapipe/pose/${file}`,
+  // locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
+  locateFile: (file) => `/@mediapipe/pose/${file}`,
 }
 
 export const getPose = (p?: Partial<PoseParams>) => {
