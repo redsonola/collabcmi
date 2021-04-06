@@ -42,13 +42,15 @@
     "yrv": "^0.0.38"
   },
   "scripts": {
+    "test-build": "npm ci && npm run build && npm run serve-build",
+    "serve-build": "npx http-server -a localhost -p 8080 --ssl --cert snowpack.crt --key snowpack.key build",
     "start": "snowpack dev --secure",
     "build": "snowpack build",
     "deploy": "./scripts/deploy.sh",
     "test": "echo \"This template does not include a test runner by default.\" && exit 1",
     "mkcert": "mkcert -install && mkcert -key-file snowpack.key -cert-file snowpack.crt localhost",
     "peer-server": "node ./scripts/devPeerServer",
-    "ci": "snowpack build"
+    "postbuild": "cp -R node_modules/@mediapipe build/@mediapipe"
   },
   "devDependencies": {},
   "husky": {

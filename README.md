@@ -8,6 +8,8 @@
 
 Runs the app in the development mode.
 Open https://localhost:8080 to view it in the browser.
+If this is your first time running it, you'll need to run `npm run mkcert` to create
+& install the local ssl certificates.
 
 The page will reload if you make edits.
 You will also see any lint errors in the console.
@@ -16,6 +18,11 @@ You will also see any lint errors in the console.
 
 Builds a static copy of your site to the `build/` folder.
 Your app is ready to be deployed!
+
+### npm run test-build
+
+Reinstalls the dependencies and builds the same way that the production pipeline does. 
+Runs a static server using the same snowpack certs that are used in dev.
 
 **For the best production performance:** Add a build bundler plugin like [@snowpack/plugin-webpack](https://github.com/snowpackjs/snowpack/tree/main/plugins/plugin-webpack) or [snowpack-plugin-rollup-bundle](https://github.com/ParamagicDev/snowpack-plugin-rollup-bundle) to your `snowpack.config.json` config file.
 
