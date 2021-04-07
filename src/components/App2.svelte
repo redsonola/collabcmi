@@ -9,8 +9,8 @@
 
   import { videoSubscription } from "../threejs/cameraVideoElement";
   import { goLoop, sleep } from "../threejs/promiseHelpers";
-  // import { initPosenet } from "../threejs/posenetcopy";
-  import { initPosenet } from "../threejs/mediapipePose";
+  import { initPosenet } from "../threejs/posenetcopy";
+  // import { initPosenet } from "../threejs/mediapipePose";
   import type { PosenetSetup } from "../threejs/mediapipePose";
   import {
     createMessagingPeer,
