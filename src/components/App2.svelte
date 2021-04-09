@@ -151,7 +151,11 @@
 
   var connectToRandomPartner = (e) => {}; //function to connect to a random partner
   var turnUpVolume = () => {}; //turn up the volume when connected to another user
-  const BEGINNING_VOLUME = 0.66; 
+  var sendMuteSelfMessage = () => {}; //if muting self, need to send to other person to mute.
+  var friendVideoElement; //keep track of friend's video element, for muting.
+  const BEGINNING_VOLUME = 0.66;
+  // var selfMute;
+  // var friendMute;  
 
   let three: ThreeRenderer;
   $: if (canvas) {
@@ -639,7 +643,57 @@
       {
         label.innerText = e.currentTarget.value 
       }
+  }
+
+  let myMuteButtonText = "Mute";
+  export function muteSelf(e)
+  {
+    let button = e;
+    if( button )
+    {
+        if( myMuteButtonText === "Mute" )
+        {
+          myMuteButtonText = "Unmute";
+        }
+        else
+        {
+          myMuteButtonText = "Mute";
+        }
     }
+  }
+
+  let theirMuteButtonText = "Mute"; 
+  export function muteThem(e)
+  {
+
+    let button = e;
+    if( button )
+    {
+        if( theirMuteButtonText === "Mute" )
+        {
+          theirMuteButtonText = "Unmute";
+          if( friendVideoElement )
+          {
+            friendVideoElement.muted = true; 
+            console.log("muted someone else")
+            console.log(friendVideoElement); 
+
+          }
+        }
+        else
+        {
+          theirMuteButtonText = "Mute";
+          if( friendVideoElement )
+          {
+            friendVideoElement.muted = false; 
+            console.log("turned off mute")
+            console.log(friendVideoElement); 
+
+          }
+        }
+    }
+  }
+
 
 </script>
 
@@ -675,6 +729,9 @@
   <!-- <text>{volumeMeterReading}</text> -->
   <!-- <br/><br/> -->
 </div>
+
+<div class="myMute" on:click={muteSelf}>{myMuteButtonText}</div>
+<div class="theirMute" on:click={muteThem}>{theirMuteButtonText}</div>
 
 <!-- <DebugPanel messages={messages} myId={myId} peerConnections={peerConnections}> -->
 <!--
@@ -726,6 +783,9 @@
   {/if}
 </div>  
 
+
+
+
 {#if loading}
   <Loading {progress} />
 {/if}
@@ -742,6 +802,23 @@
     right: 35px;
     width: 200px;
     z-index: 1; 
+  }
+
+  .myMute {
+    position: absolute;
+    left: 35px;
+    bottom: 15px;
+    z-index: 1; 
+    color: #928888;
+  } 
+
+  .theirMute {
+    position: absolute;
+    bottom: 15px;
+    right: 35px;
+    width: 100px;
+    z-index: 1; 
+    color: #928888;
   }
 
   .slider1 {
@@ -778,6 +855,8 @@
     color: #928888;
     z-index: 1;
   }
+
+
 
   .meter {
     display: block;
