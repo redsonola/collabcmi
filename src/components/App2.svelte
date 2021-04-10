@@ -61,6 +61,18 @@
 
   const webcamVideo = videoSubscription("webcam");
   const theirVideo = videoSubscription();
+<<<<<<< HEAD
+=======
+
+  var theirVideoElement; 
+  $: {
+    if ($theirVideo !== null) {
+      console.log('their video', $theirVideo);
+      theirVideoElement = $theirVideo.videoElement; 
+    }
+  }
+
+>>>>>>> fix
   // const videoSources = ["webcam", "/spacebtwTest.mp4", "/synchTestVideo.mp4"];
   $: {
     if ($theirVideo !== null) {
@@ -152,7 +164,7 @@
   var connectToRandomPartner = (e) => {}; //function to connect to a random partner
   var turnUpVolume = () => {}; //turn up the volume when connected to another user
   var sendMuteSelfMessage = () => {}; //if muting self, need to send to other person to mute.
-  var friendVideoElement; //keep track of friend's video element, for muting.
+
   const BEGINNING_VOLUME = 0.66;
   // var selfMute;
   // var friendMute;  
@@ -468,10 +480,20 @@
         }
 
         case "CallAnswered": {
+<<<<<<< HEAD
           console.log('CallAnswered', event);
           theirVideoUnsubscribe = theirVideo.subscribe(video => {
             if (video) {
               three.dispatch({ type: "AddVideo", personId: event.theirId, video });
+=======
+          theirVideoUnsubscribe = theirVideo.subscribe( video => {
+            if (video) {
+              three.dispatch({
+                type: "AddVideo",
+                personId: event.theirId,
+                video,
+              });
+>>>>>>> fix
               setPeerConnection(event.theirId, "media", true);
             }
           });
@@ -672,22 +694,20 @@
         if( theirMuteButtonText === "Mute" )
         {
           theirMuteButtonText = "Unmute";
-          if( friendVideoElement )
+          if( theirVideoElement )
           {
-            friendVideoElement.muted = true; 
+            theirVideoElement.muted = true ;
             console.log("muted someone else")
-            console.log(friendVideoElement); 
-
           }
+          console.log(theirVideoElement); 
         }
         else
         {
           theirMuteButtonText = "Mute";
-          if( friendVideoElement )
+          if( theirVideoElement )
           {
-            friendVideoElement.muted = false; 
+            theirVideoElement.muted = false; 
             console.log("turned off mute")
-            console.log(friendVideoElement); 
 
           }
         }
@@ -784,8 +804,6 @@
 </div>  
 
 
-
-
 {#if loading}
   <Loading {progress} />
 {/if}
@@ -855,8 +873,6 @@
     color: #928888;
     z-index: 1;
   }
-
-
 
   .meter {
     display: block;
