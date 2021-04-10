@@ -61,22 +61,13 @@
 
   const webcamVideo = videoSubscription("webcam");
   const theirVideo = videoSubscription();
-<<<<<<< HEAD
-=======
+  // const videoSources = ["webcam", "/spacebtwTest.mp4", "/synchTestVideo.mp4"];
 
-  var theirVideoElement; 
+  let theirVideoElement; 
   $: {
     if ($theirVideo !== null) {
       console.log('their video', $theirVideo);
       theirVideoElement = $theirVideo.videoElement; 
-    }
-  }
-
->>>>>>> fix
-  // const videoSources = ["webcam", "/spacebtwTest.mp4", "/synchTestVideo.mp4"];
-  $: {
-    if ($theirVideo !== null) {
-      console.log('their video', $theirVideo);
     }
   }
 
@@ -480,20 +471,10 @@
         }
 
         case "CallAnswered": {
-<<<<<<< HEAD
           console.log('CallAnswered', event);
           theirVideoUnsubscribe = theirVideo.subscribe(video => {
             if (video) {
               three.dispatch({ type: "AddVideo", personId: event.theirId, video });
-=======
-          theirVideoUnsubscribe = theirVideo.subscribe( video => {
-            if (video) {
-              three.dispatch({
-                type: "AddVideo",
-                personId: event.theirId,
-                video,
-              });
->>>>>>> fix
               setPeerConnection(event.theirId, "media", true);
             }
           });
