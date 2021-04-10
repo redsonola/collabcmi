@@ -115,7 +115,10 @@ export interface WritableVideoStore {
 
 export function videoSubscription(source?: string | MediaStream): Readable<CameraVideo | null> & WritableVideoStore {
   let lastVideo: Promise<CameraVideo | undefined> | undefined;
+<<<<<<< HEAD
   let lastSource = source;
+=======
+>>>>>>> fix
 
   const store = writable<CameraVideo | null>(null, (set) => {
     // when going from 0 to 1 subscribers, create the video:
@@ -130,6 +133,7 @@ export function videoSubscription(source?: string | MediaStream): Readable<Camer
   return {
     subscribe: store.subscribe,
     setSource(source?: string | MediaStream) {
+<<<<<<< HEAD
       if (lastSource !== source) {
         if (lastVideo) {
           lastVideo = lastVideo
@@ -141,6 +145,16 @@ export function videoSubscription(source?: string | MediaStream): Readable<Camer
         lastVideo.then(video => store.set(video || null));
       }
       lastSource = source;
+=======
+      if (lastVideo) {
+        lastVideo = lastVideo
+          // .then(v => v?.stop())
+          .then(() => makeVideoElement(source));
+      } else {
+        lastVideo = makeVideoElement(source);
+      }
+      lastVideo.then(video => store.set(video || null));
+>>>>>>> fix
     }
   };
 }
