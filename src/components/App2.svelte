@@ -63,7 +63,9 @@
   const theirVideo = videoSubscription();
   // const videoSources = ["webcam", "/spacebtwTest.mp4", "/synchTestVideo.mp4"];
 
-  let theirVideoElement; 
+  let theirVideoElement;
+  let myMuteButtonText = "Mute";
+  let theirMuteButtonText = "Mute";  
   $: {
     if ($theirVideo !== null) {
       console.log('their video', $theirVideo);
@@ -154,7 +156,7 @@
 
   var connectToRandomPartner = (e) => {}; //function to connect to a random partner
   var turnUpVolume = () => {}; //turn up the volume when connected to another user
-  var sendMuteSelfMessage = () => {}; //if muting self, need to send to other person to mute.
+  var sendMuteMessage = (which:number, muted:boolean) => {}; //if muting self, need to send to other person to mute.
 
   const BEGINNING_VOLUME = 0.66;
   // var selfMute;
@@ -409,6 +411,30 @@
           keypointsUpdated(event.theirId, message.pose, message.size);
           break;
         }
+        case "Mute": {
+          if( message.which === 0 )
+          {
+            if( message.muted ){
+              myMuteButtonText = "Unmute";
+            }
+            else
+            {
+              myMuteButtonText = "Mute";
+            }
+          }
+          else
+          {
+            theirVideoElement.muted = message.muted;
+            if( message.muted ){
+              theirMuteButtonText = "Unmute";
+            }
+            else
+            {
+              theirMuteButtonText = "Mute";
+            }
+          }
+          break;
+        }
 
         case "Text": {
           break;
@@ -611,6 +637,21 @@
       }
     }
 
+  sendMuteMessage = (which: number, muted: boolean) =>
+  {
+          // send to peers w/ data connections
+          peerIds
+        .filter((theirId) => peerConnections[theirId]?.data === true)
+        .forEach((theirId) => {
+          dispatchToPeer({
+            type: "SendPeerMessage",
+            message: { type: "Mute", which, muted },
+            myId,
+            theirId,
+          });
+        });
+  }
+
 
     return () => {
       console.log(`Cleaning up app for ${myId}`);
@@ -649,7 +690,7 @@
       }
   }
 
-  let myMuteButtonText = "Mute";
+  //TODO: Implement -- need to just send a message via peerjs to "muteThem"
   export function muteSelf(e)
   {
     let button = e;
@@ -658,15 +699,17 @@
         if( myMuteButtonText === "Mute" )
         {
           myMuteButtonText = "Unmute";
+          sendMuteMessage(1, true); 
         }
         else
         {
           myMuteButtonText = "Mute";
+          sendMuteMessage(1, false); 
+
         }
     }
   }
 
-  let theirMuteButtonText = "Mute"; 
   export function muteThem(e)
   {
 
@@ -693,6 +736,8 @@
 
           }
         }
+        sendMuteMessage(0, theirVideoElement.muted); 
+
     }
   }
 
