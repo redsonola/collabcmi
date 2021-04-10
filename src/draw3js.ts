@@ -145,11 +145,13 @@ export function threeRenderCode({
       // replace video if it exists
       group.children
         .filter(obj => obj.userData.isVideo)
-        .map(obj => group?.remove(obj));
+        .forEach(obj => group?.remove(obj));
 
     } else {
       // add the video if it's not there
       group = new Group();
+      allVideosGroup.add(group);
+
       group.userData.personId = personId;
       group.userData.isVideoGroup = true;
 
@@ -160,9 +162,9 @@ export function threeRenderCode({
       //   videoGroups.push(group);
       // else videoGroups.unshift(group);
       videoGroups.sort((a, b) => orderParticipantID(a.userData.personId, b.userData.personId));
-      allVideosGroup.add(group); //add from start? - can this be removed?
     }
 
+    group.children.forEach(c => c.position.y = Math.random());
     const vid = videoRect(video);
     const scaleNum = 1 / video.getSize().width;
     vid.applyMatrix4(new Matrix4().makeScale(scaleNum, scaleNum, 1))

@@ -43,7 +43,7 @@ const waitUntil4 = (videoElement: HTMLVideoElement) =>
   waitUntil(() => videoElement.readyState === 4);
 
 // webcam if no url provided
-export async function makeVideoElement(source?: string | MediaStream): Promise<CameraVideo> {
+export async function makeVideoElement(source?: string | MediaStream): Promise<CameraVideo | undefined> {
   const videoElement = document.createElement('video');
   videoElement.autoplay = true;
 
@@ -54,7 +54,6 @@ export async function makeVideoElement(source?: string | MediaStream): Promise<C
     await Promise.all([
       waitUntil4(videoElement),
       waitUntilHasSize(stream)
-
     ]);
     videoElement.muted = true; 
     return {
@@ -88,10 +87,10 @@ export async function makeVideoElement(source?: string | MediaStream): Promise<C
         return { width: videoWidth, height: videoHeight };
       }
     };
-  } else {
+  } else if (source) {
     console.log('making stream video element', source, ...source.getVideoTracks().map(t => t.getSettings()));
     await Promise.all([
-      await waitUntilLive(source),
+      waitUntilLive(source),
       waitUntilHasSize(source)
     ]);
     console.log('has size', source, ...source.getVideoTracks().map(t => t.getSettings()));
@@ -115,29 +114,33 @@ export interface WritableVideoStore {
 }
 
 export function videoSubscription(source?: string | MediaStream): Readable<CameraVideo | null> & WritableVideoStore {
-  let lastVideo: Promise<CameraVideo> | undefined;
+  let lastVideo: Promise<CameraVideo | undefined> | undefined;
+  let lastSource = source;
 
   const store = writable<CameraVideo | null>(null, (set) => {
     // when going from 0 to 1 subscribers, create the video:
     lastVideo = makeVideoElement(source)
-    lastVideo.then(set);
+    lastVideo.then(val => set(val || null));
     return () => {
       // when going from 1 to 0 subscribers, stop it:
-      lastVideo?.then(vid => vid.stop());
+      lastVideo?.then(vid => vid?.stop());
     }
   });
 
   return {
     subscribe: store.subscribe,
     setSource(source?: string | MediaStream) {
-      if (lastVideo) {
-        lastVideo = lastVideo
-          .then(v => v.stop())
-          .then(() => makeVideoElement(source));
-      } else {
-        lastVideo = makeVideoElement(source);
+      if (lastSource !== source) {
+        if (lastVideo) {
+          lastVideo = lastVideo
+            .then(v => v?.stop())
+            .then(() => makeVideoElement(source));
+        } else {
+          lastVideo = makeVideoElement(source);
+        }
+        lastVideo.then(video => store.set(video || null));
       }
-      lastVideo.then(video => store.set(video));
+      lastSource = source;
     }
   };
 }

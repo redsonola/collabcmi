@@ -59,8 +59,14 @@
   export let router: RouterState;
   console.log({router})
 
-  const webcamVideo = videoSubscription();
+  const webcamVideo = videoSubscription("webcam");
+  const theirVideo = videoSubscription();
   // const videoSources = ["webcam", "/spacebtwTest.mp4", "/synchTestVideo.mp4"];
+  $: {
+    if ($theirVideo !== null) {
+      console.log('their video', $theirVideo);
+    }
+  }
 
   export let myId: string | undefined =
     new URL(window.location.href).searchParams.get("myid") || undefined;
@@ -435,11 +441,7 @@
           setPeerConnection(event.theirId, "media", "received");
           callVideoUnsubscribe = webcamVideo.subscribe(async (video) => {
             if (video?.stream) {
-              dispatchToPeer({
-                ...event,
-                type: "AnswerCall",
-                mediaStream: video.stream,
-              });
+              dispatchToPeer({ ...event, type: "AnswerCall", mediaStream: video.stream });
             } else if (video) {
               console.warn(
                 "Rec'd call but didn't answer b/c I don't have a video stream :("
@@ -462,18 +464,14 @@
         }
 
         case "CallAnswered": {
-          theirVideoUnsubscribe = videoSubscription(
-            event.mediaStream
-          ).subscribe(async (video) => {
+          console.log('CallAnswered', event);
+          theirVideoUnsubscribe = theirVideo.subscribe(video => {
             if (video) {
-              three.dispatch({
-                type: "AddVideo",
-                personId: event.theirId,
-                video,
-              });
+              three.dispatch({ type: "AddVideo", personId: event.theirId, video });
               setPeerConnection(event.theirId, "media", true);
             }
           });
+          theirVideo.setSource(event.mediaStream);
           break;
         }
 
