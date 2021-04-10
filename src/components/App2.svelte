@@ -8,7 +8,7 @@
   // import { interceptFileRequest } from "../hackXhrInterceptor";
 
   import { videoSubscription } from "../threejs/cameraVideoElement";
-  import { goLoop, sleep } from "../threejs/promiseHelpers";
+  import { goLoop, sleep, timeout } from "../threejs/promiseHelpers";
   import { initPosenet } from "../threejs/posenetcopy";
   // import { initPosenet } from "../threejs/mediapipePose";
   import type { PosenetSetup } from "../threejs/mediapipePose";
@@ -621,11 +621,10 @@
   }
 
   onMount(() => {
-    const promiseCleanup = init(myId);
+    const promiseCleanup = timeout(100).then(() => init(myId));
+
     return () => {
-      promiseCleanup.then((cleanup) => {
-        cleanup();
-      });
+      promiseCleanup.then(cleanup => cleanup());
     };
   });
 
