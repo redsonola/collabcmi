@@ -72,6 +72,8 @@
   let theirMuteButtonText = muteUrl; 
   let myMutePosition : THREE.Vector3 = new THREE.Vector3(); 
   let theirMutePosition : THREE.Vector3 = new THREE.Vector3(); 
+  let handleResize : ()=>void = ()=>{}; //init as empty
+  
   $: {
     if ($theirVideo !== null) {
       console.log('their video', $theirVideo);
@@ -171,7 +173,7 @@
   let three: ThreeRenderer;
   $: if (canvas) {
     three?.cleanup();
-    three = threeRenderCode({ canvas });
+    three = threeRenderCode({ canvas, handleResize });
   }
   $: if (three && size) {
     setTimeout(() => {
@@ -748,8 +750,21 @@
     }
   }
 
+    //test.. may have to force call the three animate function
+  handleResize = () => 
+  {
+    if( three && myId && friendParticipant.getParticipantID() && (peerIds.length !== 0 || idToCall !== null) )
+    {
+      myMutePosition = three.getMuteButtonPosition(myId);
+      theirMutePosition = three.getMuteButtonPosition(friendParticipant.getParticipantID());
+    }
+  }
+
+
 
 </script>
+
+<!-- <svelte:window on:resize={handleResize}/> -->
 
 <div class="valueSliders">
   <label for="mainVolume">Volume:</label>
@@ -788,7 +803,9 @@
 <div class="myMute" style={`left:${myMutePosition.x}px; top:${myMutePosition.y}px`}>
   <input type="image" on:click={muteSelf} alt="muteButton" src={myMuteButtonText} width="23px" height="23px" />
 </div>
-<div class="theirMute" style={`left:${theirMutePosition.x}px; top:${theirMutePosition.y}px`}>
+
+<!-- I just made the myMutePosition.y position top for this one, bc they should be the same anyways. fix for real l8rz -->
+<div class="theirMute" style={`left:${theirMutePosition.x}px; top:${myMutePosition.y}px`}> 
   <input type="image" on:click={muteThem} alt="theirMuteButton" src={theirMuteButtonText} width="23px" height="23px" />
 </div>
 {/if}

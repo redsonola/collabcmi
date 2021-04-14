@@ -20,6 +20,7 @@ export interface PoseVideo {
 
 export interface ThreeRenderProps {
   canvas: HTMLCanvasElement;
+  handleResize : ()=>void;
 };
 
 export interface ThreeRenderer {
@@ -35,6 +36,7 @@ const map0 = textureLoader.load('/circle.jpg');
 
 export function threeRenderCode({
   canvas,
+  handleResize
 }: ThreeRenderProps): ThreeRenderer {
   let running = true;
 
@@ -141,6 +143,9 @@ export function threeRenderCode({
   let videoWidth3js = 0; 
   let videoHeight3js = 0; 
 
+  let lastSize : {w:number, h:number} = {w:0,h:0};
+
+
 
   const videos: Mesh<PlaneBufferGeometry, MeshPhongMaterial>[] = [];
   //TODO this only works for dyads. Find another solution.
@@ -229,6 +234,14 @@ export function threeRenderCode({
   function animate() {
     if (running) {
       updateSize(canvas.clientWidth, canvas.clientHeight);
+      if(lastSize.w !== canvas.clientWidth || lastSize.h !== canvas.clientHeight) //only call if different
+      {
+        if( handleResize )
+          handleResize();
+      }
+      lastSize.w = canvas.clientWidth;
+      lastSize.h = canvas.clientHeight;
+
 
       const now = performance.now();
       const delta = now - lastUpdate;
@@ -371,7 +384,11 @@ export function threeRenderCode({
       pos.y = - (pos.y * heightHalf) + heightHalf;
       pos.z = 0;
 
-      //after this need to add/subtract 23 pixels
+      //after this need to add/subtract 23 pixels for one of them.
+      if(xsign > 0)
+      {
+        pos.x -= 23; //subtracts 23 px so in line. this is the width of the icon. need to put in constant later.
+      }
 
       // console.log(pos); 
       return pos; 
