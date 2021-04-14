@@ -421,22 +421,22 @@
           if( message.which === 0 )
           {
             if( message.muted ){
-              myMuteButtonText = "Unmute";
+              myMuteButtonText = unmuteURL;
             }
             else
             {
-              myMuteButtonText = "Mute";
+              myMuteButtonText = muteUrl;
             }
           }
           else
           {
             theirVideoElement.muted = message.muted;
             if( message.muted ){
-              theirMuteButtonText = "Unmute";
+              theirMuteButtonText = unmuteURL;
             }
             else
             {
-              theirMuteButtonText = "Mute";
+              theirMuteButtonText = muteUrl;
             }
           }
           break;
