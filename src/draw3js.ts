@@ -10,8 +10,6 @@ import type { PosenetSetup } from './threejs/mediapipePose';
 import type { Pose } from '@tensorflow-models/posenet';
 import { orderParticipantID } from './participant'
 import type { SkeletionIntersection } from './skeletonIntersection';
-import {Projector} from 'three/examples/js/renderers/projector.js'
-import { poseSimilarity } from './poseMatching';
 
 export const videoOverlapAmount = 0.66;
 
