@@ -55,6 +55,8 @@
   import * as Tone from "tone";
   import "../Organism01";
   import { onVirtualTouch } from "../Organism01";
+  import * as THREE from "three";
+
 
   export let router: RouterState;
   console.log({router})
@@ -64,8 +66,12 @@
   // const videoSources = ["webcam", "/spacebtwTest.mp4", "/synchTestVideo.mp4"];
 
   let theirVideoElement;
-  let myMuteButtonText = "Mute";
-  let theirMuteButtonText = "Mute";  
+  let muteUrl = "./icons/noun_mic_283245_grey.png"; 
+  let unmuteURL = "./icons/noun_Mute_2692102_grey.png";
+  let myMuteButtonText = muteUrl;
+  let theirMuteButtonText = muteUrl; 
+  let myMutePosition : THREE.Vector3 = new THREE.Vector3(); 
+  let theirMutePosition : THREE.Vector3 = new THREE.Vector3(); 
   $: {
     if ($theirVideo !== null) {
       console.log('their video', $theirVideo);
@@ -504,6 +510,8 @@
               setPeerConnection(event.theirId, "media", true);
             }
           });
+          myMutePosition = three.getMuteButtonPosition(myId);
+          theirMutePosition = three.getMuteButtonPosition(event.theirId);
           theirVideo.setSource(event.mediaStream);
           break;
         }
@@ -696,14 +704,14 @@
     let button = e;
     if( button )
     {
-        if( myMuteButtonText === "Mute" )
+        if( myMuteButtonText === muteUrl )
         {
-          myMuteButtonText = "Unmute";
+          myMuteButtonText = unmuteURL;
           sendMuteMessage(1, true); 
         }
         else
         {
-          myMuteButtonText = "Mute";
+          myMuteButtonText = muteUrl;
           sendMuteMessage(1, false); 
 
         }
@@ -716,9 +724,9 @@
     let button = e;
     if( button )
     {
-        if( theirMuteButtonText === "Mute" )
+        if( theirMuteButtonText === muteUrl )
         {
-          theirMuteButtonText = "Unmute";
+          theirMuteButtonText = unmuteURL;
           if( theirVideoElement )
           {
             theirVideoElement.muted = true ;
@@ -728,7 +736,7 @@
         }
         else
         {
-          theirMuteButtonText = "Mute";
+          theirMuteButtonText = muteUrl;
           if( theirVideoElement )
           {
             theirVideoElement.muted = false; 
@@ -777,9 +785,14 @@
   <!-- <br/><br/> -->
 </div>
 
-<div class="myMute" on:click={muteSelf}>{myMuteButtonText}</div>
-<div class="theirMute" on:click={muteThem}>{theirMuteButtonText}</div>
-
+{#if peerIds.length !== 0 || idToCall !== null}
+<div class="myMute" style={`left:${myMutePosition.x}px; top:${myMutePosition.y}px`}>
+  <input type="image" on:click={muteSelf} alt="muteButton" src={myMuteButtonText} width="23px" height="23px" />
+</div>
+<div class="theirMute" style={`left:${theirMutePosition.x}px; top:${theirMutePosition.y}px`}>
+  <input type="image" on:click={muteThem} alt="theirMuteButton" src={theirMuteButtonText} width="23px" height="23px" />
+</div>
+{/if}
 <!-- <DebugPanel messages={messages} myId={myId} peerConnections={peerConnections}> -->
 <!--
     anything passed in here will be in the Passed in tab
