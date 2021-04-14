@@ -73,6 +73,8 @@
   let myMutePosition : THREE.Vector3 = new THREE.Vector3(); 
   let theirMutePosition : THREE.Vector3 = new THREE.Vector3(); 
   let handleResize : ()=>void = ()=>{}; //init as empty
+  let glowClass = "noGlow"; 
+  let volSliderReading = 0; 
   
   $: {
     if ($theirVideo !== null) {
@@ -408,6 +410,7 @@
           volSlider.value = BEGINNING_VOLUME.toString();
       }
       mainVolume.set(BEGINNING_VOLUME);
+      volSliderReading = BEGINNING_VOLUME; //ohhh this should be refactored.
     };
 
     function handlePeerMessage(event: PeerMessageReceived<PeerMessage>) {
@@ -563,6 +566,7 @@
         const theirId = idToCall;
         dispatchToPeer({ type: "DisconnectMedia", theirId });
         dispatchToPeer({ type: "ConnectToPeer", myId, theirId });
+        glowClass = "glowEffect";
 
         if (video.stream) {
           dispatchToPeer({
@@ -687,7 +691,13 @@
   });
 
   export function onChangeVolumeSlider(e) {
+    let vol = parseFloat(e.currentTarget.value);
+    volSliderReading = vol;
     mainVolume.set(parseFloat(e.currentTarget.value));
+    if( vol > 0 )
+    {
+      glowClass = "noGlow";
+    }
   }
 
   //not used but could become useful later if need to seriously remix sounds
@@ -761,13 +771,13 @@
   }
 
 
-
 </script>
 
 <!-- <svelte:window on:resize={handleResize}/> -->
 
 <div class="valueSliders">
   <label for="mainVolume">Volume:</label>
+  <div class={glowClass} width="75%">
   <input
     type="range"
     min="0"
@@ -776,12 +786,14 @@
     id="mainVolume"
     step="0.01"
     value="0"
-    on:input={onChangeVolumeSlider}
-  /><br />
+    width="100%"
+    on:input={onChangeVolumeSlider} />
+  </div>
+  <!-- <br /> -->
   <svg
     class="meter"
     xmlns="http://www.w3.org/2000/svg"
-    width="87%"
+    width="75%"
     height="16"
     fill="none"
   >
@@ -793,7 +805,9 @@
       rx="3"
     />
   </svg><br /> 
-  Turn up the volume to hear sound.
+  {#if volSliderReading <= 0 }
+  Turn up the volume to hear music.
+  {/if}
 
   <!-- <text>{volumeMeterReading}</text> -->
   <!-- <br/><br/> -->
@@ -950,4 +964,27 @@
   .videoAndPoseCanvas {
     z-index: -1;
   }
+
+  .noGlow {
+    z-index: 2;
+  }
+
+  .glowEffect {
+    /* width: 45%; */
+    /* height: 200px; */ 
+    border-radius: 100px;
+    /* background-color: rgb(8, 67, 177); */
+    animation: glow 1s infinite alternate;
+}
+
+@keyframes glow {
+  from {
+    box-shadow: 0 0 10px -10px rgb(8, 67, 177);
+  }
+  to {
+    box-shadow: 0 0 10px 10px rgb(8, 67, 177);
+  }
+}
+
+
 </style>
