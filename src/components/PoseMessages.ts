@@ -30,7 +30,14 @@ export interface TextMessage {
   message: string;
 }
 
-export type PeerMessage = PoseMessage | TextMessage;
+export interface MuteMessage {
+  type: 'Mute';
+  which: number; //0 - self, 1 - them --> from POV of receiver not sender
+  muted: boolean; //true - mute person, false -- unmute person
+
+}
+
+export type PeerMessage = PoseMessage | TextMessage | MuteMessage ;
 
 export interface PeerMessageStore {
   [key: string]: PeerEvents<PeerMessage> | PeerCommands<PeerMessage>

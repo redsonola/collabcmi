@@ -1,4 +1,4 @@
-import { Matrix4, Quaternion, Vector3, Group, DirectionalLight, Scene, PlaneBufferGeometry, Mesh, MeshPhongMaterial, Box3, Line, MeshBasicMaterial, Plane, PlaneHelper } from 'three';
+import { Matrix4, Quaternion, Vector3, Group, DirectionalLight, Scene, PlaneBufferGeometry, Mesh, MeshPhongMaterial, Box3, Line, MeshBasicMaterial, Plane, PlaneHelper, Object3D } from 'three';
 import * as THREE from 'three';
 
 import { videoRect } from './threejs/videoRect';
@@ -10,6 +10,8 @@ import type { PosenetSetup } from './threejs/mediapipePose';
 import type { Pose } from '@tensorflow-models/posenet';
 import { orderParticipantID } from './participant'
 import type { SkeletionIntersection } from './skeletonIntersection';
+import {Projector} from 'three/examples/js/renderers/projector.js'
+import { poseSimilarity } from './poseMatching';
 
 export const videoOverlapAmount = 0.66;
 
@@ -25,6 +27,7 @@ export interface ThreeRenderProps {
 export interface ThreeRenderer {
   cleanup: () => void;
   dispatch: (command: DrawingCommands) => void;
+  getMuteButtonPosition: (personId: string) =>  THREE.Vector3 ;
 }
 
 export type MakeThreeRenderer = (props: ThreeRenderProps) => ThreeRenderer;
@@ -137,6 +140,10 @@ export function threeRenderCode({
   const videoGroups: Group[] = [];
   const findGroup = id => videoGroups.find(g => g.userData.personId === id);
 
+  let videoWidth3js = 0; 
+  let videoHeight3js = 0; 
+
+
   const videos: Mesh<PlaneBufferGeometry, MeshPhongMaterial>[] = [];
   //TODO this only works for dyads. Find another solution.
   const addVideo = (video: CameraVideo, personId: string) => {
@@ -170,7 +177,14 @@ export function threeRenderCode({
     vid.applyMatrix4(new Matrix4().makeScale(scaleNum, scaleNum, 1))
 
     group.add(vid);
-
+    let box = new THREE.Box3().setFromObject( vid );
+    let sz = new THREE.Vector3();
+    if( !isNaN( box.getSize(sz).x) )
+    {
+      videoWidth3js = box.getSize(sz).x;
+      videoHeight3js = sz.y;
+    }
+    
     let leftMargin : number = 0.67; 
     if( videoGroups.length <= 1 )
     {
@@ -307,6 +321,64 @@ export function threeRenderCode({
   }
   return {
     dispatch,
+    getMuteButtonPosition (personId: string) : THREE.Vector3 {
+
+      //
+      let pos = new THREE.Vector3();
+      const videoGroup = findGroup(personId);
+      if (!videoGroup) return pos;
+
+      const index = videoGroups.indexOf(videoGroup); 
+      if(index === -1) return pos; 
+
+      // const vid = videoGroup.children.find((element)=>element.userData.isVideo);
+      // if(!vid) return pos;
+
+
+      //convert from threejs coordinates to computer screen/browser coordinates.
+      console.log(personId + " vid.position ");
+      console.log( videoGroup.position );
+
+      // var projector = new Projector();
+      // projector.projectVector( pos.setFromMatrixPosition( videoGroup.matrixWorld ), camera );
+
+      pos = videoGroup.position.clone(); //center of the video
+
+      //TODO: when more participants fix
+      let xsign = -1;
+      if(index === 0)
+      {
+        xsign = 1;
+      }
+      let vidWidth = videoWidth3js;
+      let vidHeight = videoHeight3js;
+      console.log("Should be the same across everything");
+
+      console.log({ videoWidth3js, videoHeight3js, xsign });
+
+      pos.x = pos.x - ( xsign * ( vidWidth / 2 ) ); 
+      pos.y = pos.y - (vidHeight / 2);
+
+      console.log(pos); 
+      
+      camera.updateMatrixWorld(); 
+      pos.project(camera);
+
+      let widthHalf = window.innerWidth / 2;
+      let heightHalf = window.innerHeight  / 2;
+
+      // console.log(pos); 
+
+      pos.x = (pos.x * widthHalf) + widthHalf;
+      pos.y = - (pos.y * heightHalf) + heightHalf;
+      pos.z = 0;
+
+      //after this need to add/subtract 23 pixels
+
+      // console.log(pos); 
+      return pos; 
+
+    },
     cleanup() {
       console.warn('Cleaning up three stuff');
       running = false;

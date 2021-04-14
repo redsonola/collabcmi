@@ -78,6 +78,11 @@ export function initThree(config: ThreeRenderProps): ThreeRenderer {
         }
       }
     },
+    getMuteButtonPosition(personId: string) : THREE.Vector3
+    {
+      let pos = new THREE.Vector3(); 
+      return pos; 
+    },
     cleanup() {
       console.warn('Cleaning up three stuff');
       window.removeEventListener('resize', onWindowResize, false);
