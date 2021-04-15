@@ -83,6 +83,6 @@ h1, h2, h3, h4, h5, h6 {
 </div>
 
 <!-- Footer -->
-<footer class="w3-center w3-grey w3-padding-32">
+<!-- <footer class="w3-center w3-grey w3-padding-32">
   <p><a href="/" title="home" class="w3-hover-text-deep-purple">Back to Skin Hunger</a></p>
-</footer>
+</footer> -->
