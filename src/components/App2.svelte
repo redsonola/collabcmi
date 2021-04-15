@@ -873,6 +873,10 @@
   {/if}
 </div>  
 
+<br />
+<div class="linksPanel">
+  <a href="/about" target="_blank">About Skin Hunger</a>
+</div>
 
 {#if loading}
   <Loading {progress} />
@@ -891,6 +895,30 @@
     width: 200px;
     z-index: 1; 
   }
+
+  .linksPanel {
+    position: absolute;
+    left: 25px;
+    bottom: 25px; 
+    z-index: 2; 
+    color: #928888;
+  }
+
+  a:link, a:visited {
+  color: #928888;
+  padding: 15px 25px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+}
+
+a:hover {
+  color: #57035f;
+  padding: 15px 25px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+}
 
   .myMute {
     position: absolute;

@@ -6,6 +6,7 @@
   <!-- <Route exact fallback component={() => import("./SkinHunger.svelte")} /> -->
   <Route exact fallback path="/" component={() => import("./App2.svelte")} let:router />
   <Route exact path="/call" component={() => import("./CallScreen.svelte")} let:router />
+  <Route exact path="/about" component={() => import("./About.svelte")} />
 </Router>
 
 <style>
