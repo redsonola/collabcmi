@@ -427,10 +427,20 @@
       });
 
       conn.on('close', function () {
+        console.log("closing out bc other participant closed");
         peerIds = peerIds.filter((id) => id !== conn.peer);
         delete dataConnections[conn.peer];
         // updatePeerData(conn.peer, () => false);
         three.dispatch({ type: "RemoveVideo", personId: conn.peer });
+        theirVideoUnsubscribe();
+
+        //get rid of current friend
+        friendParticipant = new Participant; 
+        participant.addFriendParticipant(friendParticipant); 
+        peerIds = [];
+        const status = document.getElementById("chatStatus"); 
+        if( status ) status.innerText = "The other participant has closed the connection...";
+
       });
 
       conn.on('error', (error) => {
@@ -466,6 +476,8 @@
         console.log('removing media connection');
         theirVideoUnsubscribe();
         three.dispatch({ type: "RemoveVideo", personId: call.peer });
+        console.log("closing out bc other participant closed here 479");
+
       });
 
       call.on('error', (error) => {
