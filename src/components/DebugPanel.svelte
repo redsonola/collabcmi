@@ -1,35 +1,16 @@
 <script lang="ts">
   import { slide } from 'svelte/transition';
-  import type { Readable } from 'svelte/store';
-  import type { PeerCommands, PeerEvents, PeerMessageReceived, SendPeerMessage } from '../peerJs';
-  import type { PeerConnections, PeerMessageStore, PoseMessage } from "./PoseMessages";
-  import PrintPose from './PrintPose.svelte';
+  // import PrintPose from './PrintPose.svelte';
 
   export let debugPanelExpanded = false;
 
-  export let messages: Readable<PeerMessageStore>;
-  export let peerConnections: PeerConnections = {};
+  // export let messages: Readable<PeerMessageStore>;
+  export let peerConnections: Record<string, string> = {};
   export let myId: string | undefined;
 
   function toggleDebugPanel () {
     debugPanelExpanded = !debugPanelExpanded;
   }
-
-  function isPoseEvent (action: PeerEvents<any> | PeerCommands<any>): action is PeerMessageReceived<PoseMessage> {
-    return action.type === "PeerMessageReceived" && action.message.type === "Pose";
-  }
-
-  function isPoseCommand (action: PeerEvents<any> | PeerCommands<any>): action is SendPeerMessage<PoseMessage> {
-    return action.type === "SendPeerMessage" && action.message.type === "Pose";
-  }
-
-  const getMyPose = (messages: PeerMessageStore) => Object.values(messages)
-    .filter(isPoseCommand)
-    .map(action => action.message.pose);
-
-  const getTheirPose = (messages: PeerMessageStore) => Object.values(messages)
-    .filter(isPoseEvent)
-    .map(action => action.message.pose);
 
   let debugPanelSection = 'all';
   const setDebugPanelSection = section => () => {
@@ -74,9 +55,10 @@
 
 </script>
 
-<style>
+<style lang="scss">
   .devPanel {
     position: absolute;
+    z-index: 100;
     top: 0;
     right: 0;
   }
@@ -144,20 +126,20 @@
         {/if}
         {#if debugSections.all}
           <div class="title">Other messages</div>
-          {#each Object.entries($messages)
+          <!-- {#each Object.entries($messages)
             .filter(([, msg]) => !isPoseEvent(msg) && !isPoseCommand(msg))
             as [key, message] (key)}
             <pre>{showJson(message)}</pre>
-          {/each}
+          {/each} -->
         {/if}
-        {#if debugSections.myPose}
+        <!-- {#if debugSections.myPose}
           <div class="title">My last pose</div>
           {#each getMyPose($messages) as pose}<PrintPose pose={pose} />{/each}
-        {/if}
-        {#if debugSections.theirPose}
+        {/if} -->
+        <!-- {#if debugSections.theirPose}
           <div class="title">Their last pose</div>
           {#each getTheirPose($messages) as pose}<PrintPose pose={pose} />{/each}
-        {/if}
+        {/if} -->
     </div>
     {/if}
   </div>

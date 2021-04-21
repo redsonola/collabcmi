@@ -1,4 +1,10 @@
 <script lang="ts">
+  import { createEventDispatcher } from 'svelte';
+
+  const dispatch = createEventDispatcher<{
+    "call-link-changed": { url: string }
+  }>();
+
   export let myId;
   export let turnUpVolume;
   export let loadMusic;
@@ -16,6 +22,7 @@
     url.searchParams.delete("myid");
     url.searchParams.set("callid", myId);
     linkUrl = url.href;
+    dispatch('call-link-changed', { url: linkUrl });
   }
 
   let lastTimeout;

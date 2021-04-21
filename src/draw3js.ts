@@ -137,8 +137,8 @@ export function threeRenderCode({
   scene.add(allVideosGroup);
 
   // video groups have a video and a drawn skeleton
-  const videoGroups: Group[] = [];
-  const findGroup = id => videoGroups.find(g => g.userData.personId === id);
+  // const videoGroups: Group[] = [];
+  const findGroup = (id) => allVideosGroup.children.find(g => g.userData.personId === id) as Group;
 
   let videoWidth3js = 0; 
   let videoHeight3js = 0; 
@@ -167,11 +167,11 @@ export function threeRenderCode({
 
       participantJoints.push(new Joints(personId));
 
-      videoGroups.push(group);
+      // videoGroups.push(group);
       // if(!isCallAnswered)
       //   videoGroups.push(group);
       // else videoGroups.unshift(group);
-      videoGroups.sort((a, b) => orderParticipantID(a.userData.personId, b.userData.personId));
+      allVideosGroup.children.sort((a, b) => orderParticipantID(a.userData.personId, b.userData.personId));
     }
 
     group.children.forEach(c => c.position.y = Math.random());
@@ -189,13 +189,13 @@ export function threeRenderCode({
     }
     
     let leftMargin : number = 0.67; 
-    if( videoGroups.length <= 1 )
+    if( allVideosGroup.children.length <= 1 )
     {
       leftMargin = 0.5; 
     }
 
-    for (let i = 0; i < videoGroups.length; i++) {
-      const group = videoGroups[i];
+    for (let i = 0; i < allVideosGroup.children.length; i++) {
+      const group = allVideosGroup.children[i];
       group.position.x = ( videoOverlapAmount * i ) + leftMargin;
       group.position.y = 0.3;
 
@@ -225,7 +225,7 @@ export function threeRenderCode({
 
     lookAt(new Box3(
       new Vector3(0, -0.5, 0),
-      new Vector3(videoGroups.length, 1, 0),
+      new Vector3(allVideosGroup.children.length, 1, 0),
     ));
   }
 
@@ -265,7 +265,7 @@ export function threeRenderCode({
       }
 
       case "RemoveVideo": {
-        allVideosGroup.remove(videoGroups[command.personId]);
+        allVideosGroup.remove(findGroup(command.personId));
         console.warn("TODO: cleanup threejs video objects");
         break;
       }
@@ -339,7 +339,7 @@ export function threeRenderCode({
       const videoGroup = findGroup(personId);
       if (!videoGroup) return pos;
 
-      const index = videoGroups.indexOf(videoGroup); 
+      const index = allVideosGroup.children.indexOf(videoGroup); 
       if(index === -1) return pos; 
 
       // const vid = videoGroup.children.find((element)=>element.userData.isVideo);

@@ -1,6 +1,7 @@
 {
 	"extends": "@tsconfig/svelte/tsconfig.json",
 	"compilerOptions": {
+		"resolveJsonModule": true,
 		"lib": ["DOM", "ES2017", "ESNext", "WebWorker"],
 		"types": ["svelte", "node"],
 		"strictFunctionTypes": false,
@@ -24,7 +25,6 @@
 	"allowSyntheticDefaultImports": true,
 	"forceConsistentCasingInFileNames": false,
 	"module": "esnext",
-	"resolveJsonModule": true,
 	"isolatedModules": true,
 	"noEmit": true,
 	"jsx": "react",
