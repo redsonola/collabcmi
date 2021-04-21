@@ -365,9 +365,6 @@ function animate() {
         ova.setTendrilOpacity(ovaCiliaAlpha)
     }
 
-
-
-
     if (tet !== undefined) {
         tet.verlet();
         tet.pulseNode(0, .009, Math.PI / 45);
