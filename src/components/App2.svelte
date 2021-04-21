@@ -63,8 +63,10 @@
   let myMutePosition : THREE.Vector3 = new THREE.Vector3(); 
   let theirMutePosition : THREE.Vector3 = new THREE.Vector3(); 
   let handleResize : ()=>void = ()=>{}; //init as empty
+  let beforeUnload : ()=>void = ()=>{}; 
   let glowClass = "noGlow"; 
   let volSliderReading = 0; 
+  let inPotForChatRoulette = false; 
   
   $: {
     if ($theirVideo !== null) {
@@ -398,6 +400,8 @@
       dataConnections[conn.peer] = conn;
       console.log("listenToDataConnection", conn, dataConnections);
       friendParticipant.setParticipantID(conn.peer); //for the dyad arrangement set the ID
+      peerIds.push(conn.peer); //so that other things work -- plugging the hole in the dam. -CDB
+
       console.log('setting friend ID:', conn.peer)
 
       conn.on('data', function (message: PeerMessage) {
@@ -438,8 +442,14 @@
     peer.on('connection', listenToDataConnection);
 
     function listenToMediaConnection(call: MediaConnection) {
+
+
+
       // theirId = call.peer;
       call.on('stream', function (mediaStream) {
+        const status = document.getElementById("chatStatus"); 
+        if( status ) status.innerText = "";
+
         console.log('CallAnswered', call, mediaStream);
         theirVideoUnsubscribe = theirVideo.subscribe(video => {
           if (video) {
@@ -545,9 +555,10 @@
 
     connectToRandomPartner = async (e) => {
       let theirId = await findChatRoulettePartner( peer.id );
+
       if( theirId )
       {
-        console.log("received id");
+
         const myVideoUnsubscribe = webcamVideo.subscribe(async (video) => 
         {
           if(!video){
@@ -576,8 +587,8 @@
       {
         const status = document.getElementById("chatStatus"); 
         if( status )
-          status.innerText = "Waiting for a chat partner..."
-      }
+          status.innerText = "Waiting for a chat partner...";
+        }
       await loadMusic(mainVolume);
       turnUpVolume();
     }
@@ -693,9 +704,21 @@
       theirMutePosition = three.getMuteButtonPosition(friendParticipant.getParticipantID());
     }
   }
+
+  beforeUnload = () =>
+  {
+      // send to peers w/ data connections
+      Object.values(dataConnections).forEach((conn) => {
+        if (conn.open) conn.close();
+      });
+      peer.disconnect(); 
+      console.log("disconnected from peer");
+  }
 </script>
 
 <!-- <svelte:window on:resize={handleResize}/> -->
+<svelte:window on:beforeunload={beforeUnload} on:close={beforeUnload}/>
+
 
 <div class="valueSliders">
   <label for="mainVolume">Music Volume:</label>
