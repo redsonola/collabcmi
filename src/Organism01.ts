@@ -433,7 +433,7 @@ function animate() {
 };
 
 //note: call this in the main -- App2.svelte
- animate();
+setTimeout(animate, 100);
 
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;

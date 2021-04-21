@@ -1,6 +1,9 @@
 <script lang="ts">
   export let myId;
   export let turnUpVolume;
+  export let loadMusic;
+  export let mainVolume; 
+
 
   let linkUrl;
   let inputElement;
@@ -19,6 +22,7 @@
 
   function copyToClipboard(e) {
     turnUpVolume();//not sure if this will stay here... hmm... gah
+    loadMusic( mainVolume );
 
     console.log("copying");
     inputElement.focus();

@@ -183,6 +183,30 @@
     }, 1);
   }
 
+  async function loadMusic (mainVolume : MainVolume)
+  {
+    //this is from my audiovisual project
+    midiFile = [new Tango332Riffs(mainVolume), new FourFloorRiffs(mainVolume)];
+    midiFileBass = [new BodhranTango332(mainVolume)];
+
+    //note: using a for-loop for this caused my browser to crash! WTF MATE GOOD TIMES.
+    Tone.Transport.start();
+    await midiFile[0].parseAllFiles();
+    midiFile[0].startLoop();
+    await midiFile[1].parseAllFiles();
+    midiFile[1].startLoop();
+    await midiFileBass[0].parseAllFiles();
+    midiFileBass[0].startLoop();
+
+    //this is the new code
+    tubaSonfier = new SonifierWithTuba(participant, mainVolume);
+    touchMusicalPhrases = new TouchPhrasesEachBar(
+      tubaSonfier,
+      midiFile,
+      midiFileBass
+    );
+  }
+
   /***************** main update function *****************/
 
   function keypointsUpdated(particiantId: string, pose: Pose, size: Size) {
@@ -294,6 +318,8 @@
           friendParticipant.getMaxBodyPartWindowedVariance() / 2;
       }
 
+      if(tubaSonfier && touchMusicalPhrases){
+
       //update music 1st
       tubaSonfier.update(
         yposOfTouch,
@@ -307,6 +333,7 @@
         yposOfTouch,
         combinedWindowedScore
       );
+    }
 
     } catch (ex) {
       console.error("***** FIXME *****");
@@ -373,26 +400,27 @@
       volumeMeterReading = val;
     });
 
-    //this is from my audiovisual project
-    midiFile = [new Tango332Riffs(mainVolume), new FourFloorRiffs(mainVolume)];
-    midiFileBass = [new BodhranTango332(mainVolume)];
+    // //this is from my audiovisual project
+    // midiFile = [new Tango332Riffs(mainVolume), new FourFloorRiffs(mainVolume)];
+    // midiFileBass = [new BodhranTango332(mainVolume)];
 
-    //note: using a for-loop for this caused my browser to crash! WTF MATE GOOD TIMES.
-    Tone.Transport.start();
-    await midiFile[0].parseAllFiles();
-    midiFile[0].startLoop();
-    await midiFile[1].parseAllFiles();
-    midiFile[1].startLoop();
-    await midiFileBass[0].parseAllFiles();
-    midiFileBass[0].startLoop();
+    // //note: using a for-loop for this caused my browser to crash! WTF MATE GOOD TIMES.
+    // Tone.Transport.start();
+    // await midiFile[0].parseAllFiles();
+    // midiFile[0].startLoop();
+    // await midiFile[1].parseAllFiles();
+    // midiFile[1].startLoop();
+    // await midiFileBass[0].parseAllFiles();
+    // midiFileBass[0].startLoop();
 
-    //this is the new code
-    tubaSonfier = new SonifierWithTuba(participant, mainVolume);
-    touchMusicalPhrases = new TouchPhrasesEachBar(
-      tubaSonfier,
-      midiFile,
-      midiFileBass
-    );
+    // //this is the new code
+    // tubaSonfier = new SonifierWithTuba(participant, mainVolume);
+    // touchMusicalPhrases = new TouchPhrasesEachBar(
+    //   tubaSonfier,
+    //   midiFile,
+    //   midiFileBass
+    // );
+
 
     const peer = createMessagingPeer<PoseMessage>(suppliedId, peerServerParams);
     const dispatchToPeer = (x: PeerCommands<any>) => {
@@ -412,6 +440,7 @@
       mainVolume.set(BEGINNING_VOLUME);
       volSliderReading = BEGINNING_VOLUME; //ohhh this should be refactored.
     };
+
 
     function handlePeerMessage(event: PeerMessageReceived<PeerMessage>) {
       const { message } = event;
@@ -576,8 +605,31 @@
             mediaStream: video.stream,
           });
         }
+
+        await loadMusic(mainVolume);
       }
     });
+
+    // //this is from my audiovisual project
+    // midiFile = [new Tango332Riffs(mainVolume), new FourFloorRiffs(mainVolume)];
+    // midiFileBass = [new BodhranTango332(mainVolume)];
+
+    // //note: using a for-loop for this caused my browser to crash! WTF MATE GOOD TIMES.
+    // Tone.Transport.start();
+    // await midiFile[0].parseAllFiles();
+    // midiFile[0].startLoop();
+    // await midiFile[1].parseAllFiles();
+    // midiFile[1].startLoop();
+    // await midiFileBass[0].parseAllFiles();
+    // midiFileBass[0].startLoop();
+
+    // //this is the new code
+    // tubaSonfier = new SonifierWithTuba(participant, mainVolume);
+    // touchMusicalPhrases = new TouchPhrasesEachBar(
+    //   tubaSonfier,
+    //   midiFile,
+    //   midiFileBass
+    // );
 
     goLoop(async () => {
       if (stopped) return goLoop.STOP_LOOP;
@@ -647,6 +699,7 @@
           if( status )
             status.innerText = "Waiting for a chat partner..."
         }
+        await loadMusic(mainVolume);
         turnUpVolume();
       }
     }
@@ -776,7 +829,7 @@
 <!-- <svelte:window on:resize={handleResize}/> -->
 
 <div class="valueSliders">
-  <label for="mainVolume">Volume:</label>
+  <label for="mainVolume">Music Volume:</label>
   <div class={glowClass} width="75%">
   <input
     type="range"
@@ -862,7 +915,7 @@
 
 <div class="callPanel">
   {#if peerIds.length === 0 && idToCall === null}
-    <Call {myId} {turnUpVolume} />
+    <Call {myId} {turnUpVolume} {loadMusic} {mainVolume} />
     <br/><br/><div class="callText">or<br/></div>
     <button type="button" class="chatRouletteButton" on:click={connectToRandomPartner}>Connect to a random partner!</button>
     <br /><br />

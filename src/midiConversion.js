@@ -32,6 +32,7 @@ export class MainVolume
     //expects 0 to 1
     set(vol)
     {
+
         if(vol <= 0.02)
         {
             this.mainVolume.volume.value = -100; 
