@@ -67,6 +67,8 @@
   let glowClass = "noGlow"; 
   let volSliderReading = 0; 
   let inPotForChatRoulette = false; 
+  let chatstatusMessage = ""; 
+
   
   $: {
     if ($theirVideo !== null) {
@@ -244,20 +246,27 @@
 
     windowedVarScore = participant.getMaxBodyPartWindowedVariance();
 
+    let justStartedTouching: boolean = false;
+    let yposOfTouch: number = 0;
+    let combinedWindowedScore : number = 0;
     participant.updateTouchingFriend();
-    friendParticipant.updateTouchingFriend();
 
-    if (participant.areTouching()) {
-      skeletonTouching = 1;
-    } else {
-      skeletonTouching = 0;
+    if( peerIds.length !== 0 ){
+
+      friendParticipant.updateTouchingFriend();
+
+      if (participant.areTouching()) {
+        skeletonTouching = 1;
+      } else {
+        skeletonTouching = 0;
+      }
+      justStartedTouching = participant.justStartedTouching();
+      yposOfTouch = participant.getTouchPosition().y;
+      combinedWindowedScore = windowedVarScore;
+      howLongTouch = participant.howLongTouching();
+      howMuchTouch = participant.howMuchTouching();
+      onVirtualTouch(participant.getTouch());
     }
-    let justStartedTouching: boolean = participant.justStartedTouching();
-    let yposOfTouch: number = participant.getTouchPosition().y;
-    let combinedWindowedScore = windowedVarScore;
-    howLongTouch = participant.howLongTouching();
-    howMuchTouch = participant.howMuchTouching();
-    onVirtualTouch(participant.getTouch());
 
     try {
       // participant.xCorrPositions( friendParticipant ); //update xcorr for position
@@ -303,13 +312,11 @@
         xCorrTouching = participant.getTouchingXCorr();
       }
 
-      if (friendParticipant.getMaxBodyPartWindowedVariance()) {
-        combinedWindowedScore =
-          combinedWindowedScore +
-          friendParticipant.getMaxBodyPartWindowedVariance() / 2;
+      if( peerIds.length !== 0 ){
+        combinedWindowedScore = combinedWindowedScore + friendParticipant.getMaxBodyPartWindowedVariance() / 2;
       }
 
-      if(tubaSonfier && touchMusicalPhrases){
+      if(tubaSonfier && touchMusicalPhrases && peerIds.length > 0){
 
       //update music 1st
       tubaSonfier.update(
@@ -438,8 +445,7 @@
         friendParticipant = new Participant; 
         participant.addFriendParticipant(friendParticipant); 
         peerIds = [];
-        const status = document.getElementById("chatStatus"); 
-        if( status ) status.innerText = "The other participant has closed the connection...";
+        chatstatusMessage = "The other participant has disconnected.\n Please use the above controls to reconnect, if desired.";
 
       });
 
@@ -457,8 +463,7 @@
 
       // theirId = call.peer;
       call.on('stream', function (mediaStream) {
-        const status = document.getElementById("chatStatus"); 
-        if( status ) status.innerText = "";
+        chatstatusMessage = ""; 
 
         console.log('CallAnswered', call, mediaStream);
         theirVideoUnsubscribe = theirVideo.subscribe(video => {
@@ -582,6 +587,9 @@
             console.log("theirId is now undefined??")
             return; 
           }
+
+          chatstatusMessage = "Connecting...";
+
           listenToDataConnection(peer.connect(theirId, { label: theirId, serialization: 'json' }));
 
           if (video.stream) 
@@ -597,12 +605,11 @@
       }
       else
       {
-        const status = document.getElementById("chatStatus"); 
-        if( status )
-          status.innerText = "Waiting for a chat partner...";
-        }
-      await loadMusic(mainVolume);
-      turnUpVolume();
+        chatstatusMessage = "Waiting for a chat partner...";
+
+        await loadMusic(mainVolume);
+        turnUpVolume();
+      }
     }
 
     sendMuteMessage = (which: number, muted: boolean) =>
@@ -828,7 +835,7 @@
     <br/><br/><div class="callText">or<br/></div>
     <button type="button" class="chatRouletteButton" on:click={connectToRandomPartner}>Connect to a random partner!</button>
     <br /><br />
-    <div class="callText"><label id="chatStatus"></label></div>
+    <div class="callText"><label id="chatStatus">{chatstatusMessage}</label></div>
   {:else if !myId}
     Preparing to answer<br />
     {idToCall}
