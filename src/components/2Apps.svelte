@@ -1,18 +1,40 @@
 <script lang="ts">
+  import { onDestroy } from "svelte";
   let leftIframe;
+  let rightIframe;
+
   let leftIframeRefreshing = false;
-  let friendURL;
-  let rightIframeUrl;
   let rightIframeRefreshing = false;
 
+  let friendURL;
+  let expectedRightIframeUrl;
+  let rightIframeUrl;
+
   let leftIframeURL: string;
-  $: {
-    leftIframeURL = leftIframeRefreshing ? "about: blank" : "/?debug=true";
-  }
+  $: leftIframeURL = leftIframeRefreshing ? "about: blank" : "/?debug=true";
 
   $: {
-    rightIframeUrl =
+    expectedRightIframeUrl =
       !friendURL || rightIframeRefreshing ? "about:blank" : friendURL;
+  }
+
+  let leftIframeRefreshCount = 0;
+  let rightIframeRefreshCount = 0;
+
+  function refresh(side: "left" | "right") {
+    if (side === "left") {
+      leftIframeRefreshCount += 1;
+      leftIframeRefreshing = true;
+      setTimeout(() => {
+        leftIframeRefreshing = false;
+      }, 1);
+    } else {
+      rightIframeRefreshCount += 1;
+      rightIframeRefreshing = true;
+      setTimeout(() => {
+        rightIframeRefreshing = false;
+      }, 1);
+    }
   }
 
   $: if (leftIframe?.contentWindow) {
@@ -30,20 +52,19 @@
       false
     );
   }
+
+  const urlcheckerInterval = setInterval(() => {
+    rightIframeUrl = rightIframe.contentDocument.location.href;
+  }, 100);
+
+  onDestroy(() => {
+    clearInterval(urlcheckerInterval);
+  });
 </script>
 
 <div class="appSide left">
   <div class="appDebug">
-    <input
-      type="button"
-      on:click={() => {
-        leftIframeRefreshing = true;
-        setTimeout(() => {
-          leftIframeRefreshing = false;
-        }, 1);
-      }}
-      value="refresh"
-    />
+    <input type="button" on:click={() => refresh("left")} value="refresh {leftIframeRefreshCount}" />
     <span class="iframeUrl">{leftIframeURL}</span>
   </div>
   <iframe class="app" bind:this={leftIframe} title="left" src={leftIframeURL} />
@@ -51,19 +72,15 @@
 
 <div class="appSide right">
   <div class="appDebug">
-    <input
-      type="button"
-      on:click={() => {
-        rightIframeRefreshing = true;
-        setTimeout(() => {
-          rightIframeRefreshing = false;
-        }, 1);
-      }}
-      value="refresh"
-    />
+    <input type="button" on:click={() => refresh("right")} value="refresh {rightIframeRefreshCount}" />
     <span class="iframeUrl">{rightIframeUrl}</span>
   </div>
-  <iframe class="app" title="right" src={rightIframeUrl} />
+  <iframe
+    class="app"
+    title="right"
+    bind:this={rightIframe}
+    src={expectedRightIframeUrl}
+  />
 </div>
 
 <style>
