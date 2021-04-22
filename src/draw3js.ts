@@ -347,8 +347,8 @@ export function threeRenderCode({
 
 
       //convert from threejs coordinates to computer screen/browser coordinates.
-      console.log(personId + " vid.position ");
-      console.log( videoGroup.position );
+      // console.log(personId + " vid.position ");
+      // console.log( videoGroup.position );
 
       // var projector = new Projector();
       // projector.projectVector( pos.setFromMatrixPosition( videoGroup.matrixWorld ), camera );
@@ -363,22 +363,15 @@ export function threeRenderCode({
       }
       let vidWidth = videoWidth3js;
       let vidHeight = videoHeight3js;
-      console.log("Should be the same across everything");
-
-      console.log({ videoWidth3js, videoHeight3js, xsign });
 
       pos.x = pos.x - ( xsign * ( vidWidth / 2 ) ); 
       pos.y = pos.y - (vidHeight / 2);
-
-      console.log(pos); 
       
       camera.updateMatrixWorld(); 
       pos.project(camera);
 
       let widthHalf = window.innerWidth / 2;
       let heightHalf = window.innerHeight  / 2;
-
-      // console.log(pos); 
 
       pos.x = (pos.x * widthHalf) + widthHalf;
       pos.y = - (pos.y * heightHalf) + heightHalf;
@@ -390,9 +383,7 @@ export function threeRenderCode({
         pos.x -= 23; //subtracts 23 px so in line. this is the width of the icon. need to put in constant later.
       }
 
-      // console.log(pos); 
       return pos; 
-
     },
     cleanup() {
       console.warn('Cleaning up three stuff');

@@ -160,6 +160,9 @@
   let tubaSonfier: SonifierWithTuba;
   let touchMusicalPhrases: TouchPhrasesEachBar;
 
+
+  let isChrome = !!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime);
+
   var connectToRandomPartner = (e) => {}; //function to connect to a random partner
   var turnUpVolume = () => {}; //turn up the volume when connected to another user
   var sendMuteMessage = (which:number, muted:boolean) => {}; //if muting self, need to send to other person to mute.
@@ -359,6 +362,11 @@
   const peer = new Peer(myId, peerServerParams);
 
   async function init() {
+    if( !isChrome )
+    {
+      alert("We detected that you were on a suboptimal browser for Skin Hunger. In order to fully experience our installation, we suggest using Chrome as your web browser. All features may not be fully functional or you might suffer performance problems.");
+    }
+
     let stopped = false;
     const posenet: PosenetSetup<any> = initPosenet();
 
@@ -471,8 +479,6 @@
 
     function listenToMediaConnection(call: MediaConnection) {
 
-
-
       // theirId = call.peer;
       call.on('stream', function (mediaStream) {
         chatstatusMessage = ""; 
@@ -481,7 +487,6 @@
         theirVideoUnsubscribe = theirVideo.subscribe(video => {
           if (video) {
             three.dispatch({ type: "AddVideo", personId: call.peer, video });
-            // setPeerConnection(call.peer, "media", true);
           }
         });
         myMutePosition = three.getMuteButtonPosition(peer.id);
@@ -493,8 +498,6 @@
         console.log('removing media connection');
         theirVideoUnsubscribe();
         three.dispatch({ type: "RemoveVideo", personId: call.peer });
-        console.log("closing out bc other participant closed here 479");
-
       });
 
       call.on('error', (error) => {
@@ -540,6 +543,7 @@
       posenet.updateVideo(video);
 
       three.dispatch({ type: "AddVideo", personId: peer.id, video });
+
 
       if (idToCall) {
         const theirId = idToCall;
@@ -609,7 +613,6 @@
             if(!theirId)
               return; 
             
-            console.log("calling peer");
             const call = peer.call(theirId, video.stream);
             listenToMediaConnection(call);
           }
@@ -741,7 +744,6 @@
       // send to peers w/ data connections
       Object.values(dataConnections).forEach((conn) => {
         if (conn.open) conn.close();
-        closeConnection(conn); 
       });
       
       peer.disconnect(); 
