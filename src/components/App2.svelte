@@ -53,6 +53,7 @@
 
   const webcamVideo = videoSubscription("webcam");
   const theirVideo = videoSubscription();
+  let theirVideoUnsubscribe = () => {};
   // const videoSources = ["webcam", "/spacebtwTest.mp4", "/synchTestVideo.mp4"];
 
   let theirVideoElement;
@@ -67,7 +68,9 @@
   let glowClass = "noGlow"; 
   let volSliderReading = 0; 
   let inPotForChatRoulette = false; 
-  let chatstatusMessage = ""; 
+  let chatstatusMessage = "";
+  let disconnectedBySelf = false;  
+  let closeConnection = (conn:DataConnection) => {};
 
   
   $: {
@@ -160,6 +163,7 @@
   var connectToRandomPartner = (e) => {}; //function to connect to a random partner
   var turnUpVolume = () => {}; //turn up the volume when connected to another user
   var sendMuteMessage = (which:number, muted:boolean) => {}; //if muting self, need to send to other person to mute.
+  var endCall : ()=>void ;
 
   const BEGINNING_VOLUME = 0.66;
   // var selfMute;
@@ -398,7 +402,27 @@
     };
 
     let callVideoUnsubscribe = () => {};
-    let theirVideoUnsubscribe = () => {};
+    // let theirVideoUnsubscribe = () => {};
+
+    closeConnection = (conn : DataConnection) =>
+    {
+      console.log("closing out bc other participant closed");
+        peerIds = peerIds.filter((id) => id !== conn.peer);
+        delete dataConnections[conn.peer];
+        // updatePeerData(conn.peer, () => false);
+        three.dispatch({ type: "RemoveVideo", personId: conn.peer });
+        theirVideoUnsubscribe();
+
+        //get rid of current friend
+        friendParticipant = new Participant; 
+        participant.addFriendParticipant(friendParticipant); 
+        peerIds = [];
+        if( !disconnectedBySelf )
+            chatstatusMessage = "The other participant has disconnected.\n Please use the above controls to restart, if desired.";
+
+        disconnectedBySelf = false; 
+
+    }
 
     function listenToDataConnection(conn: DataConnection) {
       if (dataConnections[conn.peer]) {
@@ -434,19 +458,7 @@
       });
 
       conn.on('close', function () {
-        console.log("closing out bc other participant closed");
-        peerIds = peerIds.filter((id) => id !== conn.peer);
-        delete dataConnections[conn.peer];
-        // updatePeerData(conn.peer, () => false);
-        three.dispatch({ type: "RemoveVideo", personId: conn.peer });
-        theirVideoUnsubscribe();
-
-        //get rid of current friend
-        friendParticipant = new Participant; 
-        participant.addFriendParticipant(friendParticipant); 
-        peerIds = [];
-        chatstatusMessage = "The other participant has disconnected.\n Please use the above controls to reconnect, if desired.";
-
+        closeConnection(conn); 
       });
 
       conn.on('error', (error) => {
@@ -729,14 +741,26 @@
       // send to peers w/ data connections
       Object.values(dataConnections).forEach((conn) => {
         if (conn.open) conn.close();
+        closeConnection(conn); 
       });
+      
       peer.disconnect(); 
       console.log("disconnected from peer");
+  }
+
+  endCall = () => 
+  {
+    disconnectedBySelf = true; 
+
+    Object.values(dataConnections).forEach((conn) => {
+        if (conn.open) conn.close();
+      });
+    console.log("ended the call"); 
   }
 </script>
 
 <!-- <svelte:window on:resize={handleResize}/> -->
-<svelte:window on:beforeunload={beforeUnload} on:close={beforeUnload}/>
+<svelte:window on:beforeunload={beforeUnload} />
 
 
 <div class="valueSliders">
@@ -800,7 +824,7 @@
       <input type="button" on:click={() => webcamVideo.setSource(source)} value="{source}" />
     {/each}
     <br/> -->
-  Data conections: {Object.keys(dataConnections).join(', ')}<br />
+  Data connections: {Object.keys(dataConnections).join(', ')}<br />
 
   <ScoreBar label="skeleton touching:" score={skeletonTouching} />
     <ScoreBar label="how long touching:" score={howLongTouch} />
@@ -842,6 +866,12 @@
   {/if}
 </div>  
 
+{#if peerIds.length > 0}
+<div class="disconnectButton">
+  <button on:click={endCall} class="disconnectButtonColor">End Video Call</button>
+  </div>>
+{/if}
+
 <br />
 <div class="linksPanel">
   <a href="/about" target="_blank">About Skin Hunger</a>
@@ -863,6 +893,19 @@
     right: 35px;
     width: 200px;
     z-index: 1; 
+  }
+
+  .disconnectButton {
+    position: absolute;
+    right: 35px;  
+    bottom: 35px; 
+    z-index: 1; 
+  }
+
+  .disconnectButtonColor {
+      background-color: rgb(55, 35, 59);
+      color: #928888; 
+      border-style: none;
   }
 
   .linksPanel {
