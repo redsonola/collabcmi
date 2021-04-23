@@ -8,9 +8,9 @@
   import Loading from "./Loading.svelte";
   // import { interceptFileRequest } from "../hackXhrInterceptor";
 
-  // import { initPosenet } from "../threejs/posenetcopy";
+  import { initPosenet } from "../threejs/posenetcopy";
   // import { initPosenet } from "../threejs/mediapipePose";
-  import { initPosenet } from "../threejs/posenetMock";
+  // import { initPosenet } from "../threejs/posenetMock";
 
   import { videoSubscription } from "../threejs/cameraVideoElement";
   import { goLoop, sleep, timeout, waitFor } from "../threejs/promiseHelpers";
@@ -63,6 +63,18 @@
 
   const posenet: PosenetSetup<any> = initPosenet();
 
+  posenet.onResults((pose) => {
+    loading = false;
+    fpsTracker.refreshLoop();
+
+    const size = posenet.getSize();
+    participant.setSize(size.width, size.height);
+    participant.addKeypoint(pose.keypoints);
+    keypointsUpdated(peer.id, pose, size);
+
+    if (dataConnection?.open) dataConnection.send({ type: "Pose", pose, size });
+  });
+
   // const videoSources = ["webcam", "/spacebtwTest.mp4", "/synchTestVideo.mp4"];
 
   let theirVideoElement;
@@ -78,8 +90,6 @@
   let inPotForChatRoulette = false; 
   let chatstatusMessage = "";
   let disconnectedBySelf = false;  
-  let closeConnection = (conn:DataConnection) => {};
-
   
   $: {
     if ($theirVideo !== null) {
@@ -89,16 +99,6 @@
   }
 
   export let myId: string | undefined = new URL(window.location.href).searchParams.get("myid") || undefined;
-
-  function setMyId(id: string) {
-    console.log("setMyId", id);
-    myId = id;
-    const newUrl = new URL(window.location.href);
-    newUrl.searchParams.set("myid", id);
-    history.replaceState(null, document.title, newUrl.toString());
-    participant.setParticipantID(myId);
-    // pushState(new URL(window.location.href).searchParams.set('myid', ))
-  }
 
   const querystringCallId = new URL(window.location.href).searchParams.get("callid");
   // if a call id is provided in the URL string, call it.
@@ -161,13 +161,15 @@
   let midiFile: DynamicMovementMidi[];
   let midiFileBass: DynamicMovementMidi[];
 
-  let mainVolume: MainVolume;
   let volumeMeterReading: number = 0;
+
+  const mainVolume = new MainVolume((val) => {
+    volumeMeterReading = val;
+  });
 
   let tubaSonfier: SonifierWithTuba;
   let touchMusicalPhrases: TouchPhrasesEachBar;
 
-  var connectToRandomPartner = (e) => {}; //function to connect to a random partner
   var turnUpVolume = () => {}; //turn up the volume when connected to another user
   var sendMuteMessage = (which:number, muted:boolean) => {}; //if muting self, need to send to other person to mute.
   var endCall : ()=>void ;
@@ -181,7 +183,7 @@
     three?.cleanup();
     three = threeRenderCode({ canvas, handleResize });
     // HERE
-    // three.dispatch({ type: "AddParticipant", skeletonIntersect: thisparticipant });
+    // three.dispatch({ type: "AddParticipant", skeletonIntersect: friendParticipant });
   }
 
   $: if (three && size) {
@@ -199,6 +201,82 @@
   $: if ($webcamVideo && three) {
     console.log('AddVideo $webcamVideo updated', $webcamVideo);
     three.dispatch({ type: "AddVideo", personId: peer.id, video: $webcamVideo });
+  }
+
+  function listenToMediaConnection(call: MediaConnection) {
+    mediaConnection?.close();
+    mediaConnection = call;
+    // theirId = call.peer;
+    call.on('stream', function (mediaStream) {
+      chatstatusMessage = ""; 
+
+      console.log('CallAnswered', call, mediaStream);
+      myMutePosition = three.getMuteButtonPosition(peer.id);
+      theirMutePosition = three.getMuteButtonPosition(call.peer);
+      theirVideo.setSource(mediaStream);
+    });
+
+    call.on('close', function () {
+      console.log('removing media connection');
+      three.dispatch({ type: "RemoveVideo", personId: call.peer });
+      console.log("closing out bc other participant closed here 479");
+
+    });
+
+    call.on('error', (error) => {
+      console.error({ myId: peer.id, theirId: call.peer, error });
+      throw error;
+    })
+  }
+
+  function listenToDataConnection(conn: DataConnection) {
+    if (dataConnection) {
+      console.warn("Trying to reconnect data for ", conn.peer, dataConnection);
+    }
+    dataConnection = conn;
+    console.log("listenToDataConnection", conn, dataConnection);
+    friendParticipant.setParticipantID(conn.peer); //for the dyad arrangement set the ID
+
+    console.log('setting friend ID:', conn.peer)
+
+    conn.on('data', function (message: PeerMessage) {
+      switch (message.type) {
+        case "Pose": {
+          friendParticipant.setSize(message.size.width, message.size.height);
+          friendParticipant.addKeypoint(message.pose.keypoints);
+          keypointsUpdated(conn.peer, message.pose, message.size);
+          break;
+        }
+        case "Mute": {
+          if( message.which === 0 )
+          {
+            myMuteButtonText = message.muted ?unmuteURL : muteUrl;
+            break;
+          }
+        }
+
+        default: {
+          console.error('Unhandled data message:', message);
+        }
+      }
+    });
+
+    conn.on('close', function () {
+      closeConnection(conn); 
+      console.log("closing out bc other participant closed");
+      dataConnection = undefined;
+      three.dispatch({ type: "RemoveVideo", personId: conn.peer });
+
+      //get rid of current friend
+      friendParticipant = new Participant; 
+      participant.addFriendParticipant(friendParticipant); 
+      chatstatusMessage = "The other participant has disconnected.\n Please use the above controls to reconnect, if desired.";
+    });
+
+    conn.on('error', (error) => {
+      console.error({ myId: peer.id, theirId: conn.peer, error });
+      throw error;
+    })
   }
 
 
@@ -261,7 +339,7 @@
     let combinedWindowedScore : number = 0;
     participant.updateTouchingFriend();
 
-    if( peerIds.length !== 0 ){
+    if( dataConnection ){
 
       friendParticipant.updateTouchingFriend();
 
@@ -315,11 +393,11 @@
         xCorrTouching = participant.getTouchingXCorr();
       }
 
-      if( peerIds.length !== 0 ){
+      if( dataConnection ){
         combinedWindowedScore = combinedWindowedScore + friendParticipant.getMaxBodyPartWindowedVariance() / 2;
       }
 
-      if(tubaSonfier && touchMusicalPhrases && peerIds.length > 0){
+      if(tubaSonfier && touchMusicalPhrases && dataConnection){
 
       //update music 1st
       tubaSonfier.update(
@@ -352,18 +430,96 @@
   }
 
   let dataConnection: DataConnection | undefined;
-  let peerIds: string[] = [];
   const peer = new Peer(myId, peerServerParams);
+
+  peer.on('connection', listenToDataConnection);
+  peer.on('call', listenToMediaConnection);
+
+  peer.on('open', (id: string) => {
+    console.log("setMyId", id);
+    myId = id;
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set("myid", id);
+    history.replaceState(null, document.title, newUrl.toString());
+    participant.setParticipantID(myId);
+    // pushState(new URL(window.location.href).searchParams.set('myid', ))
+  });
+
+
+  function closeConnection (conn : DataConnection)
+  {
+    console.log("closing out bc other participant closed");
+    dataConnection = undefined;
+    // updatePeerData(conn.peer, () => false);
+    three.dispatch({ type: "RemoveVideo", personId: conn.peer });
+
+    //get rid of current friend
+    friendParticipant = new Participant(); 
+    participant.addFriendParticipant(friendParticipant); 
+    if( !disconnectedBySelf )
+      chatstatusMessage = "The other participant has disconnected.\n Please use the above controls to restart, if desired.";
+
+    disconnectedBySelf = false; 
+  }
+
+
+  if (idToCall) {
+    listenToDataConnection(peer.connect(idToCall, { label: idToCall, serialization: 'json' }));
+
+    glowClass = "glowEffect";
+
+    if ($webcamVideo?.stream) {
+      const call = peer.call(idToCall, $webcamVideo.stream);
+      listenToMediaConnection(call);
+    }
+
+    setTimeout(function () { loadMusic(mainVolume); }, 100 );
+    //await loadMusic(mainVolume);
+  }
+
+  async function connectToRandomPartner () {
+    let theirId = await findChatRoulettePartner( peer.id );
+
+    if( theirId )
+    {
+      if(!$webcamVideo){
+        console.log("video is undefined")
+        return; 
+      }
+
+      if(!theirId){
+        console.log("theirId is now undefined??")
+        return; 
+      }
+
+      chatstatusMessage = "Connecting...";
+
+      listenToDataConnection(peer.connect(theirId, { label: theirId, serialization: 'json' }));
+
+      if ($webcamVideo.stream) 
+      {
+        if(!theirId)
+          return; 
+        
+        console.log("calling peer");
+        const call = peer.call(theirId, $webcamVideo.stream);
+        listenToMediaConnection(call);
+      }
+    }
+    else
+    {
+      chatstatusMessage = "Waiting for a chat partner...";
+
+      await loadMusic(mainVolume);
+      turnUpVolume();
+    }
+  }
+
 
   async function init() {
     let stopped = false;
 
-    peer.on('open', setMyId);
     await waitFor(() => myId || null);
-
-    mainVolume = new MainVolume((val) => {
-      volumeMeterReading = val;
-    });
 
     //this is from my audiovisual project
     midiFile = [new Tango332Riffs(mainVolume), new FourFloorRiffs(mainVolume)];
@@ -397,138 +553,6 @@
       volSliderReading = BEGINNING_VOLUME; //ohhh this should be refactored.
     };
 
-    closeConnection = (conn : DataConnection) =>
-    {
-      console.log("closing out bc other participant closed");
-        peerIds = peerIds.filter((id) => id !== conn.peer);
-        dataConnection = undefined;
-        // updatePeerData(conn.peer, () => false);
-        three.dispatch({ type: "RemoveVideo", personId: conn.peer });
-
-        //get rid of current friend
-        friendParticipant = new Participant(); 
-        participant.addFriendParticipant(friendParticipant); 
-        peerIds = [];
-        if( !disconnectedBySelf )
-            chatstatusMessage = "The other participant has disconnected.\n Please use the above controls to restart, if desired.";
-
-        disconnectedBySelf = false; 
-
-    }
-
-    function listenToDataConnection(conn: DataConnection) {
-      if (dataConnection) {
-        console.warn("Trying to reconnect data for ", conn.peer, dataConnection);
-      }
-      dataConnection = conn;
-      console.log("listenToDataConnection", conn, dataConnection);
-      friendParticipant.setParticipantID(conn.peer); //for the dyad arrangement set the ID
-      peerIds.push(conn.peer); //so that other things work -- plugging the hole in the dam. -CDB
-
-      console.log('setting friend ID:', conn.peer)
-
-      conn.on('data', function (message: PeerMessage) {
-        switch (message.type) {
-          case "Pose": {
-            friendParticipant.setSize(message.size.width, message.size.height);
-            friendParticipant.addKeypoint(message.pose.keypoints);
-            keypointsUpdated(conn.peer, message.pose, message.size);
-            break;
-          }
-          case "Mute": {
-            if( message.which === 0 )
-            {
-              myMuteButtonText = message.muted ?unmuteURL : muteUrl;
-              break;
-            }
-          }
-
-          default: {
-            console.error('Unhandled data message:', message);
-          }
-        }
-      });
-
-      conn.on('close', function () {
-        closeConnection(conn); 
-        console.log("closing out bc other participant closed");
-        peerIds = peerIds.filter((id) => id !== conn.peer);
-        dataConnection = undefined;
-        three.dispatch({ type: "RemoveVideo", personId: conn.peer });
-
-        //get rid of current friend
-        friendParticipant = new Participant; 
-        participant.addFriendParticipant(friendParticipant); 
-        peerIds = [];
-        chatstatusMessage = "The other participant has disconnected.\n Please use the above controls to reconnect, if desired.";
-      });
-
-      conn.on('error', (error) => {
-        console.error({ myId: peer.id, theirId: conn.peer, error });
-        throw error;
-      })
-    }
-
-    peer.on('connection', listenToDataConnection);
-
-    function listenToMediaConnection(call: MediaConnection) {
-      mediaConnection?.close();
-      mediaConnection = call;
-      // theirId = call.peer;
-      call.on('stream', function (mediaStream) {
-        chatstatusMessage = ""; 
-
-        console.log('CallAnswered', call, mediaStream);
-        myMutePosition = three.getMuteButtonPosition(peer.id);
-        theirMutePosition = three.getMuteButtonPosition(call.peer);
-        theirVideo.setSource(mediaStream);
-      });
-
-      call.on('close', function () {
-        console.log('removing media connection');
-        three.dispatch({ type: "RemoveVideo", personId: call.peer });
-        console.log("closing out bc other participant closed here 479");
-
-      });
-
-      call.on('error', (error) => {
-        console.error({ myId: peer.id, theirId: call.peer, error });
-        throw error;
-      })
-    }
-
-    peer.on('call', listenToMediaConnection);
-
-    posenet.onResults((pose) => {
-      loading = false;
-      fpsTracker.refreshLoop();
-
-      const size = posenet.getSize();
-      participant.setSize(size.width, size.height);
-      participant.addKeypoint(pose.keypoints);
-      keypointsUpdated(peer.id, pose, size);
-
-      if (dataConnection?.open) dataConnection.send({ type: "Pose", pose, size });
-    });
-
-    const myVideoUnsubscribe = webcamVideo.subscribe(async (video) => {
-      // TODO
-      // move this up
-      if (idToCall) {
-        listenToDataConnection(peer.connect(idToCall, { label: idToCall, serialization: 'json' }));
-
-        glowClass = "glowEffect";
-
-        if (video && video.stream) {
-          const call = peer.call(idToCall, video.stream);
-          listenToMediaConnection(call);
-        }
-
-        setTimeout( function(){ loadMusic(mainVolume); }, 100 );
-        //await loadMusic(mainVolume);
-      }
-    });
-
     goLoop(async () => {
       if (stopped) return goLoop.STOP_LOOP;
       await sleep();
@@ -554,48 +578,6 @@
       // }
     });
 
-    connectToRandomPartner = async (e) => {
-      let theirId = await findChatRoulettePartner( peer.id );
-
-      if( theirId )
-      {
-
-        const myVideoUnsubscribe = webcamVideo.subscribe(async (video) => 
-        {
-          if(!video){
-            console.log("video is undefined")
-            return; 
-          }
-
-          if(!theirId){
-            console.log("theirId is now undefined??")
-            return; 
-          }
-
-          chatstatusMessage = "Connecting...";
-
-          listenToDataConnection(peer.connect(theirId, { label: theirId, serialization: 'json' }));
-
-          if (video.stream) 
-          {
-            if(!theirId)
-              return; 
-            
-            console.log("calling peer");
-            const call = peer.call(theirId, video.stream);
-            listenToMediaConnection(call);
-          }
-        });
-      }
-      else
-      {
-        chatstatusMessage = "Waiting for a chat partner...";
-
-        await loadMusic(mainVolume);
-        turnUpVolume();
-      }
-    }
-
     sendMuteMessage = (which: number, muted: boolean) =>
     {
       // send to peers w/ data connections
@@ -608,13 +590,7 @@
       stopped = true;
       three.cleanup();
       posenet.cleanup()
-      myVideoUnsubscribe();
-      peer.disconnect();
     };
-
-
-
-
   }
 
   onMount(() => {
@@ -698,7 +674,7 @@
     //test.. may have to force call the three animate function
   handleResize = () => 
   {
-    if( three && myId && friendParticipant.getParticipantID() && (peerIds.length !== 0 || idToCall !== null) )
+    if( three && myId && friendParticipant.getParticipantID() && (dataConnection || idToCall !== null) )
     {
       myMutePosition = three.getMuteButtonPosition(myId);
       theirMutePosition = three.getMuteButtonPosition(friendParticipant.getParticipantID());
@@ -710,6 +686,9 @@
       if (dataConnection?.open) {
         dataConnection.close();
         closeConnection(dataConnection); 
+      }
+      if (mediaConnection?.open) {
+        mediaConnection.close();
       }
       peer.disconnect(); 
       console.log("disconnected from peer");
@@ -766,7 +745,7 @@
   <!-- <br/><br/> -->
 </div>
 
-{#if peerIds.length !== 0 || idToCall !== null}
+{#if dataConnection || idToCall !== null}
 <div class="myMute" style={`left:${myMutePosition.x}px; top:${myMutePosition.y}px`}>
   <input type="image" on:click={muteSelf} alt="muteButton" src={myMuteButtonText} width="23px" height="23px" />
 </div>
@@ -817,7 +796,7 @@
 />
 
 <div class="callPanel">
-  {#if peerIds.length === 0 && idToCall === null}
+  {#if !dataConnection && idToCall === null}
     <Call myId={myId} {turnUpVolume} {loadMusic} {mainVolume} on:call-link-changed={(e) => {
       window.postMessage({ name: "call-call-link-changed", ...e.detail });
     }} />
@@ -831,7 +810,7 @@
   {/if}
 </div>  
 
-{#if peerIds.length > 0}
+{#if dataConnection}
 <div class="disconnectButton">
   <button on:click={endCall} class="disconnectButtonColor">End Video Call</button>
   </div>>
