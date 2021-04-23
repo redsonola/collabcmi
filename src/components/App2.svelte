@@ -765,6 +765,7 @@
   endCall = () => 
   {
     disconnectedBySelf = true; 
+    idToCall = null; 
 
     Object.values(dataConnections).forEach((conn) => {
         if (conn.open) conn.close();
