@@ -149,16 +149,28 @@ export function threeRenderCode({
 
   const videos: Mesh<PlaneBufferGeometry, MeshPhongMaterial>[] = [];
   //TODO this only works for dyads. Find another solution.
-  const addVideo = (video: CameraVideo, personId: string) => {
+  const addVideo = (video: CameraVideo, personId: string, recentIds: string[]) => {
     let group: Group | undefined = findGroup(personId);
+    let isRecentID = recentIds.indexOf(personId) !== -1;
+    if( isRecentID )
+    { 
+      console.log("was a recent id: " + personId);
+      return; 
+    }
+
     if (group) {
       // replace video if it exists
       group.children
         .filter(obj => obj.userData.isVideo)
         .forEach(obj => group?.remove(obj));
 
-    } else {
+    } else 
+    {
       // add the video if it's not there
+
+      console.log("group below: added new video:" + personId); 
+      console.log(allVideosGroup)
+
       group = new Group();
       allVideosGroup.add(group);
 
@@ -260,7 +272,7 @@ export function threeRenderCode({
       console.log('threejs', command.type, command);
     switch (command.type) {
       case "AddVideo": {
-        addVideo(command.video, command.personId);
+        addVideo(command.video, command.personId, command.recentIds);
         break;
       }
 
@@ -401,6 +413,7 @@ export interface AddVideo {
   type: "AddVideo";
   personId: string;
   video: CameraVideo;
+  recentIds : string[]; 
 }
 
 export interface RemoveVideo {

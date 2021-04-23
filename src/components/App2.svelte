@@ -53,7 +53,7 @@
 
   const webcamVideo = videoSubscription("webcam");
   const theirVideo = videoSubscription();
-  let theirVideoUnsubscribe = () => {};
+  let theirVideoUnsubscribe;
   // const videoSources = ["webcam", "/spacebtwTest.mp4", "/synchTestVideo.mp4"];
 
   let theirVideoElement;
@@ -71,6 +71,7 @@
   let chatstatusMessage = "";
   let disconnectedBySelf = false;  
   let closeConnection = (conn:DataConnection) => {};
+  let recentIds : string[] = []; 
 
   
   $: {
@@ -416,10 +417,14 @@
     {
       console.log("closing out bc other participant closed");
         peerIds = peerIds.filter((id) => id !== conn.peer);
-        delete dataConnections[conn.peer];
+        recentIds.push( conn.peer ); 
+
+    
         // updatePeerData(conn.peer, () => false);
-        three.dispatch({ type: "RemoveVideo", personId: conn.peer });
         theirVideoUnsubscribe();
+        three.dispatch({ type: "RemoveVideo", personId: conn.peer });
+
+        delete dataConnections[conn.peer];
 
         //get rid of current friend
         friendParticipant = new Participant; 
@@ -483,10 +488,17 @@
       call.on('stream', function (mediaStream) {
         chatstatusMessage = ""; 
 
+        //if the current call.peer is in recentIds then it is current not RECENT.
+        let idx = recentIds.indexOf( call.peer );
+        if(idx !== -1)
+        {
+          recentIds.splice(idx, 1); 
+        } 
+
         console.log('CallAnswered', call, mediaStream);
         theirVideoUnsubscribe = theirVideo.subscribe(video => {
           if (video) {
-            three.dispatch({ type: "AddVideo", personId: call.peer, video });
+            three.dispatch({ type: "AddVideo", personId: call.peer, video, recentIds });
           }
         });
         myMutePosition = three.getMuteButtonPosition(peer.id);
@@ -542,7 +554,7 @@
 
       posenet.updateVideo(video);
 
-      three.dispatch({ type: "AddVideo", personId: peer.id, video });
+      three.dispatch({ type: "AddVideo", personId: peer.id, video, recentIds });
 
 
       if (idToCall) {

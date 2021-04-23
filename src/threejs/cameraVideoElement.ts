@@ -121,6 +121,7 @@ export function videoSubscription(source?: string | MediaStream): Readable<Camer
     // when going from 0 to 1 subscribers, create the video:
     lastVideo = makeVideoElement(source)
     lastVideo.then(val => set(val || null));
+
     return () => {
       // when going from 1 to 0 subscribers, stop it:
       lastVideo?.then(vid => vid?.stop());
