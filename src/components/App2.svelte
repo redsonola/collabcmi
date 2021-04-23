@@ -889,7 +889,7 @@
 
 <br />
 <div class="linksPanel">
-  <a href="/about" target="_blank">About Skin Hunger</a>
+  <a href="/about" target="_blank">About Skin Hunger</a> | <a href="/instructions" target="_blank">Instructions</a>
 </div>
 
 {#if loading}

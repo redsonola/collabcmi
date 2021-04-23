@@ -7,6 +7,7 @@
   <Route exact fallback path="/" component={() => import("./App2.svelte")} let:router />
   <Route exact path="/call" component={() => import("./CallScreen.svelte")} let:router />
   <Route exact path="/about" component={() => import("./About.svelte")} />
+  <Route exact path="/instructions" component={() => import("./Instructions.svelte")} />
   <Route exact path="/2apps" component={() => import("./2Apps.svelte")} let:router />
 </Router>
 
