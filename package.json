@@ -21,6 +21,7 @@
     "compute-cosine-similarity": "^1.0.0",
     "compute-covariance": "^1.0.1",
     "compute-l2norm": "^1.1.0",
+    "eventemitter3": "^3.1.2",
     "husky": "^4.3.6",
     "mathjs": "^7.6.0",
     "mermaid": "^8.9.2",
@@ -51,7 +52,6 @@
     "mkcert": "mkcert -install && mkcert -key-file snowpack.key -cert-file snowpack.crt localhost",
     "peer-server": "node ./scripts/devPeerServer"
   },
-  "devDependencies": {},
   "husky": {
     "hooks": {
       "pre-push": "npm run build"

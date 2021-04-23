@@ -8,9 +8,9 @@
   import Loading from "./Loading.svelte";
   // import { interceptFileRequest } from "../hackXhrInterceptor";
 
-  import { initPosenet } from "../threejs/posenetcopy";
+  // import { initPosenet } from "../threejs/posenetcopy";
   // import { initPosenet } from "../threejs/mediapipePose";
-  // import { initPosenet } from "../threejs/posenetMock";
+  import { initPosenet } from "../threejs/posenetMock";
 
   import { videoSubscription } from "../threejs/cameraVideoElement";
   import { goLoop, sleep, timeout, waitFor } from "../threejs/promiseHelpers";
@@ -22,7 +22,6 @@
 
   // import Balls from "./Balls.svelte";
   import { threeRenderCode } from "../draw3js";
-  import type { ThreeRenderer } from "../draw3js";
   import type { Size, PeerMessage, PoseMessage } from "./PoseMessages";
   import { Participant } from "../participant";
   import { findRadiusOfKeypoint } from "../main";
@@ -53,7 +52,17 @@
 
   const webcamVideo = videoSubscription("webcam");
   const theirVideo = videoSubscription();
-  let theirVideoUnsubscribe = () => {};
+  let mediaConnection: MediaConnection | undefined;
+
+  $: if ($webcamVideo?.stream && mediaConnection) {
+    console.log("answering ", mediaConnection, "with", $webcamVideo.stream);
+    mediaConnection.answer($webcamVideo.stream);
+  } else if (mediaConnection) {
+    console.warn("Rec'd call but didn't answer b/c I don't have a video stream :(", mediaConnection, $webcamVideo);
+  }
+
+  const posenet: PosenetSetup<any> = initPosenet();
+
   // const videoSources = ["webcam", "/spacebtwTest.mp4", "/synchTestVideo.mp4"];
 
   let theirVideoElement;
@@ -64,7 +73,6 @@
   let myMutePosition : THREE.Vector3 = new THREE.Vector3(); 
   let theirMutePosition : THREE.Vector3 = new THREE.Vector3(); 
   let handleResize : ()=>void = ()=>{}; //init as empty
-  let beforeUnload : ()=>void = ()=>{}; 
   let glowClass = "noGlow"; 
   let volSliderReading = 0; 
   let inPotForChatRoulette = false; 
@@ -75,13 +83,13 @@
   
   $: {
     if ($theirVideo !== null) {
-      console.log('their video', $theirVideo);
+      console.log("their video changed", $theirVideo);
       theirVideoElement = $theirVideo.videoElement; 
     }
   }
 
-  export let myId: string | undefined =
-    new URL(window.location.href).searchParams.get("myid") || undefined;
+  export let myId: string | undefined = new URL(window.location.href).searchParams.get("myid") || undefined;
+
   function setMyId(id: string) {
     console.log("setMyId", id);
     myId = id;
@@ -91,9 +99,8 @@
     participant.setParticipantID(myId);
     // pushState(new URL(window.location.href).searchParams.set('myid', ))
   }
-  const querystringCallId = new URL(window.location.href).searchParams.get(
-    "callid"
-  );
+
+  const querystringCallId = new URL(window.location.href).searchParams.get("callid");
   // if a call id is provided in the URL string, call it.
   // or, for the storybook app, you can just say this app is making the call or not.
   export let idToCall: string | null = querystringCallId || null;
@@ -121,7 +128,7 @@
   //   }
   // );
 
-  let canvas;
+  let canvas: HTMLCanvasElement;
 
   let participant = new Participant();
   let friendParticipant = new Participant();
@@ -169,16 +176,32 @@
   // var selfMute;
   // var friendMute;  
 
-  let three: ThreeRenderer;
+  let three: ReturnType<typeof threeRenderCode>;
   $: if (canvas) {
     three?.cleanup();
     three = threeRenderCode({ canvas, handleResize });
+    // HERE
+    // three.dispatch({ type: "AddParticipant", skeletonIntersect: thisparticipant });
   }
+
   $: if (three && size) {
     setTimeout(() => {
       three.dispatch({ type: "SetSize", ...size });
     }, 1);
   }
+
+  $: if (three && $theirVideo && friendParticipant.participantID) {
+    console.log('AddVideo friendParticipant.participantID');
+    three.dispatch({ type: "AddVideo", personId: friendParticipant.participantID, video: $theirVideo });
+  }
+
+  $: if ($webcamVideo) posenet.updateVideo($webcamVideo);
+  $: if ($webcamVideo && three) {
+    console.log('AddVideo $webcamVideo updated', $webcamVideo);
+    three.dispatch({ type: "AddVideo", personId: peer.id, video: $webcamVideo });
+  }
+
+
 
   async function loadMusic (mainVolume : MainVolume)
   {
@@ -207,19 +230,14 @@
   /***************** main update function *****************/
 
   function keypointsUpdated(particiantId: string, pose: Pose, size: Size) {
-    let thisparticipant: Participant;
-
-    if (participant.isParticipant(particiantId)) {
-      thisparticipant = participant;
-    } else {
-      thisparticipant = friendParticipant;
-    }
+    const thisparticipant = participant.isParticipant(particiantId)
+      ? participant
+      : friendParticipant;
 
     three?.dispatch({
       type: "UpdatePose",
       targetVideoId: particiantId,
       personId: particiantId,
-      pose,
       skeletonIntersect: thisparticipant.getSkeletonIntersection(),
       size,
     });
@@ -229,24 +247,12 @@
     //friendParticipant.setPoseSamplesRate(); //? need to send via peer -- TODO!
 
     //lol, refactor soon.
-    windowedVarianceHead = participant.getAverageBodyPartWindowedVarianceFromIndex(
-      0
-    );
-    windowedVarianceTorso = participant.getAverageBodyPartWindowedVarianceFromIndex(
-      1
-    );
-    windowedVarianceLeftArm = participant.getAverageBodyPartWindowedVarianceFromIndex(
-      2
-    );
-    windowedVarianceRightArm = participant.getAverageBodyPartWindowedVarianceFromIndex(
-      3
-    );
-    windowedVarianceLeftLeg = participant.getAverageBodyPartWindowedVarianceFromIndex(
-      4
-    );
-    windowedVarianceRightLeg = participant.getAverageBodyPartWindowedVarianceFromIndex(
-      5
-    );
+    windowedVarianceHead = participant.getAverageBodyPartWindowedVarianceFromIndex(0);
+    windowedVarianceTorso = participant.getAverageBodyPartWindowedVarianceFromIndex(1);
+    windowedVarianceLeftArm = participant.getAverageBodyPartWindowedVarianceFromIndex(2);
+    windowedVarianceRightArm = participant.getAverageBodyPartWindowedVarianceFromIndex(3);
+    windowedVarianceLeftLeg = participant.getAverageBodyPartWindowedVarianceFromIndex(4);
+    windowedVarianceRightLeg = participant.getAverageBodyPartWindowedVarianceFromIndex(5);
 
     windowedVarScore = participant.getMaxBodyPartWindowedVariance();
 
@@ -297,14 +303,7 @@
           xCorrScore = avgXcorr;
         }
 
-        let match = Scale.linear_scale(
-          participant.getMatchScore(),
-          matchMin,
-          matchMax,
-          0,
-          1,
-          true
-        );
+        let match = Scale.linear_scale(participant.getMatchScore(), matchMin, matchMax, 0, 1, true);
         if (!Number.isNaN(match)) {
           matchScore = match;
         }
@@ -352,15 +351,12 @@
     // tubaSonfier.clearMessages();
   }
 
-  let dataConnections: Record<string, DataConnection> = {};
-
+  let dataConnection: DataConnection | undefined;
   let peerIds: string[] = [];
-
   const peer = new Peer(myId, peerServerParams);
 
   async function init() {
     let stopped = false;
-    const posenet: PosenetSetup<any> = initPosenet();
 
     peer.on('open', setMyId);
     await waitFor(() => myId || null);
@@ -401,20 +397,16 @@
       volSliderReading = BEGINNING_VOLUME; //ohhh this should be refactored.
     };
 
-    let callVideoUnsubscribe = () => {};
-    // let theirVideoUnsubscribe = () => {};
-
     closeConnection = (conn : DataConnection) =>
     {
       console.log("closing out bc other participant closed");
         peerIds = peerIds.filter((id) => id !== conn.peer);
-        delete dataConnections[conn.peer];
+        dataConnection = undefined;
         // updatePeerData(conn.peer, () => false);
         three.dispatch({ type: "RemoveVideo", personId: conn.peer });
-        theirVideoUnsubscribe();
 
         //get rid of current friend
-        friendParticipant = new Participant; 
+        friendParticipant = new Participant(); 
         participant.addFriendParticipant(friendParticipant); 
         peerIds = [];
         if( !disconnectedBySelf )
@@ -425,11 +417,11 @@
     }
 
     function listenToDataConnection(conn: DataConnection) {
-      if (dataConnections[conn.peer]) {
-        console.warn("Trying to reconnect data for ", conn.peer, dataConnections);
+      if (dataConnection) {
+        console.warn("Trying to reconnect data for ", conn.peer, dataConnection);
       }
-      dataConnections[conn.peer] = conn;
-      console.log("listenToDataConnection", conn, dataConnections);
+      dataConnection = conn;
+      console.log("listenToDataConnection", conn, dataConnection);
       friendParticipant.setParticipantID(conn.peer); //for the dyad arrangement set the ID
       peerIds.push(conn.peer); //so that other things work -- plugging the hole in the dam. -CDB
 
@@ -459,6 +451,16 @@
 
       conn.on('close', function () {
         closeConnection(conn); 
+        console.log("closing out bc other participant closed");
+        peerIds = peerIds.filter((id) => id !== conn.peer);
+        dataConnection = undefined;
+        three.dispatch({ type: "RemoveVideo", personId: conn.peer });
+
+        //get rid of current friend
+        friendParticipant = new Participant; 
+        participant.addFriendParticipant(friendParticipant); 
+        peerIds = [];
+        chatstatusMessage = "The other participant has disconnected.\n Please use the above controls to reconnect, if desired.";
       });
 
       conn.on('error', (error) => {
@@ -470,20 +472,13 @@
     peer.on('connection', listenToDataConnection);
 
     function listenToMediaConnection(call: MediaConnection) {
-
-
-
+      mediaConnection?.close();
+      mediaConnection = call;
       // theirId = call.peer;
       call.on('stream', function (mediaStream) {
         chatstatusMessage = ""; 
 
         console.log('CallAnswered', call, mediaStream);
-        theirVideoUnsubscribe = theirVideo.subscribe(video => {
-          if (video) {
-            three.dispatch({ type: "AddVideo", personId: call.peer, video });
-            // setPeerConnection(call.peer, "media", true);
-          }
-        });
         myMutePosition = three.getMuteButtonPosition(peer.id);
         theirMutePosition = three.getMuteButtonPosition(call.peer);
         theirVideo.setSource(mediaStream);
@@ -491,7 +486,6 @@
 
       call.on('close', function () {
         console.log('removing media connection');
-        theirVideoUnsubscribe();
         three.dispatch({ type: "RemoveVideo", personId: call.peer });
         console.log("closing out bc other participant closed here 479");
 
@@ -503,21 +497,7 @@
       })
     }
 
-    peer.on('call', call => {
-      listenToMediaConnection(call);
-      // setPeerConnection(call.peer, "media", "received");
-      callVideoUnsubscribe = webcamVideo.subscribe(async (video) => {
-        if (video?.stream) {
-          call.answer(video.stream);
-        } else if (video) {
-          console.warn(
-            "Rec'd call but didn't answer b/c I don't have a video stream :("
-          );
-        }
-      });
-    });
-  
-
+    peer.on('call', listenToMediaConnection);
 
     posenet.onResults((pose) => {
       loading = false;
@@ -528,27 +508,19 @@
       participant.addKeypoint(pose.keypoints);
       keypointsUpdated(peer.id, pose, size);
 
-      // send to peers w/ data connections
-      Object.values(dataConnections).forEach((conn) => {
-        if (conn.open) conn.send({ type: "Pose", pose, size });
-      });
+      if (dataConnection?.open) dataConnection.send({ type: "Pose", pose, size });
     });
 
     const myVideoUnsubscribe = webcamVideo.subscribe(async (video) => {
-      if (!video) return;
-
-      posenet.updateVideo(video);
-
-      three.dispatch({ type: "AddVideo", personId: peer.id, video });
-
+      // TODO
+      // move this up
       if (idToCall) {
-        const theirId = idToCall;
-        listenToDataConnection(peer.connect(theirId, { label: theirId, serialization: 'json' }));
+        listenToDataConnection(peer.connect(idToCall, { label: idToCall, serialization: 'json' }));
 
         glowClass = "glowEffect";
 
-        if (video.stream) {
-          const call = peer.call(theirId, video.stream);
+        if (video && video.stream) {
+          const call = peer.call(idToCall, video.stream);
           listenToMediaConnection(call);
         }
 
@@ -627,9 +599,7 @@
     sendMuteMessage = (which: number, muted: boolean) =>
     {
       // send to peers w/ data connections
-      Object.values(dataConnections).forEach((conn) => {
-        if (conn.open) conn.send({ type: "Mute", which, muted });
-      });
+      if (dataConnection?.open) dataConnection.send({ type: "Mute", which, muted });
     }
 
 
@@ -638,7 +608,6 @@
       stopped = true;
       three.cleanup();
       posenet.cleanup()
-      callVideoUnsubscribe();
       myVideoUnsubscribe();
       peer.disconnect();
     };
@@ -736,14 +705,12 @@
     }
   }
 
-  beforeUnload = () =>
+  const beforeUnload = () =>
   {
-      // send to peers w/ data connections
-      Object.values(dataConnections).forEach((conn) => {
-        if (conn.open) conn.close();
-        closeConnection(conn); 
-      });
-      
+      if (dataConnection?.open) {
+        dataConnection.close();
+        closeConnection(dataConnection); 
+      }
       peer.disconnect(); 
       console.log("disconnected from peer");
   }
@@ -752,9 +719,7 @@
   {
     disconnectedBySelf = true; 
 
-    Object.values(dataConnections).forEach((conn) => {
-        if (conn.open) conn.close();
-      });
+    if (dataConnection?.open) dataConnection.close();
     console.log("ended the call"); 
   }
 </script>
@@ -824,7 +789,7 @@
       <input type="button" on:click={() => webcamVideo.setSource(source)} value="{source}" />
     {/each}
     <br/> -->
-  Data connections: {Object.keys(dataConnections).join(', ')}<br />
+  Data conection: {dataConnection ? dataConnection.peer : "none"}<br />
 
   <ScoreBar label="skeleton touching:" score={skeletonTouching} />
     <ScoreBar label="how long touching:" score={howLongTouch} />

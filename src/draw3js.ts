@@ -23,21 +23,10 @@ export interface ThreeRenderProps {
   handleResize : ()=>void;
 };
 
-export interface ThreeRenderer {
-  cleanup: () => void;
-  dispatch: (command: DrawingCommands) => void;
-  getMuteButtonPosition: (personId: string) =>  THREE.Vector3 ;
-}
-
-export type MakeThreeRenderer = (props: ThreeRenderProps) => ThreeRenderer;
-
 const textureLoader = new THREE.TextureLoader();
 const map0 = textureLoader.load('/circle.jpg');
 
-export function threeRenderCode({
-  canvas,
-  handleResize
-}: ThreeRenderProps): ThreeRenderer {
+export function threeRenderCode({ canvas, handleResize }: ThreeRenderProps) {
   let running = true;
 
   const {
@@ -271,7 +260,7 @@ export function threeRenderCode({
       }
 
       case "UpdatePose": {
-        const { personId, targetVideoId, size, pose, skeletonIntersect } = command;
+        const { personId, targetVideoId, size, skeletonIntersect } = command;
         const videoGroup = findGroup(targetVideoId);
         if (!videoGroup) return;
 
@@ -421,7 +410,6 @@ export interface UpdatePose {
   type: "UpdatePose";
   personId: string;
   targetVideoId: string; // which video to draw the pose on
-  pose: Pose;
   skeletonIntersect: SkeletionIntersection;
   size: { width: number, height: number };
 }

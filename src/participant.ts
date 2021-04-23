@@ -1,3 +1,4 @@
+import { EventEmitter } from "eventemitter3";
 import { CircularBuffer } from './circularBuffer';
 import { AveragingFilter, Derivative } from './averagingFilterV2';
 import * as PoseIndex from './poseConstants.js';
@@ -20,14 +21,19 @@ import { SkeletonTouch } from './SkeletonTouch'
 
 */
 
+export enum ParticipantEvents {
+    KeypointsAdded = "KeypointsAdded",
+    SetSize = "SetSize",
+    SetId = "SetId"
+}
+
 export function orderParticipantID(id1: string, id2: string) {
     return id1 > id2 ? -1 : 0
 }
 
 //TODO: refactor such that otherParticipant is a pointer...... YIKES
 
-export class Participant {
-
+export class Participant extends EventEmitter<ParticipantEvents> {
     participantID: string = "";
     friendParticipant: any; //starting this process, but it is not complete
 
@@ -98,6 +104,7 @@ export class Participant {
     intersection: SkeletionIntersection;;
 
     constructor() {
+        super();
         this.windowSize = 16; //should test different window sizes.
 
         this.keyPointBuffer = new CircularBuffer(this.windowSize);
@@ -199,6 +206,7 @@ export class Participant {
     //where it is on the screen in relation to other videos.
     setParticipantID(id: string) {
         this.participantID = id;
+        this.emit(ParticipantEvents.SetId, id);
     }
 
     addKeypoint(keypoints: Keypoint[]): void {
@@ -220,6 +228,7 @@ export class Participant {
             }
             */ //not using any of the angles code anymore
         // console.log(keypoints);
+        this.emit(ParticipantEvents.KeypointsAdded, this.participantID, keypoints);
     }
 
     //per second -- vary the window size with the samplerate
@@ -380,11 +389,12 @@ export class Participant {
         return this.width;
     }
 
-    setSize(w, h) {
-        this.width = w;
-        this.height = h;
-        this.avgKeyPoints.setSize(w, h);
-        this.intersection.setSize(w, h);
+    setSize(width, height) {
+        this.width = width;
+        this.height = height;
+        this.avgKeyPoints.setSize(width, height);
+        this.intersection.setSize(width, height);
+        this.emit(ParticipantEvents.SetSize, this.participantID, { width, height });
     }
 
     getHeight() {
