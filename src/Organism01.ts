@@ -81,6 +81,10 @@ let nodeType: GeometryDetail;
 let finalTethers: VerletStick[] = [];
 let finalTetherAlphas: number[] = [];
 
+let sceneAngle = 0;
+let radius = 1;
+let lookOnce : boolean = false; 
+
 
 
 // cube bounds
@@ -331,10 +335,21 @@ function render() {
     renderer.clearDepth();
 }
 
-function animate() {
+function animate() 
+{
     renderer.clear();
     // controls.autoRotate = true;
-    camera.lookAt(scene.position); //0,0,0
+
+    //make the creature move in a circle
+    // scene.rotateZ( sceneAngle );
+    // scene.translateX(0.25);
+    // scene.translateY(0.25);
+    // sceneAngle += 0.01; 
+
+    if(!lookOnce){
+        camera.lookAt(scene.position); //0,0,0
+        lookOnce = true; 
+    }
 
     if (isOvaBirth) {
         ova.setStickColor(new Color(0X7777DD), ovaStickColorAlpha);

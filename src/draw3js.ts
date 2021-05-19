@@ -10,6 +10,7 @@ import type { PosenetSetup } from './threejs/mediapipePose';
 import type { Pose } from '@tensorflow-models/posenet';
 import { orderParticipantID } from './participant'
 import type { SkeletionIntersection } from './skeletonIntersection';
+import { number } from 'mathjs';
 
 export const videoOverlapAmount = 0.66;
 
@@ -27,6 +28,8 @@ export interface ThreeRenderer {
   cleanup: () => void;
   dispatch: (command: DrawingCommands) => void;
   getMuteButtonPosition: (personId: string) =>  THREE.Vector3 ;
+  onMouseClick : (x:number, y:number) => number; 
+  moveVideoCam : (which:number, x2:number, y2:number) => void;
 }
 
 export type MakeThreeRenderer = (props: ThreeRenderProps) => ThreeRenderer;
@@ -342,11 +345,73 @@ export function threeRenderCode({
       }
     }
   }
+
+  function posToScreen()
+  {
+    
+  }
+
+  //returns world position from screen coordinates
+  function posFromScreen(x : number, y: number) : THREE.Vector3
+  {
+    let newPos = new THREE.Vector3; 
+    let inputVec = new THREE.Vector3(x,y,0);
+
+    let widthHalf = window.innerWidth / 2;
+    let heightHalf = window.innerHeight  / 2;
+
+    //inverse of xform to screen
+    inputVec.x = (inputVec.x - widthHalf) * (1/widthHalf)  ;
+    inputVec.y = (inputVec.y - heightHalf) * (1/heightHalf) ;
+
+    inputVec.set(
+      (x / window.innerWidth) * 2 - 1,
+      - (y / window.innerHeight) * 2 + 1,
+      0);
+
+    camera.updateMatrixWorld();
+    newPos = inputVec.unproject(camera)
+
+  
+    return newPos; 
+  }
+
+  //i -- index of video
+  function isInVideo(pos : Vector3) : number
+  {
+    let isInVid : number = -1;
+    let vidWidth = videoWidth3js;
+    let vidHeight = videoHeight3js;
+    for( let i=0; i<allVideosGroup.children.length; i++ )
+    {
+
+      let vid = allVideosGroup.children[i];
+      if( ( pos.x <= vid.position.x + vidWidth/2 && pos.x >= vid.position.x - vidWidth/2  ) &&
+        ( pos.y <= vid.position.y + vidHeight/2 && pos.y >= vid.position.y - vidHeight/2 ) )
+      {
+        isInVid = i;
+      }
+    }
+    return isInVid; 
+  }
+
   return {
     dispatch,
+    onMouseClick(x:number, y:number) : number
+    {
+      let newpos = posFromScreen(x, y);
+      let whichVideo = isInVideo(newpos);
+      return whichVideo; 
+    },
+    moveVideoCam(which:number, x2:number, y2:number) 
+    {
+      let pos2 = posFromScreen(x2, y2);
+      let vid = allVideosGroup.children[which]; 
+      vid.position.x = pos2.x; 
+      vid.position.y = pos2.y; 
+    },
     getMuteButtonPosition (personId: string) : THREE.Vector3 {
 
-      //
       let pos = new THREE.Vector3();
       const videoGroup = findGroup(personId);
       if (!videoGroup) return pos;

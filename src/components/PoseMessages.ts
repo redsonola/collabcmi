@@ -23,4 +23,11 @@ export interface MuteMessage {
 
 }
 
-export type PeerMessage = PoseMessage | TextMessage | MuteMessage ;
+export interface MoveVideoMessage {
+  type: 'MoveVideo';
+  which: number; //this is the order in the draw3js vector
+  x: number; //x posiiton in screen coordinates
+  y: number; //y position in screen coordinates
+}
+
+export type PeerMessage = PoseMessage | TextMessage | MuteMessage | MoveVideoMessage;

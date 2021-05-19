@@ -141,7 +141,7 @@ export class DynamicMovementMidi extends LoadMidiFile {
         this.measureLen = Tone.Time("1n").toSeconds();
         this.noteQuarterLen = Tone.Time("4n").toSeconds();
 
-        this.scheduledAhead = this.measureLen + this.measureLen; //default 2 measures
+        this.scheduledAhead = this.measureLen; //default 2 measures
         this.looping = false;
         this.startTime = Tone.now();
         this.magneticLoopStarted = 0;

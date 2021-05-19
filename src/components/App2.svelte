@@ -73,6 +73,9 @@
   let closeConnection = (conn:DataConnection) => {};
   let recentIds : string[] = []; 
 
+  //is the webcam moving, if so, where?
+  let movingWebCamWindow : {which:number, startX:number, startY:number, isMoving: boolean } = 
+      { which:-1, startX:0, startY:0, isMoving: false } ;
   
   $: {
     if ($theirVideo !== null) {
@@ -167,6 +170,8 @@
   var connectToRandomPartner = (e) => {}; //function to connect to a random partner
   var turnUpVolume = () => {}; //turn up the volume when connected to another user
   var sendMuteMessage = (which:number, muted:boolean) => {}; //if muting self, need to send to other person to mute.
+  var sendVideoMoveMessage = (which:number, x:number, y:number) => {}; //if muting self, need to send to other person to mute.
+
   var endCall : ()=>void ;
 
   const BEGINNING_VOLUME = 0.66;
@@ -460,8 +465,20 @@
             if( message.which === 0 )
             {
               myMuteButtonText = message.muted ?unmuteURL : muteUrl;
-              break;
             }
+            else
+            {
+              if( theirVideoElement )
+                {
+                  theirVideoElement.muted = message.muted ;
+                  theirMuteButtonText = message.muted ? unmuteURL : muteUrl;
+                }
+            }
+            break;
+          }
+          case "MoveVideo":
+          {
+            three.moveVideoCam( message.which, message.x, message.y );
           }
 
           default: {
@@ -647,6 +664,14 @@
       });
     }
 
+    sendVideoMoveMessage = ( which: number, x:number, y:number ) =>
+    {
+      // send to peers w/ data connections
+      Object.values(dataConnections).forEach((conn) => {
+        if (conn.open) conn.send({ type: "MoveVideo", which, x, y });
+      });      
+    }
+
 
     return () => {
       console.log(`Cleaning up app for ${myId}`);
@@ -772,10 +797,42 @@
       });
     console.log("ended the call"); 
   }
+
+  function mouseClick(event)
+  {
+    let vidIndex = three.onMouseClick(event.clientX, event.clientY);
+    if(vidIndex > -1)
+    {
+      movingWebCamWindow.which = vidIndex;
+      movingWebCamWindow.startX = event.clientX;
+      movingWebCamWindow.startY = event.clientY;
+      movingWebCamWindow.isMoving = true; 
+    }
+    // let movingWebCamWindow : {which:number, startX:number, startY:number, isMoving: false};
+  }
+
+  function mouseUp(event)
+  {
+    movingWebCamWindow.isMoving = false; 
+  }
+
+  function mouseMove(event)
+  {
+    let endPosX = event.clientX;
+    let endPosY = event.clientY;
+
+    if(  movingWebCamWindow.isMoving )
+    {
+      three.moveVideoCam( movingWebCamWindow.which, endPosX, endPosY ) ;
+      sendVideoMoveMessage( movingWebCamWindow.which, endPosX, endPosY ) 
+    }
+  }
+
+
 </script>
 
 <!-- <svelte:window on:resize={handleResize}/> -->
-<svelte:window on:beforeunload={beforeUnload} />
+<svelte:window on:beforeunload={beforeUnload} on:mousedown={mouseClick} on:mouseup={mouseUp} on:mousemove={mouseMove} />
 
 
 <div class="valueSliders">
