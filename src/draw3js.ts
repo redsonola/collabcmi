@@ -409,6 +409,7 @@ export function threeRenderCode({
       let vid = allVideosGroup.children[which]; 
       vid.position.x = pos2.x; 
       vid.position.y = pos2.y; 
+      handleResize(); //moves the mute button to the new position as well, etc.
     },
     getMuteButtonPosition (personId: string) : THREE.Vector3 {
 

@@ -879,7 +879,7 @@
 </div>
 
 <!-- I just made the myMutePosition.y position top for this one, bc they should be the same anyways. fix for real l8rz -->
-<div class="theirMute" style={`left:${theirMutePosition.x}px; top:${myMutePosition.y}px`}> 
+<div class="theirMute" style={`left:${theirMutePosition.x}px; top:${theirMutePosition.y}px`}> 
   <input type="image" on:click={muteThem} alt="theirMuteButton" src={theirMuteButtonText} width="23px" height="23px" />
 </div>
 {/if}
