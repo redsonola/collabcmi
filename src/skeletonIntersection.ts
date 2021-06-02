@@ -98,20 +98,32 @@ export class WhereTouch {
 
 export class DrawSkeletonIntersectLine {
 
-    geometry: BufferGeometry = new THREE.BufferGeometry(); ;
     material: THREE.LineBasicMaterial;
+    touchingMaterial: THREE.LineBasicMaterial; 
+
     personId: string;
     limbs: LimbIntersect[];
-    mesh : THREE.Mesh | null;
     minConfidence : number; 
+
+    geometry: BufferGeometry = new THREE.BufferGeometry();
+    touchGeo:BufferGeometry = new THREE.BufferGeometry();  
+
+    mesh : THREE.Mesh | null;    
+    touchingMesh : THREE.Mesh | null;    
+
     line : THREE.Line = new THREE.Line();
-
-
+    touchLine : THREE.Line = new THREE.Line(); 
 
     constructor(minConfidence:number =0.4, personId: string = "") {
         this.geometry = new THREE.BufferGeometry();
         this.mesh = null; 
+
+        this.touchGeo = new THREE.BufferGeometry();
+        this.touchingMesh = null; 
+
         this.material = new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent:true, opacity:1});
+        this.touchingMaterial = new THREE.LineBasicMaterial({ color: 0xFF00FF, transparent:true, opacity:1});
+
         this.personId = personId;
         this.limbs = [];
         this.minConfidence = minConfidence; 
@@ -130,14 +142,23 @@ export class DrawSkeletonIntersectLine {
     groupToDraw() : THREE.Group {
         const group = new THREE.Group();
         let points : THREE.Vector3[] = []; 
+        let touchingPoints : THREE.Vector3[] = []; 
 
         this.limbs.forEach(limb => {
             const keypoints = limb.getKeypoints(); 
             if( keypoints[0].position.x && keypoints[0].position.y && keypoints[1].position.x && keypoints[1].position.y &&
                 keypoints[0].score > this.minConfidence && keypoints[1].score > this.minConfidence )  
             {
+                if( !limb.touching )
+                {
                     points.push( new THREE.Vector3( keypoints[0].position.x, keypoints[0].position.y, 0.95 ) ); 
                     points.push( new THREE.Vector3( keypoints[1].position.x, keypoints[1].position.y, 0.95 ) ); 
+                }
+                else
+                {
+                    touchingPoints.push( new THREE.Vector3( keypoints[0].position.x, keypoints[0].position.y, 0.95 ) ); 
+                    touchingPoints.push( new THREE.Vector3( keypoints[1].position.x, keypoints[1].position.y, 0.95 ) );                
+                }
 
                     // console.log( "here:" + keypoints[0].position.x + "," + keypoints[0].position.y + " to " + keypoints[1].position.x + "," + keypoints[1].position.y  );
             } });
@@ -146,21 +167,31 @@ export class DrawSkeletonIntersectLine {
             this.line.geometry = this.geometry; 
             this.line.material = this.material;
             this.line.frustumCulled = false;  
+
+            this.touchGeo.setFromPoints(touchingPoints);
+            this.touchLine.geometry = this.touchGeo; 
+            this.touchLine.material = this.touchingMaterial;
+            this.touchLine.frustumCulled = false;              
+
             group.add(this.line);
+            group.add(this.touchLine);
 
         return group;
     }
 }
 
+//TODO: add touching to this
 class DrawHead extends DrawSkeletonIntersectLine {
     center : THREE.Vector3 | null  = null ; 
     radius : number = 0;
     ellipseCurve : THREE.EllipseCurve = new THREE.EllipseCurve(0, 0, 0, 0, 0, 0, false, 0); 
+    touching : boolean; 
     
-    updateHead(center : THREE.Vector3, radius : number ) : void
+    updateHead(center : THREE.Vector3, radius : number, touching:boolean ) : void
     {
         this.center = center; 
         this.radius = radius; 
+        this.touching = touching; 
     }
 
     groupToDraw() : THREE.Group {
@@ -194,8 +225,10 @@ class DrawHead extends DrawSkeletonIntersectLine {
         }
 
         this.geometry.setFromPoints(points);
-        this.line.geometry = this.geometry; 
-        this.line.material = this.material; 
+        this.line.geometry = this.geometry;
+        if( !this.touching ) 
+            this.line.material = this.material; 
+        else this.line.material = this.touchingMaterial; 
         this.line.frustumCulled = false; 
         group.add(this.line);
 
@@ -212,6 +245,7 @@ export class LimbIntersect extends DetectIntersect {
     flip: boolean = false;
     w: number;
     h: number;
+    touching: boolean; //whether it is touching the other person
 
     constructor(w: number, h: number, index1_: number, index2_: number, minConfidence_: number = 0.4) {
         super(minConfidence_);
@@ -223,6 +257,11 @@ export class LimbIntersect extends DetectIntersect {
         this.h = h;
 
 
+    }
+
+    resetTouch() : void
+    {
+        this.touching = false;
     }
 
     getIndex1(): number {
@@ -548,13 +587,6 @@ class BodyPartIntersect extends DetectIntersect {
 
     drawSkeleton : DrawSkeletonIntersectLine;
 
-    setFlipSelf(flip: boolean) {
-        this.flip = flip;
-        for (let i = 0; i < this.limbs.length; i++) {
-            this.limbs[i].setFlipSelf(flip);
-        }
-    }
-
     constructor(w: number, h: number, name: string, material: THREE.Material, confidence: number) {
         super(confidence);
         this.name = name;
@@ -567,6 +599,18 @@ class BodyPartIntersect extends DetectIntersect {
         this.h = h;
         this.drawSkeleton = new DrawSkeletonIntersectLine(confidence, ""); 
 
+    }
+
+    resetTouch() : void
+    {
+        this.limbs.forEach( (limb )=>{limb.resetTouch(); } ); 
+    }
+
+    setFlipSelf(flip: boolean) {
+        this.flip = flip;
+        for (let i = 0; i < this.limbs.length; i++) {
+            this.limbs[i].setFlipSelf(flip);
+        }
     }
 
     getVectorsFromLimbs(limbs_: LimbIntersect[]): THREE.Vector3[] {
@@ -630,8 +674,11 @@ class BodyPartIntersect extends DetectIntersect {
         let otherLimbs = bodypart.getLimbs();
         for (let i = 0; i < this.limbs.length; i++) {
             for (let j = 0; j < otherLimbs.length; j++) {
-                if (this.limbs[i].getScore() > this.minConfidence)
+                if (this.limbs[i].getScore() > this.minConfidence) {
                     whereTouch.ifDistIsLessReplace(this.limbs[i].intersects(otherLimbs[j], w, h), this.limbs[i].getIndices(), otherLimbs[j].getIndices());
+                }
+                this.limbs[i].touching = this.limbs[i].touching || whereTouch.isTouching; 
+                otherLimbs[j].touching = otherLimbs[j].touching || whereTouch.isTouching; 
             }
         }
         return whereTouch;
@@ -695,6 +742,7 @@ class HeadIntersect extends BodyPartIntersect {
     boundaries: HeadBoundary[];
     sphere: THREE.Sphere;
     index: number[];
+    touching: boolean; 
 
     constructor(w: number, h: number, name: string, material: THREE.Material, confidence) {
         super(w, h, name, material, confidence);
@@ -775,7 +823,12 @@ class HeadIntersect extends BodyPartIntersect {
         this.updateBoundaries(box, this.getAvgScore(keypoints));
         this.line.geometry.setFromPoints(this.getVectors());
 
-        (this.drawSkeleton as DrawHead).updateHead(headCenter, noseToEarDistance);
+        this.touching = false; 
+        this.boundaries.forEach( (bound)=>{
+            this.touching = this.touching || bound.touching; 
+        });
+
+        (this.drawSkeleton as DrawHead).updateHead(headCenter, noseToEarDistance, this.touching);
 
     }
 
@@ -883,11 +936,19 @@ export class SkeletionIntersection {
     //TODO: return where it is touching
 
 
+    resetTouch() : void
+    {
+        this.parts.forEach( (part)=>{ part.resetTouch() } );
+        
+    }
+
     touching(w: number, h: number): WhereTouch {
 
         // (window as any).headIntersect = this.head.getPositions(); 
 
         let touch: WhereTouch = new WhereTouch();
+        this.resetTouch(); 
+        this.friendSkeleton.resetTouch(); 
 
         let friendParts = this.friendSkeleton.getBodyPartIntersections();
         // (window as any).friendHeadIntersect = friendParts[0].getPositions(); 
