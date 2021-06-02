@@ -72,6 +72,7 @@
   let disconnectedBySelf = false;  
   let closeConnection = (conn:DataConnection) => {};
   let recentIds : string[] = []; 
+  let cursorStyle : string = "default";
 
   //is the webcam moving, if so, where?
   let movingWebCamWindow : {which:number, startX:number, startY:number, isMoving: boolean } = 
@@ -803,6 +804,7 @@
     let vidIndex = three.onMouseClick(event.clientX, event.clientY);
     if(vidIndex > -1)
     {
+      document.body.style.cursor = "move"
       movingWebCamWindow.which = vidIndex;
       movingWebCamWindow.startX = event.clientX;
       movingWebCamWindow.startY = event.clientY;
@@ -814,18 +816,30 @@
   function mouseUp(event)
   {
     movingWebCamWindow.isMoving = false; 
+    document.body.style.cursor = "default"; 
   }
 
   function mouseMove(event)
   {
     let endPosX = event.clientX;
     let endPosY = event.clientY;
+    let vidIndex = three.onMouseClick(event.clientX, event.clientY);
+
+    if( vidIndex > -1 )
+    {
+      document.body.style.cursor = "move";
+    }
+    else if(!movingWebCamWindow.isMoving)
+    {
+      document.body.style.cursor = "default";
+    }
 
     if(  movingWebCamWindow.isMoving )
     {
       three.moveVideoCam( movingWebCamWindow.which, endPosX, endPosY ) ;
       sendVideoMoveMessage( movingWebCamWindow.which, endPosX, endPosY ) 
     }
+
   }
 
 
