@@ -42,8 +42,8 @@
     TouchPhrasesEachBar,
   } from "../xcorrSonify";
   import * as Tone from "tone";
- //import "../Organism01"; //turn back on for creature
-  //import { onVirtualTouch } from "../Organism01"; //turn back on for creature, uncomment Line 282
+  import "../Organism01"; //turn back on for creature
+  import { onVirtualTouch } from "../Organism01"; //turn back on for creature, uncomment Line 282
   import * as THREE from "three";
   import { DataConnection, MediaConnection } from "peerjs";
 
@@ -221,9 +221,11 @@
 
     if (participant.isParticipant(particiantId)) {
       thisparticipant = participant;
+      three.setWhichIsSelf( particiantId ); //figure out how to just set this once, gah.
     } else {
       thisparticipant = friendParticipant;
     }
+
 
     three?.dispatch({
       type: "UpdatePose",
@@ -263,11 +265,12 @@
     let justStartedTouching: boolean = false;
     let yposOfTouch: number = 0;
     let combinedWindowedScore : number = 0;
-    participant.updateTouchingFriend();
+    let offset = three.getOffsetVidPosition(false); 
+    participant.updateTouchingFriend(three.getOffsetVidPosition(false));
 
     if( peerIds.length !== 0 ){
 
-      friendParticipant.updateTouchingFriend();
+      friendParticipant.updateTouchingFriend(three.getOffsetVidPosition(true));
 
       if (participant.areTouching()) {
         skeletonTouching = 1;
@@ -279,7 +282,7 @@
       combinedWindowedScore = windowedVarScore;
       howLongTouch = participant.howLongTouching();
       howMuchTouch = participant.howMuchTouching();
-      //onVirtualTouch(participant.getTouch()); //TURN ON FOR CREATURE
+      onVirtualTouch(participant.getTouch()); //TURN ON FOR CREATURE
     }
 
     try {
@@ -517,6 +520,7 @@
         theirVideoUnsubscribe = theirVideo.subscribe(video => {
           if (video) {
             three.dispatch({ type: "AddVideo", personId: call.peer, video, recentIds });
+            three.setWhichIsSelf(participant.getParticipantID()); 
           }
         });
         myMutePosition = three.getMuteButtonPosition(peer.id);
@@ -573,6 +577,8 @@
       posenet.updateVideo(video);
 
       three.dispatch({ type: "AddVideo", personId: peer.id, video, recentIds });
+      three.setWhichIsSelf(participant.getParticipantID()); 
+
 
 
       if (idToCall) {

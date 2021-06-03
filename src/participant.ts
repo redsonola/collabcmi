@@ -975,8 +975,8 @@ export class Participant {
     }
 
     //TODO: update everything in one method & just have that as the outside thingy!
-    updateTouchingFriend(): void {
-        this.intersection.update(); //TODO only update when have friend
+    updateTouchingFriend(offsets : THREE.Vector3): void {
+        this.intersection.update(offsets); //TODO only update when have friend
 
         if (this.friendParticipant) {
             //TODO: refactor so I only do this once.

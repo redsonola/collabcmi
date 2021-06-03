@@ -29,7 +29,11 @@ export interface ThreeRenderer {
   dispatch: (command: DrawingCommands) => void;
   getMuteButtonPosition: (personId: string) =>  THREE.Vector3 ;
   onMouseClick : (x:number, y:number) => number; 
+  setWhichIsSelf : (personId : string) => void ;
+  positionFromScreen : (x:number, y:number) => THREE.Vector3;
   moveVideoCam : (which:number, x2:number, y2:number) => void;
+  getOffsetVidPosition : (isFriend : boolean) => Vector3
+
 }
 
 export type MakeThreeRenderer = (props: ThreeRenderProps) => ThreeRenderer;
@@ -149,6 +153,11 @@ export function threeRenderCode({
   let lastSize : {w:number, h:number} = {w:0,h:0};
 
 
+  //these variables allow moving the video
+  let offsetSelfVideo : Vector3 = new Vector3(0,0,0); 
+  let offsetFriendVideo : Vector3 = new Vector3(0,0,0); 
+  let whichIndexIsSelf : number = 0; 
+  let myId : string = ""; 
 
   const videos: Mesh<PlaneBufferGeometry, MeshPhongMaterial>[] = [];
   //TODO this only works for dyads. Find another solution.
@@ -346,9 +355,27 @@ export function threeRenderCode({
     }
   }
 
-  function posToScreen()
+  function posToScreen(x : number, y : number) : THREE.Vector3
   {
+    let pos = new THREE.Vector3(x, y, 0); 
+
+    // let vidWidth = videoWidth3js;
+    // let vidHeight = videoHeight3js;
+
+    // pos.x = pos.x -  ( vidWidth / 2 ); 
+    // pos.y = pos.y - (vidHeight / 2);
     
+    camera.updateMatrixWorld(); 
+    pos.project(camera);
+
+    let widthHalf = window.innerWidth / 2;
+    let heightHalf = window.innerHeight  / 2;
+
+    pos.x = (pos.x * widthHalf) + widthHalf;
+    pos.y = - (pos.y * heightHalf) + heightHalf;
+    pos.z = 0;
+
+    return pos; 
   }
 
   //returns world position from screen coordinates
@@ -403,12 +430,48 @@ export function threeRenderCode({
       let whichVideo = isInVideo(newpos);
       return whichVideo; 
     },
+    positionFromScreen(x:number, y:number) : Vector3
+    {
+      return posFromScreen(x, y);
+    },
+    setWhichIsSelf(personId : string) : void //kind hacky gah but this code is not super flexible
+    {
+      myId = personId; 
+      const videoGroup = findGroup(personId);
+      if (!videoGroup) return;
+      whichIndexIsSelf = allVideosGroup.children.indexOf(videoGroup); 
+    },
+    getOffsetVidPosition( isFriend : boolean ) : THREE.Vector3
+    {
+      if( !isFriend )
+      {
+        return offsetSelfVideo; 
+      }
+      else{
+        return offsetFriendVideo; 
+      }
+    },
     moveVideoCam(which:number, x2:number, y2:number) 
     {
       let pos2 = posFromScreen(x2, y2);
       let vid = allVideosGroup.children[which]; 
+
+      let screenPos = posToScreen(vid.position.x, vid.position.y); 
+
+      if(whichIndexIsSelf === which) 
+      {
+        offsetSelfVideo.x += x2 - screenPos.x;
+        offsetSelfVideo.y += y2 - screenPos.y;
+      }
+      else
+      { 
+        offsetSelfVideo.x += x2 - screenPos.x;
+        offsetSelfVideo.y += y2 - screenPos.y;
+      }
+
       vid.position.x = pos2.x; 
-      vid.position.y = pos2.y; 
+      vid.position.y = pos2.y;
+
       handleResize(); //moves the mute button to the new position as well, etc.
     },
     getMuteButtonPosition (personId: string) : THREE.Vector3 {

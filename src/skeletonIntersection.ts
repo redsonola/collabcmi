@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { Participant } from './participant';
 import * as PoseIndex from './poseConstants'
-import type { BufferGeometry } from 'three';
+import type { BufferGeometry, Vector3 } from 'three';
 
 //need to put in utilities space
 function distance(keypoints: any, poseIndex1: number, poseIndex2: number): number {
@@ -246,6 +246,10 @@ export class LimbIntersect extends DetectIntersect {
     w: number;
     h: number;
     touching: boolean; //whether it is touching the other person
+    offsets : THREE.Vector3 = new THREE.Vector3(0,0,0); 
+    lastOffsetX : number = 0;
+    lastOffsetXIndex : number = 0;
+
 
     constructor(w: number, h: number, index1_: number, index2_: number, minConfidence_: number = 0.4) {
         super(minConfidence_);
@@ -257,6 +261,11 @@ export class LimbIntersect extends DetectIntersect {
         this.h = h;
 
 
+    }
+
+    updateOffsets(offs : THREE.Vector3)
+    {
+        this.offsets = offs; 
     }
 
     resetTouch() : void
@@ -428,7 +437,9 @@ export class LimbIntersect extends DetectIntersect {
         return false; // Doesn't fall in any of the above cases 
     }
 
-    scaleVector(v: THREE.Vector3, flip: boolean): THREE.Vector3 {
+    //TODO: remove the "scale" & replace with actual positions drawn by 3js.
+    scaleVector(v: THREE.Vector3, flip: boolean, i : number=-1): THREE.Vector3 
+    {
         //TODO: ok this should be a passed in value -- but it is passed in via draw3js.ts line 84 
         let percentXOver = 0.66;
 
@@ -439,13 +450,20 @@ export class LimbIntersect extends DetectIntersect {
 
         let scaledY = v.y / this.h;
 
+        //it is scaled by 2 because keypoints are from the scaled image given to posenet/mediapipe. 
+        //need to get rid of this and just work from the points actually drawn by 3js
+        //because this is hacky as SHIT!
+        //however, not now. 
+        scaledX -= (this.offsets.x/this.w)/2; 
+        scaledY -= (this.offsets.y/this.h)/2;
+       
         return new THREE.Vector3(scaledX, scaledY, 2);
     }
 
     scaleLine(l: THREE.Line3, flip: boolean): THREE.Line3 {
 
         let line: THREE.Line3 = new THREE.Line3();
-        return this.setLine3(line, this.scaleVector(l.start, flip), this.scaleVector(l.end, flip));
+        return this.setLine3(line, this.scaleVector(l.start, flip, 0), this.scaleVector(l.end, flip, 1));
     }
 
     findDistBetweenPointAndLine(v: THREE.Vector3, aLine: THREE.Line3): WhereTouch {
@@ -482,11 +500,9 @@ export class LimbIntersect extends DetectIntersect {
         }
     };
 
-    
-
     closeEnough(limb: LimbIntersect, whatIsEnough: number, whereIntersect: WhereTouch): WhereTouch {
         let myLine = this.scaleLine(this.line(), this.flip);
-        let otherLine = this.scaleLine(limb.line(), !this.flip);
+        let otherLine = limb.scaleLine(limb.line(), !this.flip);
 
         let myIndices = this.getIndices();
         let theirIndices = limb.getIndices(); 
@@ -536,7 +552,8 @@ export class LimbIntersect extends DetectIntersect {
         this.w = w;
         this.h = h;
         let myLine = this.scaleLine(this.line(), this.flip);
-        let otherLine = this.scaleLine(limb.line(), !this.flip);
+        let otherLine = limb.scaleLine(limb.line(), !this.flip);
+
         const CLOSE_ENOUGH: number = 0.05;
         let whereIntersect: WhereTouch = new WhereTouch();
         whereIntersect.isTouching = false;
@@ -637,6 +654,12 @@ class BodyPartIntersect extends DetectIntersect {
         this.line.geometry.setFromPoints(this.getVectors());
 
         this.drawSkeleton.update(this.limbs);
+    }
+
+    //just so I don't have to propagate changes to inherited classes.
+    updateOffsets( offsets : THREE.Vector3 )
+    {
+        this.limbs.forEach( (limb)=>{ limb.updateOffsets(offsets) } );
     }
 
     draw() : THREE.Group
@@ -779,6 +802,12 @@ class HeadIntersect extends BodyPartIntersect {
         this.boundaries[3].updateBoundary(box.max.x, box.min.y, box.min.x, box.min.y, score);
     }
 
+        //just so I don't have to propagate changes to inherited classes.
+        updateOffsets( offsets : THREE.Vector3 )
+        {
+            this.boundaries.forEach( (limb)=>{ limb.updateOffsets(offsets) } );
+        }
+
     getVectors() {
         return this.getVectorsFromLimbs(this.boundaries);
     }
@@ -858,6 +887,7 @@ export class SkeletionIntersection {
     friendSkeleton: any = undefined; // I find annoying that neither null or undefined can be assigned to defined type except via | which introduces even more freaking complexity. WTF.
 
     material: THREE.Material
+    isFriend : boolean = false; 
 
 
     constructor(participant_: Participant, minConfidence: number = 0.3, w: number = 1, h: number = 1) {
@@ -866,7 +896,6 @@ export class SkeletionIntersection {
         this.material = new THREE.LineBasicMaterial({
             color: 0x0000ff
         });
-
         this.torso = new TorsoIntersect(w, h, "torso", this.material, minConfidence);
         this.head = new HeadIntersect(w, h, "head", this.material, minConfidence);
 
@@ -876,6 +905,11 @@ export class SkeletionIntersection {
         this.rightLeg = new ArmsLegsIntersect(w, h, "rightLeg", this.material, PoseIndex.rightHip, PoseIndex.rightKnee, PoseIndex.rightKnee, PoseIndex.rightAnkle, minConfidence);
 
         this.parts = [this.head, this.torso, this.leftArm, this.rightArm, this.leftLeg, this.rightLeg];
+    }
+
+    setIsFriend(friend:boolean = true)
+    {
+        this.isFriend = friend; 
     }
 
     setShouldFlipSelf(should: boolean) {
@@ -902,10 +936,10 @@ export class SkeletionIntersection {
 
     setFriend(friend: SkeletionIntersection) {
         this.friendSkeleton = friend;
-
+        this.friendSkeleton.setIsFriend(); 
     }
 
-    update() {
+    update(offsets : Vector3) {
         let keypoints1 = this.participant.getAvgKeyPoints();
         let limbs : LimbIntersect[] = []; 
         for (let i = 0; i < this.parts.length; i++) {
@@ -913,7 +947,16 @@ export class SkeletionIntersection {
             // limbs.push(...this.parts[i].getLimbs());
             // console.log( this.parts[i] ); 
         }
+        this.updateOffsets(offsets);
         // this.drawSkeleton.update(limbs);
+    }
+
+    updateOffsets(offsets : Vector3)
+    {
+        for (let i = 0; i < this.parts.length; i++) 
+        {
+            this.parts[i].updateOffsets(offsets);
+        }
     }
 
     getDrawGroup() : THREE.Group
