@@ -252,7 +252,7 @@ class SamplerFactory
             "E2": "052_Tuba_E2_Loud.mp3",	
             "G2": "055_Tuba_G2_Loud.mp3",
             "A2": "057_Tuba_A2_Loud.mp3",
-            "C3" : "060_Tuba_C3_Loud.mp3"
+            "C3": "060_Tuba_C3_Loud.mp3" 
         },
         {
             baseUrl: "./Tuba_samples/Tuba_Long/Loud/"

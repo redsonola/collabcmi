@@ -454,9 +454,9 @@ export class LimbIntersect extends DetectIntersect {
         //need to get rid of this and just work from the points actually drawn by 3js
         //because this is hacky as SHIT!
         //however, not now. 
-        scaledX -= (this.offsets.x/this.w)/2; 
-        scaledY -= (this.offsets.y/this.h)/2;
-       
+        scaledX += (this.offsets.x/this.w)/2; 
+        scaledY += (this.offsets.y/this.h)/2;
+
         return new THREE.Vector3(scaledX, scaledY, 2);
     }
 
@@ -503,6 +503,25 @@ export class LimbIntersect extends DetectIntersect {
     closeEnough(limb: LimbIntersect, whatIsEnough: number, whereIntersect: WhereTouch): WhereTouch {
         let myLine = this.scaleLine(this.line(), this.flip);
         let otherLine = limb.scaleLine(limb.line(), !this.flip);
+        
+        //TODO: substitute this intersection code with library code
+        //algorithm -- find boxes for each limb then test for intersection
+        //to find the box: 
+               //find the normal for each line
+                  //normVector = point1.sub(point2).normalize(); 
+                  //.applyEuler (or cross product, whichever)
+                  // then each point in the box is:
+                  //boxThick; // thickness of box / 2
+                  //boxPoint1 = point1.add( normVector * boxThick )
+                  //boxPoint2 = point1.sub( normVector * boxThick )
+                  //boxPoint3 = point2.add( normVector * boxThick )
+                  //boxPoint4 = point2.sub( normVector * boxThick )
+                  //NOTE --> points must be given to library call in counterclockwise order
+               //test intersection with https://github.com/jriecken/sat-js
+               //chosen bc it is lightweight.  
+
+
+
 
         let myIndices = this.getIndices();
         let theirIndices = limb.getIndices(); 
@@ -528,13 +547,13 @@ export class LimbIntersect extends DetectIntersect {
         //TODO: find quarters & others in loop.
 
         //find the midpoints & quarter points & eight points
-        const numberOfMidpointsEach : number = 2; // divide line into 8ths
+        const numberOfMidpointsEach : number = 2; // divide line into 4ths
 
         let myLineSegment : THREE.Line3 = myLine;
         let otherLineSegment : THREE.Line3 = otherLine;
 
-        whereIntersect = this.doLinesIntersectAtMidpoint( myLine, otherLine, myIndices, theirIndices, whereIntersect, 2 );
-        whereIntersect = this.doLinesIntersectAtMidpoint( otherLine, myLine, myIndices, theirIndices, whereIntersect, 2 );   
+        whereIntersect = this.doLinesIntersectAtMidpoint( myLine, otherLine, myIndices, theirIndices, whereIntersect, 1 );
+        whereIntersect = this.doLinesIntersectAtMidpoint( otherLine, myLine, myIndices, theirIndices, whereIntersect, 1 );   
 
         whereIntersect.isTouching = whereIntersect.dist <= whatIsEnough;
 
@@ -888,10 +907,14 @@ export class SkeletionIntersection {
 
     material: THREE.Material
     isFriend : boolean = false; 
+    w : number;
+    h : number; 
 
 
     constructor(participant_: Participant, minConfidence: number = 0.3, w: number = 1, h: number = 1) {
         this.participant = participant_;
+        this.w = w; 
+        this.h = h; 
 
         this.material = new THREE.LineBasicMaterial({
             color: 0x0000ff
@@ -924,6 +947,8 @@ export class SkeletionIntersection {
         for (let i = 0; i < this.parts.length; i++) {
             this.parts[i].setSize(w, h);
         }
+        this.w = w;
+        this.h = h; 
     }
 
     getLines(): THREE.Line[] {
@@ -948,6 +973,13 @@ export class SkeletionIntersection {
             // console.log( this.parts[i] ); 
         }
         this.updateOffsets(offsets);
+
+        let offsetx = -((offsets.x/this.w)/2);
+        let offsety = -((offsets.y/this.h)/2);
+
+        // console.log(  "isFriend:" + this.isFriend + "  offsetx:" + offsetx + "  offsety:" + offsety  );
+
+        
         // this.drawSkeleton.update(limbs);
     }
 

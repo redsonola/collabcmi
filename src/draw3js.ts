@@ -465,8 +465,8 @@ export function threeRenderCode({
       }
       else
       { 
-        offsetSelfVideo.x += x2 - screenPos.x;
-        offsetSelfVideo.y += y2 - screenPos.y;
+        offsetFriendVideo.x += x2 - screenPos.x;
+        offsetFriendVideo.y += y2 - screenPos.y;
       }
 
       vid.position.x = pos2.x; 
