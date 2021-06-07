@@ -910,7 +910,6 @@ export class SkeletionIntersection {
     w : number;
     h : number; 
 
-
     constructor(participant_: Participant, minConfidence: number = 0.3, w: number = 1, h: number = 1) {
         this.participant = participant_;
         this.w = w; 

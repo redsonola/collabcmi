@@ -42,8 +42,8 @@
     TouchPhrasesEachBar,
   } from "../xcorrSonify";
   import * as Tone from "tone";
-  // import "../Organism01"; //turn back on for creature
-  // import { onVirtualTouch } from "../Organism01"; //turn back on for creature, uncomment Line 282
+  import "../Organism01"; //turn back on for creature
+  import { onVirtualTouch } from "../Organism01"; //turn back on for creature, uncomment Line 282
   import * as THREE from "three";
   import { DataConnection, MediaConnection } from "peerjs";
 
@@ -282,7 +282,7 @@
       combinedWindowedScore = windowedVarScore;
       howLongTouch = participant.howLongTouching();
       howMuchTouch = participant.howMuchTouching();
-      // onVirtualTouch(participant.getTouch()); //TURN ON FOR CREATURE
+      onVirtualTouch(participant.getTouch()); //TURN ON FOR CREATURE
     }
 
     try {
