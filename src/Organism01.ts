@@ -443,11 +443,14 @@ function animate()
     updateNodes();
     render();
 
-    requestAnimationFrame(animate); 
+    setTimeout(() => requestAnimationFrame(animate), 100); 
 };
 
-//note: call this in the main -- App2.svelte
-setTimeout(animate, 100);
+export function startAnimation()
+{
+//note: call this in the main -- App2.svelt
+    setTimeout(animate, 100);
+}
 
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;

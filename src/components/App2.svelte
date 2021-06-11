@@ -43,7 +43,7 @@
   } from "../xcorrSonify";
   import * as Tone from "tone";
   import "../Organism01"; //turn back on for creature
-  import { onVirtualTouch } from "../Organism01"; //turn back on for creature, uncomment Line 285
+  import { onVirtualTouch, startAnimation } from "../Organism01"; //turn back on for creature, uncomment Line 285
   import * as THREE from "three";
   import { DataConnection, MediaConnection } from "peerjs";
 
@@ -564,6 +564,10 @@
 
 
     posenet.onResults((pose) => {
+      if(loading)
+      {
+        startAnimation(); 
+      }
       loading = false;
       fpsTracker.refreshLoop();
 
@@ -576,6 +580,7 @@
       Object.values(dataConnections).forEach((conn) => {
         if (conn.open) conn.send({ type: "Pose", pose, size });
       });
+
     });
 
     const myVideoUnsubscribe = webcamVideo.subscribe(async (video) => {
@@ -696,10 +701,6 @@
       myVideoUnsubscribe();
       peer.disconnect();
     };
-
-
-
-
   }
 
   onMount(() => {
