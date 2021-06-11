@@ -43,7 +43,7 @@
   } from "../xcorrSonify";
   import * as Tone from "tone";
   import "../Organism01"; //turn back on for creature
-  import { onVirtualTouch } from "../Organism01"; //turn back on for creature, uncomment Line 282
+  import { onVirtualTouch } from "../Organism01"; //turn back on for creature, uncomment Line 285
   import * as THREE from "three";
   import { DataConnection, MediaConnection } from "peerjs";
 
@@ -73,6 +73,8 @@
   let closeConnection = (conn:DataConnection) => {};
   let recentIds : string[] = []; 
   let cursorStyle : string = "default";
+  let hasFriend : boolean = false; //set this when there is another participant to true & read value
+
 
   //is the webcam moving, if so, where?
   let movingWebCamWindow : {which:number, startX:number, startY:number, isMoving: boolean } = 
@@ -265,12 +267,15 @@
     let justStartedTouching: boolean = false;
     let yposOfTouch: number = 0;
     let combinedWindowedScore : number = 0;
-    let offset = three.getOffsetVidPosition(false); 
-    participant.updateTouchingFriend(three.getOffsetVidPosition(false));
+    let offset = three.getOffsetVidPosition(false);
+    
+    //ok this is bad because it also gives the points to draw which should be a separate thing, etc. 
+    participant.updateTouchingFriend(three.getOffsetVidPosition(false), hasFriend);
+    
 
-    if( peerIds.length !== 0 ){
+    if( peerIds.length !== 0 && hasFriend ){
 
-      friendParticipant.updateTouchingFriend(three.getOffsetVidPosition(true));
+      friendParticipant.updateTouchingFriend(three.getOffsetVidPosition(true), hasFriend);
 
       if (participant.areTouching()) {
         skeletonTouching = 1;
@@ -442,7 +447,8 @@
         if( !disconnectedBySelf )
             chatstatusMessage = "The other participant has disconnected.\n Please use the above controls to restart, if desired.";
 
-        disconnectedBySelf = false; 
+        disconnectedBySelf = false;
+        hasFriend = false; 
 
     }
 
@@ -453,6 +459,7 @@
       dataConnections[conn.peer] = conn;
       console.log("listenToDataConnection", conn, dataConnections);
       friendParticipant.setParticipantID(conn.peer); //for the dyad arrangement set the ID
+      hasFriend = true; 
       peerIds.push(conn.peer); //so that other things work -- plugging the hole in the dam. -CDB
 
       console.log('setting friend ID:', conn.peer)

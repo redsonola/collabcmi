@@ -975,10 +975,10 @@ export class Participant {
     }
 
     //TODO: update everything in one method & just have that as the outside thingy!
-    updateTouchingFriend(offsets : THREE.Vector3): void {
+    updateTouchingFriend(offsets : THREE.Vector3, hasFriend : boolean): void {
         this.intersection.update(offsets); //TODO only update when have friend
 
-        if (this.friendParticipant) {
+        if (this.friendParticipant && hasFriend) {
             //TODO: refactor so I only do this once.
             let iAmSecond = orderParticipantID(this.participantID, this.friendParticipant.getParticipantID()) === -1;
 

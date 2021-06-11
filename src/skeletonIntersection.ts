@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import type { Participant } from './participant';
 import * as PoseIndex from './poseConstants'
-import type { BufferGeometry, Vector3 } from 'three';
+import { Box2, BufferGeometry, Vector3 } from 'three';
+import * as SAT from 'sat'; 
+import { threeRenderCode } from './draw3js';
 
 //need to put in utilities space
 function distance(keypoints: any, poseIndex1: number, poseIndex2: number): number {
@@ -100,29 +102,27 @@ export class DrawSkeletonIntersectLine {
 
     material: THREE.LineBasicMaterial;
     touchingMaterial: THREE.LineBasicMaterial; 
+    boxMaterial: THREE.LineBasicMaterial; 
+
 
     personId: string;
     limbs: LimbIntersect[];
     minConfidence : number; 
 
     geometry: BufferGeometry = new THREE.BufferGeometry();
-    touchGeo:BufferGeometry = new THREE.BufferGeometry();  
+    touchGeo: BufferGeometry = new THREE.BufferGeometry(); 
 
-    mesh : THREE.Mesh | null;    
-    touchingMesh : THREE.Mesh | null;    
-
+    // geometryBox: BufferGeometry =  new THREE.BufferGeometry();
+    // boxLine : THREE.Line = new THREE.Line(); 
+       
     line : THREE.Line = new THREE.Line();
     touchLine : THREE.Line = new THREE.Line(); 
 
     constructor(minConfidence:number =0.4, personId: string = "") {
-        this.geometry = new THREE.BufferGeometry();
-        this.mesh = null; 
-
-        this.touchGeo = new THREE.BufferGeometry();
-        this.touchingMesh = null; 
 
         this.material = new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent:true, opacity:1});
         this.touchingMaterial = new THREE.LineBasicMaterial({ color: 0xFF00FF, transparent:true, opacity:1});
+        // this.boxMaterial = new THREE.LineBasicMaterial({ color: 0x8888FF, transparent:true, opacity:1});
 
         this.personId = personId;
         this.limbs = [];
@@ -143,12 +143,21 @@ export class DrawSkeletonIntersectLine {
         const group = new THREE.Group();
         let points : THREE.Vector3[] = []; 
         let touchingPoints : THREE.Vector3[] = []; 
+        let boxPoints  : THREE.Vector3[] = []; 
+
+
 
         this.limbs.forEach(limb => {
-            const keypoints = limb.getKeypoints(); 
+            const keypoints = limb.getKeypoints();
+
+            let box = limb.box; 
+            let limbPoints  : THREE.Vector3[] = []; 
+
             if( keypoints[0].position.x && keypoints[0].position.y && keypoints[1].position.x && keypoints[1].position.y &&
                 keypoints[0].score > this.minConfidence && keypoints[1].score > this.minConfidence )  
             {
+                let v1=new THREE.Vector3(); 
+                let v2=new THREE.Vector3(); 
                 if( !limb.touching )
                 {
                     points.push( new THREE.Vector3( keypoints[0].position.x, keypoints[0].position.y, 0.95 ) ); 
@@ -156,11 +165,42 @@ export class DrawSkeletonIntersectLine {
                 }
                 else
                 {
-                    touchingPoints.push( new THREE.Vector3( keypoints[0].position.x, keypoints[0].position.y, 0.95 ) ); 
-                    touchingPoints.push( new THREE.Vector3( keypoints[1].position.x, keypoints[1].position.y, 0.95 ) );                
+                    v1 = new THREE.Vector3( keypoints[0].position.x, keypoints[0].position.y, 0.95 ) ; 
+                    v2 = new THREE.Vector3( keypoints[1].position.x, keypoints[1].position.y, 0.95 ) 
+
+                    touchingPoints.push( v1 ); 
+                    touchingPoints.push( v2 );
                 }
 
-                    // console.log( "here:" + keypoints[0].position.x + "," + keypoints[0].position.y + " to " + keypoints[1].position.x + "," + keypoints[1].position.y  );
+                //this is just for debugging -- uncomment to show the collision box
+                // console.log("v1:" + v1.x + "," + v1.y + "  v2:" + v2.x + "," + v2.y )
+            //     let i=0; 
+            //     box.forEach((vec)=>{ 
+            //         vec.z = 0.95; 
+
+
+                    
+            //         if(limb.flip)
+            //         {
+            //             vec.x += 0.66; 
+            //         }
+            //         vec.x = 1 - vec.x;
+            //         vec.x = vec.x * (320);  
+            //         vec.y = vec.y * (240); 
+
+            //         // console.log("vec" + i + ":"+ vec.x + "," + vec.y );
+
+
+            //         limbPoints.push(vec);
+            //         i++;
+            //      });
+            //      boxPoints.push(...limbPoints); 
+            //      if(box.length > 0)
+            //      {
+            //         boxPoints.push(limbPoints[0].clone());
+            //      }
+
+            //         // console.log( "here:" + keypoints[0].position.x + "," + keypoints[0].position.y + " to " + keypoints[1].position.x + "," + keypoints[1].position.y  );
             } });
 
             this.geometry.setFromPoints(points);
@@ -171,10 +211,16 @@ export class DrawSkeletonIntersectLine {
             this.touchGeo.setFromPoints(touchingPoints);
             this.touchLine.geometry = this.touchGeo; 
             this.touchLine.material = this.touchingMaterial;
-            this.touchLine.frustumCulled = false;              
+            this.touchLine.frustumCulled = false;  
+            
+            // this.geometryBox.setFromPoints(boxPoints);
+            // this.boxLine.geometry = this.geometryBox; 
+            // this.boxLine.material = this.boxMaterial;
+            // this.boxLine.frustumCulled = false;   
 
             group.add(this.line);
             group.add(this.touchLine);
+            // group.add(this.boxLine);
 
         return group;
     }
@@ -237,6 +283,13 @@ class DrawHead extends DrawSkeletonIntersectLine {
 
 }
 
+//to reuse the values -- the collision function
+let normVector2 = new THREE.Vector2(); 
+let normVector2nd = new THREE.Vector2();
+let normVector = new THREE.Vector3();
+let normVector2ndPts = new THREE.Vector3();
+let parallelVector = new THREE.Vector2();
+
 export class LimbIntersect extends DetectIntersect {
     limbLine: THREE.Line3;
     keypoints: any[];
@@ -250,6 +303,8 @@ export class LimbIntersect extends DetectIntersect {
     lastOffsetX : number = 0;
     lastOffsetXIndex : number = 0;
 
+    box : Vector3[] = []; 
+
 
     constructor(w: number, h: number, index1_: number, index2_: number, minConfidence_: number = 0.4) {
         super(minConfidence_);
@@ -259,6 +314,8 @@ export class LimbIntersect extends DetectIntersect {
         this.keypoints = [];
         this.w = w;
         this.h = h;
+
+
 
 
     }
@@ -299,8 +356,8 @@ export class LimbIntersect extends DetectIntersect {
     {
         let keypoints : THREE.Vector3[]= 
         [
-            this.scaleVector( new THREE.Vector3( this.keypoints[0].position.x , this.keypoints[0].position.y, 0.9 ), this.flip ),
-            this.scaleVector( new THREE.Vector3( this.keypoints[1].position.x , this.keypoints[1].position.y, 0.9 ), this.flip )
+            this.scaleVector( new THREE.Vector3( this.keypoints[0].position.x , this.keypoints[0].position.y, 0 ), this.flip ),
+            this.scaleVector( new THREE.Vector3( this.keypoints[1].position.x , this.keypoints[1].position.y, 0 ), this.flip )
         ]
         return keypoints; 
     }
@@ -357,7 +414,7 @@ export class LimbIntersect extends DetectIntersect {
             start = pt1;
             end = pt2;
         }
-        l.set(start, end);
+        l.set(pt1, pt2);
         return l;
     }
 
@@ -500,69 +557,94 @@ export class LimbIntersect extends DetectIntersect {
         }
     };
 
-    closeEnough(limb: LimbIntersect, whatIsEnough: number, whereIntersect: WhereTouch): WhereTouch {
-        let myLine = this.scaleLine(this.line(), this.flip);
-        let otherLine = limb.scaleLine(limb.line(), !this.flip);
-        
-        //TODO: substitute this intersection code with library code
-        //algorithm -- find boxes for each limb then test for intersection
+    //LATER!
+    createSATPolygonFromLine(line : THREE.Line3) : SAT.Polygon
+    {
         //to find the box: 
                //find the normal for each line
-                  //normVector = point1.sub(point2).normalize(); 
-                  //.applyEuler (or cross product, whichever)
-                  // then each point in the box is:
-                  //boxThick; // thickness of box / 2
-                  //boxPoint1 = point1.add( normVector * boxThick )
-                  //boxPoint2 = point1.sub( normVector * boxThick )
-                  //boxPoint3 = point2.add( normVector * boxThick )
-                  //boxPoint4 = point2.sub( normVector * boxThick )
-                  //NOTE --> points must be given to library call in counterclockwise order
-               //test intersection with https://github.com/jriecken/sat-js
-               //chosen bc it is lightweight.  
+        let point1 = line.start.clone(); 
+        let point2 = line.end.clone(); 
+        let dx = point1.clone().sub(point2);
 
+        //find the normals in different directions
+        normVector2.set( -dx.y, dx.x).normalize(); 
+        normVector2nd.set( dx.y, -dx.x).normalize();
+        normVector.set( normVector2.x, normVector2.y, 0 );
+        normVector2ndPts.set( normVector2nd.x, normVector2nd.y, 0 );
+        parallelVector.set( dx.x, dx.y).normalize();
+       
+        // thickness of box / 2 -- so far this is 2X of current 'closeEnough'
+        let boxThick = 0.008;
+        let normV1 = normVector.multiplyScalar(boxThick);
+        let normV2 =  normVector2ndPts.multiplyScalar(boxThick);
+        parallelVector.multiplyScalar(boxThick);
+        let pVector = new Vector3(parallelVector.x, parallelVector.y, 0); 
 
+        // then each point in the box is:
+        let boxPoint1 = point1.clone().add( normV1 ).add( pVector );
+        let boxPoint2 = point1.clone().add( normV2 ).add( pVector );; 
+        let boxPoint4 = point2.clone().add( normV1 ).sub( pVector );;
+        let boxPoint3 = point2.clone().add( normV2 ).sub( pVector );;
 
+        this.box = [boxPoint1, boxPoint2, boxPoint3, boxPoint4]; 
 
+        return new SAT.Polygon(new SAT.Vector(0,0), [
+                new SAT.Vector(boxPoint1.x, boxPoint1.y), 
+                new SAT.Vector(boxPoint2.x, boxPoint2.y),
+                new SAT.Vector(boxPoint3.x, boxPoint3.y),
+                new SAT.Vector(boxPoint4.x, boxPoint4.y)
+        ]);
+    }
+
+    createSATLine(line : THREE.Line3) : SAT.Polygon
+    {
+        return new SAT.Polygon(new SAT.Vector(line.start.x, line.start.y), [
+            new SAT.Vector(line.start.x, line.start.y),
+            new SAT.Vector(line.end.x, line.end.y),
+          ]);
+    }
+
+    closeEnough(limb: LimbIntersect, whatIsEnough: number, whereIntersect: WhereTouch): WhereTouch {
+        let myLine : THREE.Line3 = this.scaleLine(this.line(), this.flip);
+        let otherLine : THREE.Line3 = limb.scaleLine(limb.line(), !this.flip);
+
+        //TODO: substitute this intersection code with library code
+        //algorithm -- find boxes for each limb then test for intersection
+                    //test intersection with https://github.com/jriecken/sat-js
+                    
+        let line1 : SAT.Polygon = this.createSATPolygonFromLine(myLine); 
+        let line2 : SAT.Polygon = limb.createSATPolygonFromLine(otherLine); 
+        let response : SAT.Response = new SAT.Response();
+        let collided : boolean = SAT.testPolygonPolygon(line1, line2, response);
+        whereIntersect.isTouching = collided; 
         let myIndices = this.getIndices();
         let theirIndices = limb.getIndices(); 
 
+        if( collided )
+        {
+            whereIntersect.intersectPoint.x = response.overlap.x; 
+            whereIntersect.intersectPoint.y = response.overlap.y;
+            whereIntersect.dist = 0; 
+            whereIntersect.myIndex = myIndices; 
+            whereIntersect.theirIndex = theirIndices; 
+        }
 
         //find shortest distance btw 2 end points 
-        whereIntersect = this.findDistBetweenPointAndLine(otherLine.start, myLine);
-        whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(otherLine.end, myLine), myIndices, theirIndices);
-        whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(myLine.end, otherLine), myIndices, theirIndices);
-        whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(myLine.start, otherLine), myIndices, theirIndices);
+        // whereIntersect = this.findDistBetweenPointAndLine(otherLine.start, myLine);
+        // whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(otherLine.end, myLine), myIndices, theirIndices);
+        // whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(myLine.end, otherLine), myIndices, theirIndices);
+        // whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(myLine.start, otherLine), myIndices, theirIndices);
 
-        //find the shortest distance btw each midpoint
+        // //find the midpoints & quarter points & eight points
+        // const numberOfMidpointsEach : number = 2; // divide line into 4ths
 
-        // let myMidPoint = new THREE.Vector3();
-        // myMidPoint = myLine.getCenter(myMidPoint);
+        // let myLineSegment : THREE.Line3 = myLine;
+        // let otherLineSegment : THREE.Line3 = otherLine;
 
-        // let otherMidPoint = new THREE.Vector3();
-        // otherMidPoint = otherLine.getCenter(otherMidPoint);
+        // whereIntersect = this.doLinesIntersectAtMidpoint( myLine, otherLine, myIndices, theirIndices, whereIntersect, 1 );
+        // whereIntersect = this.doLinesIntersectAtMidpoint( otherLine, myLine, myIndices, theirIndices, whereIntersect, 1 );   
 
-        // whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(myMidPoint, otherLine), myIndices, theirIndices);
-        // whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(otherMidPoint, myLine), myIndices, theirIndices);
-
-        //TODO: find quarters & others in loop.
-
-        //find the midpoints & quarter points & eight points
-        const numberOfMidpointsEach : number = 2; // divide line into 4ths
-
-        let myLineSegment : THREE.Line3 = myLine;
-        let otherLineSegment : THREE.Line3 = otherLine;
-
-        whereIntersect = this.doLinesIntersectAtMidpoint( myLine, otherLine, myIndices, theirIndices, whereIntersect, 1 );
-        whereIntersect = this.doLinesIntersectAtMidpoint( otherLine, myLine, myIndices, theirIndices, whereIntersect, 1 );   
-
-        whereIntersect.isTouching = whereIntersect.dist <= whatIsEnough;
-
-        //TODO create a whereTouch factory I guess. also pinpoint actually where and not just the skeletion key
-        // let whereTouch : WhereTouch = new WhereTouch(); 
-        // whereTouch.isTouching = dist <= whatIsEnough;
-        // whereTouch.keypointIndices.push(this.index1);
-        // whereTouch.keypointIndices.push(this.index2);
-        // whereTouch.xyValsPerIndices.push( this.keypoints[0].position); 
+        // whereIntersect.isTouching = whereIntersect.dist <= whatIsEnough;
 
         return whereIntersect;
     }
@@ -611,29 +693,24 @@ export class LimbIntersect extends DetectIntersect {
 class BodyPartIntersect extends DetectIntersect {
 
     limbs: LimbIntersect[]; //lol
-    geometry: THREE.BufferGeometry;
-    line: THREE.Line;
-    material: THREE.Material;
+    // line: THREE.Line;
     name: string;
-    meshMaterial: THREE.MeshBasicMaterial;
-    // shape : THREE.ShapeBufferGeometry;
     flip: boolean = false;
     w: number;
     h: number;
-
+    
+    // geometry : THREE.BufferGeometry = new THREE.BufferGeometry(); 
+    
     drawSkeleton : DrawSkeletonIntersectLine;
 
     constructor(w: number, h: number, name: string, material: THREE.Material, confidence: number) {
         super(confidence);
         this.name = name;
         this.limbs = [];
-        this.geometry = new THREE.BufferGeometry();
-        this.material = material;
-        this.line = new THREE.Line(this.geometry, this.material);
-        this.meshMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
         this.w = w;
         this.h = h;
         this.drawSkeleton = new DrawSkeletonIntersectLine(confidence, ""); 
+        // this.line.geometry = this.geometry; 
 
     }
 
@@ -670,7 +747,7 @@ class BodyPartIntersect extends DetectIntersect {
         for (let i = 0; i < this.limbs.length; i++) {
             this.limbs[i].update(keypoints);
         }
-        this.line.geometry.setFromPoints(this.getVectors());
+        // this.line.geometry.setFromPoints(this.getVectors());
 
         this.drawSkeleton.update(this.limbs);
     }
@@ -701,10 +778,6 @@ class BodyPartIntersect extends DetectIntersect {
 
         return positions;
 
-    }
-
-    getLine(): THREE.Line {
-        return this.line;
     }
 
     getVectors() {
@@ -869,7 +942,7 @@ class HeadIntersect extends BodyPartIntersect {
         let box = new THREE.Box3;
         box = this.sphere.getBoundingBox(box);
         this.updateBoundaries(box, this.getAvgScore(keypoints));
-        this.line.geometry.setFromPoints(this.getVectors());
+        // this.line.geometry.setFromPoints(this.getVectors());
 
         this.touching = false; 
         this.boundaries.forEach( (bound)=>{
@@ -950,14 +1023,6 @@ export class SkeletionIntersection {
         this.h = h; 
     }
 
-    getLines(): THREE.Line[] {
-        let lines: THREE.Line[] = [];
-        for (let i = 0; i < this.parts.length; i++) {
-            lines.push(this.parts[i].getLine());
-        }
-        return lines;
-    }
-
     setFriend(friend: SkeletionIntersection) {
         this.friendSkeleton = friend;
         this.friendSkeleton.setIsFriend(); 
@@ -977,9 +1042,6 @@ export class SkeletionIntersection {
         let offsety = -((offsets.y/this.h)/2);
 
         // console.log(  "isFriend:" + this.isFriend + "  offsetx:" + offsetx + "  offsety:" + offsety  );
-
-        
-        // this.drawSkeleton.update(limbs);
     }
 
     updateOffsets(offsets : Vector3)
