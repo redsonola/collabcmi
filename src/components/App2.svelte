@@ -7,6 +7,7 @@
   import PrintPose from "./PrintPose.svelte";
   import Loading from "./Loading.svelte";
   // import { interceptFileRequest } from "../hackXhrInterceptor";
+  import '@tensorflow/tfjs-backend-webgl';
 
   import { initPosenet } from "../threejs/posenetcopy";
   // import { initPosenet } from "../threejs/mediapipePose";

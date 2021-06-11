@@ -1,3 +1,4 @@
+import '@tensorflow/tfjs-backend-webgl';
 import * as posenet from '@tensorflow-models/posenet';
 import type { CameraVideo } from './cameraVideoElement';
 import type { PosenetSetup } from './mediapipePose';
