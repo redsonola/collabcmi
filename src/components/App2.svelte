@@ -9,8 +9,8 @@
   // import { interceptFileRequest } from "../hackXhrInterceptor";
   import '@tensorflow/tfjs-backend-webgl';
 
-  import { initPosenet } from "../threejs/posenetcopy";
-  // import { initPosenet } from "../threejs/mediapipePose";
+  // import { initPosenet } from "../threejs/posenetcopy";
+  import { initPosenet } from "../threejs/mediapipePose";
   // import { initPosenet } from "../threejs/posenetMock";
 
   import { videoSubscription } from "../threejs/cameraVideoElement";

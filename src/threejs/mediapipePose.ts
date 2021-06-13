@@ -4,7 +4,7 @@
 
 import * as posenet from '@tensorflow-models/posenet';
 import * as pose from '../mediaPipePose';
-import type { CameraVideo } from './cameraVideoElement';
+import type { CameraVideo, VideoSize } from './cameraVideoElement';
 import * as poseConstants from '../poseConstants';
 
 
@@ -31,6 +31,27 @@ const posenetToMediapipeIndices = () => {
   };
 };
 
+// from https://github.com/tensorflow/tfjs-models/tree/master/posenet#keypoints
+const posenetIndicesToPartName = {
+  0: "nose",
+  1: "leftEye",
+  2: "rightEye",
+  3: "leftEar",
+  4: "rightEar",
+  5: "leftShoulder",
+  6: "rightShoulder",
+  7: "leftElbow",
+  8: "rightElbow",
+  9: "leftWrist",
+  10: "rightWrist",
+  11: "leftHip",
+  12: "rightHip",
+  13: "leftKnee",
+  14: "rightKnee",
+  15: "leftAnkle",
+  16: "rightAnkle"
+};
+
 export interface PosenetSetup<T> {
   cleanup: () => void;
   onResults: (handler: (results: posenet.Pose) => void) => void;
@@ -39,12 +60,31 @@ export interface PosenetSetup<T> {
   updateVideo: (CameraVideo) => void;
 }
 
+// Supported/required config options:
+// https://google.github.io/mediapipe/solutions/pose#javascript-solution-api
 const defaultConfig: pose.PoseOptions = {
+  modelComplexity: 1,
   smoothLandmarks: true,
-  upperBodyOnly: false,
   minDetectionConfidence: 0.5,
   minTrackingConfidence: 0.5,
 };
+
+export function mediapipeToPosenetKeypoints (result: pose.PoseResult, size: VideoSize): posenet.Keypoint[] | undefined {
+  const mapping = posenetToMediapipeIndices();
+  if (pose.resultHasLandmarks(result)) {
+    let keypoints: posenet.Keypoint[] = []
+    for (let i = 0; i < poseConstants.posePointCount; i++) {
+      const landmark = result.poseLandmarks[mapping[i]];
+      keypoints.push({
+        position: { x: landmark.x * size.width, y: landmark.y * size.height },
+        score: landmark.visibility,
+        part: posenetIndicesToPartName[i]
+      });
+    }
+    return keypoints;
+  }
+}
+
 
 export function initPosenet(
   // _vid?: CameraVideo,
@@ -66,14 +106,15 @@ export function initPosenet(
 
   function updateVideo(_vid: CameraVideo) {
     vid = _vid;
-    if (!running) {
-      nextPose();
-    }
     const { width, height } = vid.getSize();
     if (!width || !height) throw new Error(`Video track needs dimensions, but was (${width}x${height}).`);
 
     vid.videoElement.width = width;
     vid.videoElement.height = height;
+
+    if (running) {
+      nextPose();
+    }
   }
 
   async function nextPose() {
@@ -103,20 +144,10 @@ export function initPosenet(
     updateConfig,
     onResults: (handler) => {
       net.onResults(result => {
-        const mapping = posenetToMediapipeIndices();
-        const { width, height } = getSize();
-        if (pose.resultHasLandmarks(result)) {
-          let keypoints: posenet.Keypoint[] = []
-          for (let i = 0; i < poseConstants.posePointCount; i++) {
-            const landmark = result.poseLandmarks[mapping[i]];
-            keypoints.push({
-              position: { x: landmark.x * width, y: landmark.y * height },
-              score: landmark.visibility,
-              part: ""
-            })
-          }
+        const keypoints = mediapipeToPosenetKeypoints(result, getSize());
+        // console.log({ result, keypoints })
+        if (keypoints)
           handler({ score: 1, keypoints });
-        }
       });
     },
     cleanup() {

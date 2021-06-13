@@ -9,6 +9,8 @@
   <Route exact path="/about" component={() => import("./About.svelte")} />
   <Route exact path="/instructions" component={() => import("./Instructions.svelte")} />
   <Route exact path="/2apps" component={() => import("./2Apps.svelte")} let:router />
+  <Route exact path="/mediapipe-dev" component={() => import("./MediapipeDev.svelte")} let:router />
+  <Route exact path="/mediapipe-dev2" component={() => import("./MediapipeDev2.svelte")} let:router />
 </Router>
 
 <style>
