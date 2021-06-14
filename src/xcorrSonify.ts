@@ -432,7 +432,7 @@ class LongPlayingNoteSampler
 
     LOWEST_WHILST_TOUCHING : number = -15;
     HIGH_VOL_FOR_SCALE : number = 18; 
-    VOLUME_CAP : number = 15; 
+    VOLUME_CAP : number = 1; 
 
     instrumentID : InstrumentID = -1; 
 
@@ -512,7 +512,7 @@ class LongPlayingNoteSampler
                 vol = Math.min( vol, this.VOLUME_CAP ); //try capping at 15
                 sampler.volume.rampTo( vol );
                 
-                // console.log( "touchingXCorr: " + touchingXCorr + " volume :" + sampler.volume.value );
+                console.log( "touchingXCorr: " + touchingXCorr + " volume :" + sampler.volume.value );
             });
 
             if(( now - this.lastAttackTime[this.curLongIndex] >= this.TUBA_MAX_LENGTH ) )
@@ -558,7 +558,11 @@ class LongPlayingNoteSampler
         //maybe I don't need this here. check later.
         this.longSampler.forEach( (sampler)=>
         {
-            sampler.volume.rampTo( Scale.linear_scale( touchingXCorr, 0.099, 0.66, this.LOWEST_WHILST_TOUCHING, 20 ) );
+            // sampler.volume.rampTo( Scale.linear_scale( touchingXCorr, 0.099, 0.66, this.LOWEST_WHILST_TOUCHING, 20 ) );
+            let vol = Scale.linear_scale( touchingXCorr, 0.099, 0.66, this.LOWEST_WHILST_TOUCHING, this.HIGH_VOL_FOR_SCALE );
+            vol = Math.min( vol, this.VOLUME_CAP ); //try capping at 15
+            sampler.volume.rampTo( vol );
+
             // console.log( "touchingXCorr: " + touchingXCorr + " volume :" + sampler.volume.value );
         });
 
@@ -767,8 +771,8 @@ export class SonifierWithTuba {
         this.longPlayingNoteSamplers = [new LongPlayingNoteTuba(mainVolume), 
                                         // new LongPlayingNoteCelloLoud(mainVolume), 
                                         // new LongPlayingNoteCelloSoft(mainVolume), 
-                                        new LongPlayingNoteTubaLoud(mainVolume), 
-                                        new LongPlayingNoteTubaSoft(mainVolume)];
+                                        new LongPlayingNoteTuba(mainVolume), 
+                                        new LongPlayingNoteTuba(mainVolume)];
 
         this.masterCompressor = new Tone.Compressor(-20, 1);
         this.limiter = new Tone.Limiter(-6);
