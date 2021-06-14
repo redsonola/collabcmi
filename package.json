@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@mediapipe/pose": "^0.3.1621277220",
+    "@mediapipe/pose": "0.3.1621277220",
     "@snowpack/plugin-babel": "^2.1.6",
     "@snowpack/plugin-sass": "^1.4.0",
     "@snowpack/plugin-svelte": "^3.6.0",

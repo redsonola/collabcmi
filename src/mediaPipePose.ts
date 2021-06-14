@@ -43,11 +43,13 @@ export interface PoseParams {
 }
 
 export interface PoseOptions {
-  upperBodyOnly: boolean,
+  modelComplexity: number,
   smoothLandmarks: boolean,
   minDetectionConfidence: number,
   minTrackingConfidence: number
 }
+
+
 
 export abstract class PoseClass {
   constructor(p: PoseParams) {
@@ -107,7 +109,7 @@ export type PoseLandmark =
 
 
 const defaultGetPoseParams: PoseParams = {
-  locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
+  locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.3.1621277220/${file}`,
   // locateFile: (file) => `/@mediapipe/pose/${file}`,
 }
 
