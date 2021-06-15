@@ -512,7 +512,7 @@ class LongPlayingNoteSampler
                 vol = Math.min( vol, this.VOLUME_CAP ); //try capping at 15
                 sampler.volume.rampTo( vol );
                 
-                console.log( "touchingXCorr: " + touchingXCorr + " volume :" + sampler.volume.value );
+                // console.log( "touchingXCorr: " + touchingXCorr + " volume :" + sampler.volume.value );
             });
 
             if(( now - this.lastAttackTime[this.curLongIndex] >= this.TUBA_MAX_LENGTH ) )
