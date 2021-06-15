@@ -280,6 +280,7 @@ class SamplerFactory
             baseUrl: "./audio_samples/Cello_Loud/"
         });
         sampler.id = InstrumentID.cello;
+        sampler.volume.rampTo(9); 
 
         return sampler; 
     }
@@ -302,6 +303,7 @@ class SamplerFactory
         {
             baseUrl: "./audio_samples/Cello_Soft/"
         });
+        sampler.volume.rampTo(9); 
         sampler.id = InstrumentID.cello;
 
 
@@ -327,8 +329,7 @@ class SamplerFactory
             baseUrl: "./audio_samples/Cello_Stabs/"
         });
         sampler.id = InstrumentID.cello;
-
-
+        //don't set volume, loud enough
         return sampler; 
     }
 
@@ -349,8 +350,7 @@ class SamplerFactory
             baseUrl: "./audio_samples/Large_Clay_Drum/"
         });
         sampler.id = InstrumentID.clayDrum;
-
-
+        //don't set volume, loud enough
         return sampler; 
     }
 
@@ -372,8 +372,7 @@ class SamplerFactory
             baseUrl: "./audio_samples/Cello_Pluck/"
         });
         sampler.id = InstrumentID.pluckedcello;
-
-
+        sampler.volume.rampTo(7); 
         return sampler; 
     }
 }
@@ -812,8 +811,8 @@ export class SonifierWithTuba {
                 sampler.chain(vibrato, ampEnv, mainVolume.getVolume() );
             }
             ampEnv.connect( waveForm );
-            const SEQUENCER_VOLUME_VALUE = 9; //move to top
-            sampler.volume.value = SEQUENCER_VOLUME_VALUE;  
+            // const SEQUENCER_VOLUME_VALUE = 0; //move to top
+            // sampler.volume.value = SEQUENCER_VOLUME_VALUE;  
 
             i++; 
         });
