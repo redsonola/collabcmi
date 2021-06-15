@@ -104,6 +104,11 @@ export class DrawSkeletonIntersectLine {
     touchingMaterial: THREE.LineBasicMaterial; 
     boxMaterial: THREE.LineBasicMaterial; 
 
+    width : number; 
+    height : number; 
+
+
+
 
     personId: string;
     limbs: LimbIntersect[];
@@ -118,7 +123,7 @@ export class DrawSkeletonIntersectLine {
     line : THREE.Line = new THREE.Line();
     touchLine : THREE.Line = new THREE.Line(); 
 
-    constructor(minConfidence:number =0.4, personId: string = "") {
+    constructor(minConfidence:number =0.4, personId: string = "", width: number, height: number) {
 
         this.material = new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent:true, opacity:1});
         this.touchingMaterial = new THREE.LineBasicMaterial({ color: 0xFF00FF, transparent:true, opacity:1});
@@ -127,6 +132,8 @@ export class DrawSkeletonIntersectLine {
         this.personId = personId;
         this.limbs = [];
         this.minConfidence = minConfidence; 
+        this.width = width; 
+        this.height = height; 
     }
 
     isPerson(id: string) {
@@ -185,8 +192,8 @@ export class DrawSkeletonIntersectLine {
             //             vec.x += 0.66; 
             //         }
             //         vec.x = 1 - vec.x;
-            //         vec.x = vec.x * (320);  
-            //         vec.y = vec.y * (240); 
+            //         vec.x = vec.x * (this.width);  
+            //         vec.y = vec.y * (this.height); 
 
             //         // console.log("vec" + i + ":"+ vec.x + "," + vec.y );
 
@@ -711,7 +718,7 @@ class BodyPartIntersect extends DetectIntersect {
         this.limbs = [];
         this.w = w;
         this.h = h;
-        this.drawSkeleton = new DrawSkeletonIntersectLine(confidence, ""); 
+        this.drawSkeleton = new DrawSkeletonIntersectLine(confidence, "", w, h); 
         // this.line.geometry = this.geometry; 
 
     }
@@ -873,7 +880,7 @@ class HeadIntersect extends BodyPartIntersect {
         this.sphere = new THREE.Sphere();
 
         this.index = [PoseIndex.nose, PoseIndex.leftEar, PoseIndex.rightEar, PoseIndex.leftEye, PoseIndex.rightEye];
-        this.drawSkeleton = new DrawHead(confidence, "");  
+        this.drawSkeleton = new DrawHead(confidence, "", w, h);  
     }
 
     //return max instead of average. need to compensate for ears tho
