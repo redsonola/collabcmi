@@ -46,6 +46,7 @@
   import { onVirtualTouch, startAnimation } from "../Organism01"; //turn back on for creature, uncomment Line 285
   import * as THREE from "three";
   import { DataConnection, MediaConnection } from "peerjs";
+import { Vector3 } from "three";
 
 
   export let router: RouterState;
@@ -489,7 +490,8 @@
           }
           case "MoveVideo":
           {
-            three.moveVideoCam( message.which, message.x, message.y );
+            //need to send in screen resolution invariant terms
+            three.moveVideoCamFromThreeJSCoords( message.which, message.x, message.y );
           }
 
           default: {
@@ -815,44 +817,44 @@
 
   function mouseClick(event)
   {
-    // let vidIndex = three.onMouseClick(event.clientX, event.clientY);
-    // if(vidIndex > -1)
-    // {
-    //   document.body.style.cursor = "move"
-    //   movingWebCamWindow.which = vidIndex;
-    //   movingWebCamWindow.startX = event.clientX;
-    //   movingWebCamWindow.startY = event.clientY;
-    //   movingWebCamWindow.isMoving = true; 
-    // }
-    // let movingWebCamWindow : {which:number, startX:number, startY:number, isMoving: false};
+    let vidIndex = three.onMouseClick(event.clientX, event.clientY);
+    if(vidIndex > -1)
+    {
+      document.body.style.cursor = "move"
+      movingWebCamWindow.which = vidIndex;
+      movingWebCamWindow.startX = event.clientX;
+      movingWebCamWindow.startY = event.clientY;
+      movingWebCamWindow.isMoving = true; 
+    }
   }
 
   function mouseUp(event)
   {
-    // movingWebCamWindow.isMoving = false; 
-    // document.body.style.cursor = "default"; 
+    movingWebCamWindow.isMoving = false; 
+    document.body.style.cursor = "default"; 
   }
 
   function mouseMove(event)
   {
-    // let endPosX = event.clientX;
-    // let endPosY = event.clientY;
-    // let vidIndex = three.onMouseClick(event.clientX, event.clientY);
+    let endPosX = event.clientX;
+    let endPosY = event.clientY;
+    let vidIndex = three.onMouseClick(event.clientX, event.clientY);
 
-    // if( vidIndex > -1 )
-    // {
-    //   document.body.style.cursor = "move";
-    // }
-    // else if(!movingWebCamWindow.isMoving)
-    // {
-    //   document.body.style.cursor = "default";
-    // }
+    if( vidIndex > -1 )
+    {
+      document.body.style.cursor = "move";
+    }
+    else if(!movingWebCamWindow.isMoving)
+    {
+      document.body.style.cursor = "default";
+    }
 
-    // if(  movingWebCamWindow.isMoving )
-    // {
-    //   three.moveVideoCam( movingWebCamWindow.which, endPosX, endPosY ) ;
-    //   sendVideoMoveMessage( movingWebCamWindow.which, endPosX, endPosY ) 
-    // }
+    if(  movingWebCamWindow.isMoving )
+    {
+      three.moveVideoCam( movingWebCamWindow.which, endPosX, endPosY ) ;
+      let pos : Vector3 = three.positionFromScreen(endPosX, endPosY); 
+      sendVideoMoveMessage( movingWebCamWindow.which, pos.x, pos.y ) ;
+    }
 
   }
 

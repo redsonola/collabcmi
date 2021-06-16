@@ -1,4 +1,4 @@
-import { Matrix4, Quaternion, Vector3, Group, DirectionalLight, Scene, PlaneBufferGeometry, Mesh, MeshPhongMaterial, Box3, Line, MeshBasicMaterial, Plane, PlaneHelper, Object3D } from 'three';
+import { Matrix4, Quaternion, Vector3, Group, DirectionalLight, Scene, PlaneBufferGeometry, Mesh, MeshPhongMaterial, Box3, Line, MeshBasicMaterial, Plane, PlaneHelper, Object3D, Vector2 } from 'three';
 import * as THREE from 'three';
 
 import { videoRect } from './threejs/videoRect';
@@ -32,6 +32,7 @@ export interface ThreeRenderer {
   setWhichIsSelf : (personId : string) => void ;
   positionFromScreen : (x:number, y:number) => THREE.Vector3;
   moveVideoCam : (which:number, x2:number, y2:number) => void;
+  moveVideoCamFromThreeJSCoords : (which:number, x2:number, y2:number) => void;
   getOffsetVidPosition : (isFriend : boolean) => Vector3
 
 }
@@ -422,6 +423,33 @@ export function threeRenderCode({
     return isInVid; 
   }
 
+  function moveVideo(which:number, x2:number, y2:number)
+  {
+    let vid = allVideosGroup.children[which]; 
+
+    let vidPos = posToScreen(vid.position.x, vid.position.y); 
+    let pos2 = posToScreen(x2, y2);
+
+    let offsetx = (pos2.x - vidPos.x) ; 
+    let offsety = (pos2.y - vidPos.y) ;    
+
+    if(whichIndexIsSelf === which) 
+    {
+      offsetSelfVideo.x += offsetx;
+      offsetSelfVideo.y += offsety;
+    }
+    else
+    { 
+      offsetFriendVideo.x += offsetx;
+      offsetFriendVideo.y += offsety;
+    }
+
+    vid.position.x = x2; 
+    vid.position.y = y2;
+
+    handleResize(); //moves the mute button to the new position as well, etc.
+  }
+
   return {
     dispatch,
     onMouseClick(x:number, y:number) : number
@@ -451,28 +479,14 @@ export function threeRenderCode({
         return offsetFriendVideo; 
       }
     },
+    moveVideoCamFromThreeJSCoords(which:number, x2:number, y2:number) 
+    {
+      moveVideo(which, x2, y2) 
+    },
     moveVideoCam(which:number, x2:number, y2:number) 
     {
       let pos2 = posFromScreen(x2, y2);
-      let vid = allVideosGroup.children[which]; 
-
-      let screenPos = posToScreen(vid.position.x, vid.position.y); 
-
-      if(whichIndexIsSelf === which) 
-      {
-        offsetSelfVideo.x += x2 - screenPos.x;
-        offsetSelfVideo.y += y2 - screenPos.y;
-      }
-      else
-      { 
-        offsetFriendVideo.x += x2 - screenPos.x;
-        offsetFriendVideo.y += y2 - screenPos.y;
-      }
-
-      vid.position.x = pos2.x; 
-      vid.position.y = pos2.y;
-
-      handleResize(); //moves the mute button to the new position as well, etc.
+      moveVideo(which, pos2.x, pos2.y); 
     },
     getMuteButtonPosition (personId: string) : THREE.Vector3 {
 
