@@ -595,12 +595,12 @@ export class LimbIntersect extends DetectIntersect {
 
         this.box = [boxPoint1, boxPoint2, boxPoint3, boxPoint4]; 
 
-        return new SAT.Polygon(new SAT.Vector(0,0), [
+        return { polygon: new SAT.Polygon(new SAT.Vector(0,0), [
                 new SAT.Vector(boxPoint1.x, boxPoint1.y), 
                 new SAT.Vector(boxPoint2.x, boxPoint2.y),
                 new SAT.Vector(boxPoint3.x, boxPoint3.y),
                 new SAT.Vector(boxPoint4.x, boxPoint4.y)
-        ]);
+        ]), firstPoint: boxPoint1 };
     }
 
     createSATLine(line : THREE.Line3) : SAT.Polygon
@@ -619,41 +619,41 @@ export class LimbIntersect extends DetectIntersect {
         //algorithm -- find boxes for each limb then test for intersection
                     //test intersection with https://github.com/jriecken/sat-js
                     
-        // let line1 : SAT.Polygon = this.createSATPolygonFromLine(myLine); 
-        // let line2 : SAT.Polygon = limb.createSATPolygonFromLine(otherLine); 
-        // let response : SAT.Response = new SAT.Response();
-        // let collided : boolean = SAT.testPolygonPolygon(line1, line2, response);
-        // whereIntersect.isTouching = collided; 
-        // let myIndices = this.getIndices();
-        // let theirIndices = limb.getIndices(); 
+        let line1 : SAT.Polygon = this.createSATPolygonFromLine(myLine); 
+        let line2 : SAT.Polygon = limb.createSATPolygonFromLine(otherLine); 
+        let response : SAT.Response = new SAT.Response();
+        let collided : boolean = SAT.testPolygonPolygon(line1.polygon, line2.polygon, response);
+        whereIntersect.isTouching = collided; 
+        let myIndices = this.getIndices();
+        let theirIndices = limb.getIndices(); 
 
-        // if( collided )
-        // {
-        //     whereIntersect.intersectPoint.x = response.overlap.x; 
-        //     whereIntersect.intersectPoint.y = response.overlap.y;
-        //     whereIntersect.dist = 0; 
-        //     whereIntersect.myIndex = myIndices; 
-        //     whereIntersect.theirIndex = theirIndices; 
-        // }
+        if( collided )
+        {
+            whereIntersect.intersectPoint.x =  line1.firstPoint.x - response.overlapV.x / 2; 
+            whereIntersect.intersectPoint.y = line1.firstPoint.y  - response.overlapV.y / 2;
+            whereIntersect.dist = 0; 
+            whereIntersect.myIndex = myIndices; 
+            whereIntersect.theirIndex = theirIndices; 
+        }
 
         //find shortest distance btw 2 end points 
-        let myIndices = [this.index1, this.index2]; 
-        let theirIndices = [limb.index1, limb.index2];
-        whereIntersect = this.findDistBetweenPointAndLine(otherLine.start, myLine);
-        whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(otherLine.end, myLine), myIndices, theirIndices);
-        whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(myLine.end, otherLine), myIndices, theirIndices);
-        whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(myLine.start, otherLine), myIndices, theirIndices);
+        // let myIndices = [this.index1, this.index2]; 
+        // let theirIndices = [limb.index1, limb.index2];
+        // whereIntersect = this.findDistBetweenPointAndLine(otherLine.start, myLine);
+        // whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(otherLine.end, myLine), myIndices, theirIndices);
+        // whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(myLine.end, otherLine), myIndices, theirIndices);
+        // whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(myLine.start, otherLine), myIndices, theirIndices);
 
-        //find the midpoints & quarter points & eight points
-        const numberOfMidpointsEach : number = 2; // divide line into 4ths
+        // //find the midpoints & quarter points & eight points
+        // const numberOfMidpointsEach : number = 2; // divide line into 4ths
 
-        let myLineSegment : THREE.Line3 = myLine;
-        let otherLineSegment : THREE.Line3 = otherLine;
+        // let myLineSegment : THREE.Line3 = myLine;
+        // let otherLineSegment : THREE.Line3 = otherLine;
 
-        whereIntersect = this.doLinesIntersectAtMidpoint( myLine, otherLine, myIndices, theirIndices, whereIntersect, 2 );
-        whereIntersect = this.doLinesIntersectAtMidpoint( otherLine, myLine, myIndices, theirIndices, whereIntersect, 2 );   
+        // whereIntersect = this.doLinesIntersectAtMidpoint( myLine, otherLine, myIndices, theirIndices, whereIntersect, 2 );
+        // whereIntersect = this.doLinesIntersectAtMidpoint( otherLine, myLine, myIndices, theirIndices, whereIntersect, 2 );   
 
-        whereIntersect.isTouching = whereIntersect.dist <= whatIsEnough;
+        // whereIntersect.isTouching = whereIntersect.dist <= whatIsEnough;
 
         return whereIntersect;
     }
