@@ -51,7 +51,8 @@
     "deploy": "./scripts/deploy.sh",
     "test": "echo \"This template does not include a test runner by default.\" && exit 1",
     "mkcert": "mkcert -install && mkcert -key-file snowpack.key -cert-file snowpack.crt localhost",
-    "peer-server": "node ./scripts/devPeerServer"
+    "peer-server": "node ./scripts/devPeerServer",
+    "file-recording-server": "node ./scripts/fileRecordingServer"
   },
   "husky": {
     "hooks": {
