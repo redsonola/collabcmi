@@ -7,8 +7,8 @@
 
   export let myId;
   export let turnUpVolume;
-  export let loadMusic;
-  export let mainVolume; 
+  // export let loadMusic;
+  // export let mainVolume; 
 
 
   let linkUrl;
@@ -29,7 +29,7 @@
 
   function copyToClipboard(e) {
     turnUpVolume();//not sure if this will stay here... hmm... gah
-    loadMusic( mainVolume );
+    // loadMusic( mainVolume );
 
     console.log("copying");
     inputElement.focus();

@@ -173,7 +173,8 @@ import { Vector3 } from "three";
   let tubaSonfier: SonifierWithTuba;
   let touchMusicalPhrases: TouchPhrasesEachBar;
   let synchSonifier : SynchSonifier;
-  let musicLoaded : boolean; 
+  let musicLoaded : boolean = false;
+  let toneStarted = false;  
 
 
 
@@ -209,6 +210,7 @@ import { Vector3 } from "three";
 
     //note: using a for-loop for this caused my browser to crash! WTF MATE GOOD TIMES.
     Tone.Transport.start();
+
     await midiFile[0].parseAllFiles();
     midiFile[0].startLoop();
     await midiFile[1].parseAllFiles();
@@ -340,26 +342,28 @@ import { Vector3 } from "three";
       if(tubaSonfier && touchMusicalPhrases && peerIds.length > 0){
 
       //update music 1st
-      tubaSonfier.update(
-        yposOfTouch,
-        xCorrTouching,
-        justStartedTouching,
-        participant.justStoppedTouching(),
-        howLongTouch
-      );
-      touchMusicalPhrases.update(
-        justStartedTouching,
-        yposOfTouch,
-        combinedWindowedScore
-      );
-      synchSonifier.update( 
-        matchScore, 
-        participant.getAvgBodyPartsLocation(), 
-        xcorrDx, 
-        participant.getAvgBodyPartsJerk(), 
-        friendParticipant.getAvgBodyPartsJerk(), 
-        dxAvg, windowedVarScore, 
-        participant.getAvgBodyPartsAccel() );
+      if( musicLoaded ) {
+        tubaSonfier.update(
+          yposOfTouch,
+          xCorrTouching,
+          justStartedTouching,
+          participant.justStoppedTouching(),
+          howLongTouch
+        );
+        touchMusicalPhrases.update(
+          justStartedTouching,
+          yposOfTouch,
+          combinedWindowedScore
+        );
+        synchSonifier.update( 
+          matchScore, 
+          participant.getAvgBodyPartsLocation(), 
+          xcorrDx, 
+          participant.getAvgBodyPartsJerk(), 
+          friendParticipant.getAvgBodyPartsJerk(), 
+          dxAvg, windowedVarScore, 
+          participant.getAvgBodyPartsAccel() );
+      }
     }
 
     } catch (ex) {
@@ -399,31 +403,24 @@ import { Vector3 } from "three";
     {
       dxAvg.push(0); 
     }
-
     mainVolume = new MainVolume((val) => {
       volumeMeterReading = val;
     });
 
     //this is from my audiovisual project
-    midiFile = [new Tango332Riffs(mainVolume), new FourFloorRiffs(mainVolume)];
-    midiFileBass = [new BodhranTango332(mainVolume)];
+    // midiFile = [new Tango332Riffs(mainVolume), new FourFloorRiffs(mainVolume)];
+    // midiFileBass = [new BodhranTango332(mainVolume)];
 
     //note: using a for-loop for this caused my browser to crash! WTF MATE GOOD TIMES.
-    Tone.Transport.start();
-    await midiFile[0].parseAllFiles();
-    midiFile[0].startLoop();
-    await midiFile[1].parseAllFiles();
-    midiFile[1].startLoop();
-    await midiFileBass[0].parseAllFiles();
-    midiFileBass[0].startLoop();
+    // Tone.Transport.start();
 
     //this is the new code
-    tubaSonfier = new SonifierWithTuba(participant, mainVolume);
-    touchMusicalPhrases = new TouchPhrasesEachBar(
-      tubaSonfier,
-      midiFile,
-      midiFileBass
-    );
+    // tubaSonfier = new SonifierWithTuba(participant, mainVolume);
+    // touchMusicalPhrases = new TouchPhrasesEachBar(
+    //   tubaSonfier,
+    //   midiFile,
+    //   midiFileBass
+    // );
 
     turnUpVolume = () => 
     {
@@ -580,6 +577,9 @@ import { Vector3 } from "three";
       if(loading)
       {
         startAnimation(); 
+        loadMusic(mainVolume); 
+        turnUpVolume();
+        musicLoaded = true; 
       }
       loading = false;
       fpsTracker.refreshLoop();
@@ -617,8 +617,7 @@ import { Vector3 } from "three";
           listenToMediaConnection(call);
         }
 
-        setTimeout( function(){ loadMusic(mainVolume); }, 100 );
-        //await loadMusic(mainVolume);
+        // setTimeout( function(){ loadMusic(mainVolume); }, 100 );
       }
     });
 
@@ -683,8 +682,7 @@ import { Vector3 } from "three";
       {
         chatstatusMessage = "Waiting for a chat partner...";
 
-        await loadMusic(mainVolume);
-        turnUpVolume();
+        // await loadMusic(mainVolume);
       }
     }
 
@@ -732,6 +730,10 @@ import { Vector3 } from "three";
     {
       glowClass = "noGlow";
     }
+    if( !toneStarted  ) {
+           Tone.start();
+    }
+
   }
 
   //not used but could become useful later if need to seriously remix sounds
@@ -974,7 +976,7 @@ import { Vector3 } from "three";
 
 <div class="callPanel">
   {#if peerIds.length === 0 && idToCall === null}
-    <Call myId={myId} {turnUpVolume} {loadMusic} {mainVolume} on:call-link-changed={(e) => {
+    <Call myId={myId} {turnUpVolume} on:call-link-changed={(e) => {
       window.postMessage({ name: "call-call-link-changed", ...e.detail });
     }} />
     <br/><br/><div class="callText">or<br/></div>

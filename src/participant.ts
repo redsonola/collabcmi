@@ -133,8 +133,8 @@ export class Participant extends EventEmitter {
     avgMinBodyPartXCorr: number = 100;
     avgMaxBodyPartXCorr: number = -100;
 
-    maxVar: number[]; //the max variance we have encountered for each body part
-    maxJerk : number[]; //the max jerk we have encountered for each body part
+    maxVar: number[] = []; //the max variance we have encountered for each body part
+    maxJerk : number[] = []; //the max jerk we have encountered for each body part
     bodyPartsJerkMax : number[]; //this are legacy values of jerk maxes that need to get updated with testing/recording
     maxXCorrSkeleton: AveragingFilter;
     maxVarAvg: AveragingFilter;
@@ -184,6 +184,11 @@ export class Participant extends EventEmitter {
         this.dxCorriMaxMIN = 1;
 
         this.bodyPartsJerkMax = [175, 175, 35, 35, 35, 35];
+        for(let i=0; i<PoseIndex.bodyPartArray.length; i++)
+        {
+            this.maxVar.push(0);
+            this.maxJerk.push(0);
+        }
 
         //not really using this.
         this.poseSampleRate = 16; //default rate from testing on my machine. mas o menos ahahah need to fix this
