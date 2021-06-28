@@ -5,8 +5,8 @@ const peerServer = PeerServer({
   debug: true,
   port: 9000,
   ssl: {
-    key: fs.readFileSync('./localhost-key.pem'),
-    cert: fs.readFileSync('./localhost.pem')
+    key: fs.readFileSync('../snowpack.key'),
+    cert: fs.readFileSync('../snowpack.crt')
   },
   path: '/peerServer'
 });

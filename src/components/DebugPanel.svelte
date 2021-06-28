@@ -26,6 +26,11 @@
     theirPose: "Their pose"
   };
 
+  import {
+    recordKeypoints,
+    recordBodyPartsJerkRaw,
+  } from "../persistedFlags";
+
   const isDebugPanelSection = (debugPanelExpanded, debugPanelSection, section) => (
     debugPanelExpanded && (debugPanelSection === section || debugPanelSection === "all")
   );
@@ -37,6 +42,11 @@
       call: isDebugPanelSection(debugPanelExpanded, debugPanelSection, 'call'),
       myPose: isDebugPanelSection(debugPanelExpanded, debugPanelSection, 'myPose'),
       theirPose: isDebugPanelSection(debugPanelExpanded, debugPanelSection, 'theirPose'),
+      toggles: isDebugPanelSection(
+        debugPanelExpanded,
+        debugPanelSection,
+        "toggles"
+      ),
     }
   }
 
@@ -132,6 +142,20 @@
             <pre>{showJson(message)}</pre>
           {/each} -->
         {/if}
+        {#if debugSections.toggles}
+        <div class="title">Toggles</div>
+
+        <input type="checkbox" bind:checked={$recordKeypoints} />
+        <label for="record-keypoints">Record Keypoints</label>
+        <br />
+
+        <input type="checkbox" bind:checked={$recordBodyPartsJerkRaw} />
+        <label for="record-recordBodyPartsJerkRawValue"
+          >Record Jerk Raw</label
+        >
+        <br />
+
+      {/if}
         <!-- {#if debugSections.myPose}
           <div class="title">My last pose</div>
           {#each getMyPose($messages) as pose}<PrintPose pose={pose} />{/each}

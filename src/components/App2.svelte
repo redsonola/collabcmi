@@ -41,6 +41,11 @@
     SonifierWithTuba,
     TouchPhrasesEachBar,
   } from "../xcorrSonify";
+
+  import {
+    SynchSonifier
+  } from "../SynchSonification"
+
   import * as Tone from "tone";
   import "../Organism01"; //turn back on for creature
   import { onVirtualTouch, startAnimation } from "../Organism01"; //turn back on for creature, uncomment Line 285
@@ -50,7 +55,7 @@ import { Vector3 } from "three";
 
 
   export let router: RouterState;
-  export let showDebugPanel = router.query.debug === "true";
+  export let showDebugPanel = true;  router.query.debug === "true";
 
   const webcamVideo = videoSubscription("webcam");
   const theirVideo = videoSubscription();
@@ -140,18 +145,18 @@ import { Vector3 } from "three";
   participant.setPoseSamplesRate();
   friendParticipant.setPoseSamplesRate();
 
+  //measures of correlation & similarity 
   let corrData: Keypoint[] = [];
+  const XCORR_BODY_PARTS : number = 6; //omg fix this, but it is kind of arbitrary 
   let matchScore = 0;
   let xCorrScore = 0;
   let synchScore = 0;
 
-  let windowedVarScore = 0;
-  let windowedVarianceHead = 0;
-  let windowedVarianceTorso = 0;
-  let windowedVarianceLeftArm = 0;
-  let windowedVarianceRightArm = 0;
-  let windowedVarianceLeftLeg = 0;
-  let windowedVarianceRightLeg = 0;
+  //measure of movement 
+  let windowedVarScore = 0; // really dx as found it to be a better measure of movement than the variance for this app.
+  let dxAvg : number[] = [];
+  let xcorrDx : number[] = [];
+  let avgLocation : {x:number, y:number}[]; //hmmm? from spacebtw but I don't if I use this
 
   let xCorrTouching = 0;
 
@@ -167,6 +172,9 @@ import { Vector3 } from "three";
 
   let tubaSonfier: SonifierWithTuba;
   let touchMusicalPhrases: TouchPhrasesEachBar;
+  let synchSonifier : SynchSonifier;
+  let musicLoaded : boolean; 
+
 
 
   let isChrome = !!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime);
@@ -210,11 +218,13 @@ import { Vector3 } from "three";
 
     //this is the new code
     tubaSonfier = new SonifierWithTuba(participant, mainVolume);
+    synchSonifier = new SynchSonifier(participant, mainVolume); 
     touchMusicalPhrases = new TouchPhrasesEachBar(
       tubaSonfier,
       midiFile,
       midiFileBass
     );
+    musicLoaded = true; 
   }
 
   /***************** main update function *****************/
@@ -243,27 +253,13 @@ import { Vector3 } from "three";
     participant.setPoseSamplesRate(fpsTracker.getFPS());
     //friendParticipant.setPoseSamplesRate(); //? need to send via peer -- TODO!
 
-    //lol, refactor soon.
-    windowedVarianceHead = participant.getAverageBodyPartWindowedVarianceFromIndex(
-      0
-    );
-    windowedVarianceTorso = participant.getAverageBodyPartWindowedVarianceFromIndex(
-      1
-    );
-    windowedVarianceLeftArm = participant.getAverageBodyPartWindowedVarianceFromIndex(
-      2
-    );
-    windowedVarianceRightArm = participant.getAverageBodyPartWindowedVarianceFromIndex(
-      3
-    );
-    windowedVarianceLeftLeg = participant.getAverageBodyPartWindowedVarianceFromIndex(
-      4
-    );
-    windowedVarianceRightLeg = participant.getAverageBodyPartWindowedVarianceFromIndex(
-      5
-    );
+    for( let i=0; i<XCORR_BODY_PARTS; i++ )
+    {
+      dxAvg[i] = participant.getAverageBodyPartDXFromIndex(i).avg;
+    }
 
-    windowedVarScore = participant.getMaxBodyPartWindowedVariance();
+    let minConfidence = 0.66;
+    windowedVarScore = participant.getMaxBodyPartDx(minConfidence); 
 
     let justStartedTouching: boolean = false;
     let yposOfTouch: number = 0;
@@ -306,6 +302,8 @@ import { Vector3 } from "three";
             score: findRadiusOfKeypoint(participant, index) / 100,
           }));
 
+        xcorrDx = participant.getAvgXCorrBodyParts();
+
         let matchMin = 0; //just cut-off lower values to create more spread in higher
         let matchMax = 0.4; //before, 0.25
         let xCorrMin = 0.2; //-1
@@ -336,7 +334,7 @@ import { Vector3 } from "three";
       }
 
       if( peerIds.length !== 0 ){
-        combinedWindowedScore = combinedWindowedScore + friendParticipant.getMaxBodyPartWindowedVariance() / 2;
+        combinedWindowedScore = ( combinedWindowedScore + friendParticipant.getMaxBodyPartDx() ) / 2;
       }
 
       if(tubaSonfier && touchMusicalPhrases && peerIds.length > 0){
@@ -354,6 +352,14 @@ import { Vector3 } from "three";
         yposOfTouch,
         combinedWindowedScore
       );
+      synchSonifier.update( 
+        matchScore, 
+        participant.getAvgBodyPartsLocation(), 
+        xcorrDx, 
+        participant.getAvgBodyPartsJerk(), 
+        friendParticipant.getAvgBodyPartsJerk(), 
+        dxAvg, windowedVarScore, 
+        participant.getAvgBodyPartsAccel() );
     }
 
     } catch (ex) {
@@ -388,6 +394,11 @@ import { Vector3 } from "three";
 
     peer.on('open', setMyId);
     await waitFor(() => myId || null);
+
+    for(let i=0; i<XCORR_BODY_PARTS; i++)     
+    {
+      dxAvg.push(0); 
+    }
 
     mainVolume = new MainVolume((val) => {
       volumeMeterReading = val;
@@ -935,13 +946,21 @@ import { Vector3 } from "three";
     <ScoreBar label="touching xcorr score:" score={xCorrTouching} />
     <ScoreBar label="total xcorr score:"score={xCorrScore} />
     <ScoreBar label="combined score:"score={synchScore} />
-    <ScoreBar label="windowed var score:"score={windowedVarScore} />
-    <ScoreBar label="windowed var head:"score={windowedVarianceHead} />
-    <ScoreBar label="windowed var torso:"score={windowedVarianceTorso} />
-    <ScoreBar label="windowed var left arm:"score={windowedVarianceLeftArm} />
-    <ScoreBar label="windowed var right arm:"score={windowedVarianceRightArm} />
-    <ScoreBar label="windowed var left leg:"score={windowedVarianceLeftLeg} />
-    <ScoreBar label="windowed var right leg:"score={windowedVarianceRightLeg} />
+
+    <ScoreBar label="xcorr head:"score={xcorrDx[0]} />
+    <ScoreBar label="xcorr torso:"score={xcorrDx[1]} />
+    <ScoreBar label="xcorr left arm:"score={xcorrDx[2]} />
+    <ScoreBar label="xcorr arm:"score={xcorrDx[3]} />
+    <ScoreBar label="xcorr left leg:"score={xcorrDx[4]} />
+    <ScoreBar label="xcorr right leg:"score={xcorrDx[5]} />
+
+    <ScoreBar label="dx score:"score={windowedVarScore} />
+    <ScoreBar label="dx head:"score={dxAvg[0]} />
+    <ScoreBar label="dx torso:"score={dxAvg[1]} />
+    <ScoreBar label="dx left arm:"score={dxAvg[2]} />
+    <ScoreBar label="dx right arm:"score={dxAvg[3]} />
+    <ScoreBar label="dx left leg:"score={dxAvg[4]} />
+    <ScoreBar label="dx right leg:"score={dxAvg[5]} />
 
     <PrintPose keypoints={corrData} />
   </DebugPanel> 

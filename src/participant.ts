@@ -11,6 +11,13 @@ import * as Scale from './scale'
 import { SkeletionIntersection } from './skeletonIntersection'
 import { SkeletonTouch } from './SkeletonTouch'
 
+import { FPSTracker } from './fpsMeasure' 
+import { AppendFunction, deferredFile } from './fileApis';
+import { recordBodyPartsJerkRaw, recordKeypoints } from './persistedFlags';
+import { appStartTimestamp } from './appStartTimestamp';
+import { EventEmitter } from "eventemitter3"; //note Brent added this -- it emits events that's all I know.
+
+
 // import { Buffer } from "buffer";
 
 /* TODO:
@@ -24,21 +31,51 @@ export function orderParticipantID(id1: string, id2: string) {
     return id1 > id2 ? -1 : 0
 }
 
-//TODO: refactor such that otherParticipant is a pointer...... YIKES
 
-export class Participant {
+// make a filename based on the participant -- Brent code
+const fileNameBase = (p: Participant, fileName: string) => (
+    `${appStartTimestamp}_${p.participantID}_${fileName}`
+);
 
+//Brent code
+export interface RecordedKeypoint {
+    timestamp: number;
+    keypoints: Keypoint[];
+} 
+
+export enum ParticipantEvents {
+    KeypointsAdded = "KeypointsAdded",
+    SetSize = "SetSize"
+}
+
+///end Brent
+
+export class Participant extends EventEmitter {
+
+    //unique id of participant -- now the same as the peerID -- perhaps unique Id will be 
+    //this + number in vector
     participantID: string = "";
+
+    //we will change this to an array
     friendParticipant: any; //starting this process, but it is not complete
+
+    updateNow : number = 0; 
 
     windowSize: number;
     keyPointBuffer: CircularBuffer<any>;
     endIndex: number;
     beginIndex: number;
 
+    fpsTracker : FPSTracker;
+
+    //for adding data to files
+    appendKeypoints: AppendFunction;
+    appendXCorrTest: AppendFunction;
+
     width: number;
     height: number;
 
+    //this is pose-matching not cross-correlation 
     matchScore: number = 0;
 
     //note: this is probably going to turn into a processing tree. hahahahahahaha - or NOT mess follows.
@@ -66,14 +103,19 @@ export class Participant {
     iMaxPositionsDX: AveragingFilter[];
     xcorrMaxPositionDY: AveragingFilter[];
     iMaxPositionsDY: AveragingFilter[];
+    xcorrAvg: AveragingFilter[];
 
+
+    //not using this anymore I think. need to bah-lete
     poseAnglesDx: Derivative[];
 
+    //keep track of overall max and min -- will depreciate these since adding recording system and better data analysis
     derivativexCorrMaxMAX: number;
     derivativexCorrMaxMIN: number;
     derivativexCorriMaxMAX: number;
     derivativexCorriMaxMIN: number;
 
+    //keep track of overall max and min -- will depreciate these since adding recording system and better data analysis
     dxCorrMaxMAX: number;
     dxCorrMaxMIN: number;
     dxCorriMaxMAX: number;
@@ -83,6 +125,7 @@ export class Participant {
 
     avgKeyPoints: AverageFilteredKeyPoints;
 
+    //overall confidence score for posenet / mediapipe. need to refactor and streamline this
     minConfidenceScore: number = 0.3;
 
     keyPointsBufferSize: number = 2; //changed 12/26/2020
@@ -91,13 +134,18 @@ export class Participant {
     avgMaxBodyPartXCorr: number = -100;
 
     maxVar: number[]; //the max variance we have encountered for each body part
+    maxJerk : number[]; //the max jerk we have encountered for each body part
+    bodyPartsJerkMax : number[]; //this are legacy values of jerk maxes that need to get updated with testing/recording
     maxXCorrSkeleton: AveragingFilter;
     maxVarAvg: AveragingFilter;
+    winVarScaleMax : number = 1;
 
     touch: SkeletonTouch = new SkeletonTouch();
     intersection: SkeletionIntersection;;
 
     constructor() {
+        super(); 
+
         this.windowSize = 16; //should test different window sizes.
 
         this.keyPointBuffer = new CircularBuffer(this.windowSize);
@@ -115,6 +163,7 @@ export class Participant {
         this.iMaxDerivative1 = [];
         this.poseAnglesDx = [];
 
+
         // this.xcorrMaxPositions = [];
         // this.iMaxPositions = [];
 
@@ -122,6 +171,7 @@ export class Participant {
         this.iMaxPositionsDX = [];
         this.xcorrMaxPositionDY = [];
         this.iMaxPositionsDY = [];
+        this.xcorrAvg = [];
 
         this.derivativexCorrMaxMAX = 0;
         this.derivativexCorrMaxMIN = 1;
@@ -133,10 +183,28 @@ export class Participant {
         this.dxCorriMaxMAX = 0;
         this.dxCorriMaxMIN = 1;
 
+        this.bodyPartsJerkMax = [175, 175, 35, 35, 35, 35];
+
+        //not really using this.
         this.poseSampleRate = 16; //default rate from testing on my machine. mas o menos ahahah need to fix this
+
 
         this.avgKeyPoints = new AverageFilteredKeyPoints();
 
+        this.fpsTracker = new FPSTracker();
+
+        this.appendKeypoints = deferredFile((append) => {
+            if (recordKeypoints.get() && this.participantID && this.width !== 0) {
+                append(JSON.stringify({ width: this.width, height: this.height }));
+                return fileNameBase(this, "keypoints.csv");
+            }
+        });
+
+        this.appendXCorrTest = deferredFile(() => {
+            if (recordBodyPartsJerkRaw.get() && this.participantID) {
+                return fileNameBase(this, "xCorrTest.csv");
+            }
+        });
 
         this.maxVar = [];
         this.maxXCorrSkeleton = new AveragingFilter();
@@ -157,6 +225,7 @@ export class Participant {
 
 
 
+
             this.poseAnglesDx.push(new Derivative());
         }
 
@@ -167,10 +236,11 @@ export class Participant {
             // this.xcorrMaxPositions.push(new AveragingFilter()); 
             // this.iMaxPositions.push(new AveragingFilter()); 
 
-            this.xcorrMaxPositionDX.push(new AveragingFilter());
-            this.iMaxPositionsDX.push(new AveragingFilter());
-            this.xcorrMaxPositionDY.push(new AveragingFilter());
-            this.iMaxPositionsDY.push(new AveragingFilter());
+            this.xcorrMaxPositionDX.push( new AveragingFilter(2, 2) ); 
+            this.iMaxPositionsDX.push( new AveragingFilter(2, 2) ); 
+            this.xcorrMaxPositionDY.push( new AveragingFilter(2, 2) ); 
+            this.iMaxPositionsDY.push( new AveragingFilter(2, 2) ); 
+            this.xcorrAvg.push( new AveragingFilter(4, 2) ); 
 
             //for the positions
             this.xcorrMaxPos.push(new AveragingFilter());
@@ -179,10 +249,17 @@ export class Participant {
             this.xcorriMaxPos.push(new AveragingFilter());
         }
 
+        //again this is depreciated. when I have time (lol, never, I want to delete this shit)
         this.setPoseSamplesRate(4); //ok just set to start with
 
+        //this holds the info about intersections AND also draws the skeleton
+        //a coupling that doesn't make sense now
+        //but sense the skeleton was originally only drawn to test the intersection code
+        //as a legacy makes sense but here we are.
         this.intersection = new SkeletionIntersection(this);
     }
+
+    
 
     addFriendParticipant(p: Participant) {
         this.friendParticipant = p;
@@ -201,25 +278,49 @@ export class Participant {
         this.participantID = id;
     }
 
-    addKeypoint(keypoints: Keypoint[]): void {
-        if (keypoints === null) return;
-        this.keyPointBuffer.add(keypoints);
-        this.avgKeyPoints.update(keypoints);
+    /** can override in testing */
+    now () {
+        return performance.now();
+    }
 
-        /*
-        let angleFindingObj = PoseAngle.getAngleFunctionsFromKeypoints(this.avgKeyPoints.top());
-        let angleFunctions = GetMethods.getMethods(angleFindingObj);
-        // console.log(angleFunctions); 
-        if (angleFindingObj != null)
-            for (let i = 0; i <= 8; i++) {
-                let newAngleFunc : any = angleFindingObj[angleFunctions[i]];
-                let newAngle : number = newAngleFunc(this.avgKeyPoints.top());
-                this.poseAngles[i].update(newAngle);
-                this.poseAnglesDx[i].update(this.poseAngles[i].top());
-                //  console.log(newAngle); 
-            }
-            */ //not using any of the angles code anymore
-        // console.log(keypoints);
+    //update the keypoints from the pose and also update other shiz related to keypoints. 
+    addKeypoint(keypoints: Keypoint[]): void {
+
+        let now : number = this.now(); //note: maybe want to do this in main.
+        if( keypoints === null ) return; 
+        this.updateNow = now; 
+
+        //this records keypoints
+        if (recordKeypoints.get()) {
+            console.log("recording");
+            this.appendKeypoints(JSON.stringify({
+                timestamp: now,
+                keypoints
+            }));
+        }
+
+        this.keyPointBuffer.add(keypoints);
+        this.avgKeyPoints.update(keypoints, now);
+
+        this.fpsTracker.refreshLoop(); 
+
+        this.emit(ParticipantEvents.KeypointsAdded, this.participantID, keypoints);
+
+        let filename = "xCorrTest.csv";
+        
+        if (recordBodyPartsJerkRaw.get()) {
+            this.appendXCorrTest([
+                this.now(), this.avgKeyPoints.getEyeDistance(),
+                ...this.avgKeyPoints.getDXArray(),
+                ...this.avgKeyPoints.getDYArray(),
+                ...this.avgKeyPoints.getAccelXArray(),
+                ...this.avgKeyPoints.getAccelYArray(), 
+                ...this.avgKeyPoints.getJerkXArray(),
+                ...this.avgKeyPoints.getJerkYArray(), 
+                // ...this.getXcorrMaxPositionDXArray(),
+                // ...this.getXcorrMaxPositionDXArray()                
+            ].join(','));
+        }
     }
 
     //per second -- vary the window size with the samplerate
@@ -229,7 +330,9 @@ export class Participant {
 
         // this.windowSize = this.nearestPowerOf2(sps); doesn't work. 4 now, quick & dirty
 
-        //fix this shit later
+        //fix this shit later -- has to do with xcorr buffer size. 
+        //basically, I was averaging to shit as was my custom when I had like 60fps all the time
+        //but lol we are not getting 60 fps 
         if (sps / 2 >= 32) { this.windowSize = 32; }
         else if (sps / 2 >= 16) { this.windowSize = 16; }
         else if (sps / 2 >= 8) { this.windowSize = 8; }
@@ -325,20 +428,17 @@ export class Participant {
         return array;
     }
 
+    setWinVarScaleMax(m:number) : void
+    {
+        this.winVarScaleMax = m; 
+    }
+
     getCurDX(): Derivative[] {
         return this.avgKeyPoints.getDXBuffer();
     }
 
     getCurDY(): Derivative[] {
         return this.avgKeyPoints.getDYBuffer();
-    }
-
-    getScaledCurDX(): Derivative[] {
-        return this.avgKeyPoints.getScaledDXBuffer();
-    }
-
-    getScaledCurDY(): Derivative[] {
-        return this.avgKeyPoints.getScaledDYBuffer();
     }
 
     getAvgCurDXTop(index): number {
@@ -385,6 +485,11 @@ export class Participant {
         this.height = h;
         this.avgKeyPoints.setSize(w, h);
         this.intersection.setSize(w, h);
+        if (recordKeypoints.get()) {
+            this.appendKeypoints(JSON.stringify({ width: w, height: h }));
+        }
+        this.emit(ParticipantEvents.SetSize, this.participantID, { width: w, height: h });
+
     }
 
     getHeight() {
@@ -404,153 +509,6 @@ export class Participant {
     getAvgScore(index) {
         return this.avgKeyPoints.getAvgScore(index);
     }
-
-    //this gets the cross-covariance btw each a window of values, in the rescaled (but not L2 normalized) positional data
-    //this was SUCKY so it is depreciated & would need to be updated to run properly
-    // xCorrPositions( otherParticipant: Participant  ): void
-    // {
-    //     //TODO: fix this is not going to work need to use an actual buffer not just current keypoints
-    //     let other  = otherParticipant.getKeyPointBuffer();
-    //     let me = this.getKeyPointBuffer();
-
-    //     let sz = Math.min(me.length, other.length); //take the lowest sampling rate as the window for comparison
-    //     if( sz < this.windowSize ) return; 
-    //     sz = this.windowSize; //force sampling to window size, jesus.
-    //     // (window as any).windowSizeOtherParticipant = sz;
-    //     // (window as any).windowSizeParticipant = this.windowSize;
-
-    //     //take the sample size
-    //     other = other.slice(other.length-sz, other.length); 
-    //     me = me.slice(me.length-sz, me.length); 
-
-    //     // (window as any).other = other;
-
-    //     let otherNorm : any[] = [];
-    //     let meNorm : any[] = [];
-
-    //     for( let i=0; i<sz; i++ )
-    //     {
-    //          otherNorm.push(PoseMatch.reScaleTo1(other[i], otherParticipant.getWidth(), otherParticipant.getHeight()));
-    //          meNorm.push(PoseMatch.reScaleTo1(me[i], this.getWidth(), this.getHeight()));
-    //     }
-
-    //     let buffermeX : any[] = [];
-    //     let bufferotherX : any[] = [];
-    //     let buffermeY : any[] = [];
-    //     let bufferotherY : any[] = [];
-    //     for(let j=0; j<otherNorm[0].length; j++)
-    //     {
-    //         let bufmeX : number[] = [];
-    //         let bufotherX : number[] = [];
-    //         let bufmeY : number[] = [];
-    //         let bufotherY : number[] = [];
-
-    //          for (let i=0; i<otherNorm.length; i++)
-    //          {
-    //             bufmeY.push(meNorm[i][j].position.y * 256.0);
-    //             bufmeX.push(meNorm[i][j].position.x * 256.0);
-
-    //             bufotherY.push(otherNorm[i][j].position.y * 256.0);
-    //             bufotherX.push(otherNorm[i][j].position.x * 256.0 );
-    //          }
-    //         buffermeX.push(bufmeX);
-    //         bufferotherX.push(bufotherX);
-    //         buffermeY.push(bufmeY);
-    //         bufferotherY.push(bufotherY);
-    //     }
-
-    //     for( let i=0; i<buffermeX.length; i++ )
-    //     {
-    //         const sig1 = Buffer.from( buffermeX[i] );
-    //         const sig2 = Buffer.from( bufferotherX[i] );
-
-    //         const sig3 = Buffer.from( buffermeY[i] );
-    //         const sig4 = Buffer.from( bufferotherY[i] );
-
-    //         if(this.getAvgScore(i) >= this.minConfidenceScore && otherParticipant.getAvgScore(i) >= this.minConfidenceScore )
-    //         {
-
-    //             let xcorr_out = XCorr.Xcorr(sig1, sig2);
-    //             if( !isNaN(xcorr_out.xcorrMax)  )
-    //             {
-    //                 this.xcorrMaxPos[i].update(xcorr_out.xcorrMax);
-    //             }
-    //             else 
-    //             {
-    //                 this.xcorrMaxPos[i].update(-100);
-    //             }
-    //             this.xcorriMaxPos[i].update(xcorr_out.iMax); 
-
-    //             let xcorr_out2 = Xcorr(sig3, sig4);
-    //             if( !isNaN(xcorr_out2.xcorrMax)  )
-    //             {
-    //                 this.xcorrMaxPosY[i].update(xcorr_out2.xcorrMax);
-    //             }
-    //             else 
-    //             {
-    //                 this.xcorrMaxPosY[i].update(-100);
-    //             }
-    //             this.xcorriMaxPos[i].update(xcorr_out2.iMax); 
-    //         }
-    //         else 
-    //         {
-    //             //zero values out for low confidence scores.
-    //             this.xcorrMaxPos[i].update(-1); 
-    //             this.xcorriMaxPos[i].update(0); 
-    //         }
-    //     }  
-
-    //     //TODO: this  version of synchronity later now that things work
-    //     // for( let i=0; i<sz; i++ )
-    //     // {
-    //     //      otherNorm.push(PoseMatch.scaleAndL2Norm(other[i], otherParticipant.getWidth(), otherParticipant.getHeight()));
-    //     //      meNorm.push(PoseMatch.scaleAndL2Norm(me[i], this.getWidth(), this.getHeight()));
-    //     // }
-
-    //     // let buffermeX : any[] = [];
-    //     // let bufferotherX : any[] = [];
-    //     // let buffermeY : any[] = [];
-    //     // let bufferotherY : any[] = [];
-    //     // for(let j=0; j<otherNorm[0].length; j+=2)
-    //     // {
-    //     //     let bufmeX : number[] = [];
-    //     //     let bufotherX : number[] = [];
-    //     //     let bufmeY : number[] = [];
-    //     //     let bufotherY : number[] = [];
-
-    //     //     for (let i=0; i<otherNorm.length; i++)
-    //     //     {
-    //     //         bufmeY.push(meNorm[i][j]);
-    //     //         bufmeX.push(meNorm[i][j+1]);
-
-    //     //         bufotherY.push(otherNorm[i][j]);
-    //     //         bufotherX.push(otherNorm[i][j+1]);
-    //     //     }
-    //     //     buffermeX.push(bufmeX);
-    //     //     bufferotherX.push(bufotherX);
-    //     //     buffermeY.push(bufmeY);
-    //     //     bufferotherY.push(bufotherY);
-    //     // }
-
-    //     // for( let i=0; i<buffermeX.length; i++ )
-    //     // {
-    //     //     const sig1 = Buffer.from( buffermeX[i] );
-    //     //     const sig2 = Buffer.from( bufferotherX[i] );
-
-    //     //     let xcorr_out = Xcorr(sig1, sig2);
-    //     //     if( !isNaN(xcorr_out.xcorrMax)  )
-    //     //     {
-    //     //         this.xcorrMaxPos[i].update(xcorr_out.xcorrMax);
-    //     //     }
-    //     //     else 
-    //     //     {
-    //     //         this.xcorrMaxPos[i].update(-100);
-    //     //     }
-    //     //     this.xcorriMaxPos[i].update(xcorr_out.iMax); 
-    //     // }  
-
-
-    // }
 
     getWindowSize(): number {
         return this.windowSize;
@@ -663,95 +621,6 @@ export class Participant {
         // return this.collapseMultiVariateCrossCorrelationUsingFishersZ(this.xcorrMaxPositionDX[i].top(), this.xcorrMaxPositionDY[i].top())
     }
 
-    //find the x - correlation between the body angles of 2 participants.
-    xCorrAngles(otherParticipant: Participant): void {
-        //ok, this is just on one elbow to test - rightShoulderHipElbow
-        // this.xcorrMaxRightShoulderHipElbow  = new CircularBuffer(this.windowSize);
-        // this.xcorrMaxIndexRightShoulderHipElbow  = new CircularBuffer(this.windowSize);
-
-        //not really usign this, but changed from a Derivative yikes.
-        let otherAngles: Derivative[] = otherParticipant.getCurAnglesDx();
-
-        let otherAnglesArray: number[][] = [];
-        let myAnglesArray: number[][] = [];
-        let sz = math.min(otherAngles[0].length(), this.poseAnglesDx[0].length()); //take the lowest sampling rate as the window for comparison
-        if (sz < this.windowSize) return; //TODO: probably send window size from the other participant... maybe
-
-
-        for (let i = 0; i < this.xcorrMax.length; i++) {
-            otherAnglesArray.push(otherAngles[i].getOutputContents(sz));
-            myAnglesArray.push(this.poseAnglesDx[i].getOutputContents(sz));
-        }
-
-        // if (otherAnglesArray[0].length < this.windowSize) return;
-        if (myAnglesArray[0].length < this.windowSize) return;
-
-        if (otherAnglesArray[0].length != myAnglesArray[0].length) {
-            console.log("Problem i is 0");
-
-            console.log("otherAnglesArray[i].length: " + otherAnglesArray[0].length.toString());
-            console.log("this.poseAnglesDx[i].length: " + myAnglesArray[0].length.toString());
-
-            console.log("sz: " + sz.toString());
-
-            console.log("otherAngles[i].length(): " + otherAngles[0].length().toString());
-            console.log("myAnglesArray[i].length: " + this.poseAnglesDx[0].length().toString());
-
-        }
-        console.assert(otherAnglesArray[0].length == myAnglesArray[0].length);
-        //also assert power of 2, later. for now, it should be windowsize.
-
-        for (let i: number = 0; i < this.xcorrMax.length; i++) {
-
-            const sig1 = Buffer.from(this.convertToUint16(myAnglesArray[i]));
-            const sig2 = Buffer.from(this.convertToUint16(otherAnglesArray[i]));
-            if (otherAnglesArray[i].length != myAnglesArray[i].length) {
-                console.log("Problem i is: " + i.toString());
-
-                console.log("otherAnglesArray[i].length: " + otherAnglesArray[i].length.toString());
-                console.log("this.poseAnglesDx[i].length: " + myAnglesArray[i].length.toString());
-
-                console.log("sz: " + sz.toString());
-
-                console.log("otherAngles[i].length(): " + otherAngles[i].length().toString());
-                console.log("myAnglesArray[i].length: " + this.poseAnglesDx[i].length().toString());
-
-            }
-            console.assert(otherAnglesArray[i].length == myAnglesArray[i].length);
-
-            let xcorr_out = Xcorr(sig1, sig2);
-
-            if (!isNaN(xcorr_out.xcorrMax)) {
-                this.xcorrMax[i].update(xcorr_out.xcorrMax);
-            }
-            else {
-                this.xcorrMax[i].update(0.0);
-            }
-
-            this.iMax[i].update(xcorr_out.iMax);
-            this.xcorrMaxDerivative1[i].update(this.xcorrMax[i].top());
-            this.iMaxDerivative1[i].update(this.iMax[i].top());
-
-            // if(this.xcorrMaxDerivative1[i].top() >  this.derivativexCorrMaxMAX ) {this.derivativexCorrMaxMAX = this.xcorrMaxDerivative1[i].top()};
-            // if(this.xcorrMaxDerivative1[i].top() <  this.derivativexCorrMaxMIN ) {this.derivativexCorrMaxMIN = this.xcorrMaxDerivative1[i].top()};
-
-            // if(this.iMaxDerivative1[i].top() >  this.derivativexCorriMaxMAX ) {this.derivativexCorriMaxMAX = this.iMaxDerivative1[i].top()};
-            // if(this.iMaxDerivative1[i].top() <  this.derivativexCorriMaxMIN ) {this.derivativexCorriMaxMIN = this.iMaxDerivative1[i].top()};
-
-            // console.log("max:");
-            // console.log(this.derivativexCorriMaxMAX);
-
-            // console.log("min");
-            // console.log(this.derivativexCorriMaxMIN);
-
-
-            // this.iMax[i].add(xcorr_out.iMax);
-
-            //  console.log("Angle " +i+ " -->  xCorrMax: " +xcorr_out.xcorrMax + " xCorrMaxIndex: " +xcorr_out.iMax);
-            //  console.log(xcorr_out.xcorrMax);
-        }
-    }
-
     getCurrXCorrMaxDx(index: number): number {
         return this.xcorrMaxDerivative1[index].top();
     }
@@ -787,37 +656,6 @@ export class Participant {
     getKeyPointLength() {
         return this.keyPointBuffer.length();
     }
-
-    // getAverageBodyPartXCorrSynchronicity( bodyPartIndices: number[], minConfidence: number ) : number
-    // {
-    //     let sum : number = 0; 
-    //     for(let i = 0 ; i<bodyPartIndices.length; i++)
-    //     {
-    //         sum += this.getXCorrPos(bodyPartIndices[i]); 
-    //     } 
-
-    //     return sum/bodyPartIndices.length;
-    // }
-
-    // getAvgSkeletonXCorr(minConfidence : number = 0.25) : number
-    // {
-    //     //    getXCorrPos(index : number)
-    //     //getAvgScore(index)
-
-    //     let sum : number = 0; 
-    //     let count : number = 0;
-    //     for(let i = 0 ; i<PoseIndex.posePointCount; i++)
-    //     {
-    //         if( this.getAvgScore(i) >= minConfidence && this.friendParticipant.getAvgScore(i) >= minConfidence )
-    //         {
-    //             sum += this.getDistXCorrMax(i); 
-    //             count++; 
-    //         }
-    //     } 
-
-    //     return sum/count;
-    // }
-
     //so this will return the highest value PER body part MOVING -- instead of avg. across the body.
 
     //this also updates the buffers & returns the average. gah kind of messy need to refactor. 
@@ -906,66 +744,6 @@ export class Participant {
         return this.avgKeyPoints.getMaxDy();
     }
 
-    getAverageBodyPartWindowedVarianceFromIndex(index: number, minConfidence: number = 0.3): number {
-        //goes through the below order: 
-        //[head, torso, leftArm, rightArm, leftLeg, rightLeg];
-        let maxWindowedVarTestedMaximums = [2, 2, 5, 5, 5, 5]; //just from one session -- TODO: find better maxes.
-
-        let winvar = this.getAverageBodyPartWindowedVariance(index, PoseIndex.bodyPartArray[index], minConfidence);
-        // console.log(index + ":" + winvar);
-        winvar = Scale.linear_scale(winvar, 0, maxWindowedVarTestedMaximums[index], 0, 1);
-
-        if (!isNaN(winvar))
-            return winvar;
-        else return 0;
-    }
-
-    getAverageBodyPartWindowedVariance(index: number, bodyPartIndices: number[], minConfidence: number = 0.3): number {
-        let sum: number = 0;
-        let count: number = 0;
-        for (let i = 0; i < bodyPartIndices.length; i++) {
-            if (this.getAvgScore(i) >= minConfidence) {
-                sum += this.avgKeyPoints.getWindowedVariance(bodyPartIndices[i]);
-                count++;
-            }
-        }
-        if (count == 0) return 0;
-        else {
-
-            let v = sum / count;
-            if (this.maxVar[index] < v) {
-                this.maxVar[index] = v;
-            }
-            // console.log( index + ":" + this.maxVar[index] );
-
-            return v;
-        }
-    }
-
-    //this is not getting updated at some points.... gah.
-    //this should be in an averaging filter. 
-    getMaxBodyPartWindowedVariance(minConfidence: number = 0.4) {
-        let maxWindowedVar: number = 0;
-
-        for (let i = 0; i < PoseIndex.bodyPartArray.length; i++) {
-            let winvar = this.getAverageBodyPartWindowedVarianceFromIndex(i);
-            //let winvar = this.getAverageBodyPartWindowedVariance( PoseIndex.bodyPartArray[i] );
-
-            if (winvar > maxWindowedVar)
-                maxWindowedVar = winvar;
-
-            // not searching for the max now -- test more later
-
-            // if(i < 3)
-        }
-
-        //update a running average to calm that down dude
-        this.maxVarAvg.update(maxWindowedVar)
-
-        return this.maxVarAvg.top();//this.maxVarAvg.top(); //already scaled 0 to 1
-    }
-
-
     getParticipantID(): string {
         return this.participantID;
     }
@@ -974,6 +752,104 @@ export class Participant {
         return this.participantID === id;
     }
 
+    getAverageBodyPartDXFromIndex( index: number, winVarMax: number = this.winVarScaleMax, minConfidence : number = 0.45 ) : {avg: number, count: number}
+    {
+        let winvar = this.getAverageBodyPartDx( PoseIndex.bodyPartArray[index], minConfidence );
+        return winvar
+    }
+
+    //note, perhaps this should be a mix of the actual avg. of skeleton vs. some bodypart avg.
+    getAverageBodyPartDx( bodyPartIndices: number[], minConfidence : number = 0.45 ) : {avg: number, count: number}
+    {
+        let sum : number = 0; 
+        let count : number = 0;
+        for(let i = 0 ; i<bodyPartIndices.length; i++)
+        {
+            if( this.getAvgScore(bodyPartIndices[i]) >= minConfidence )
+                {
+                    sum += this.avgKeyPoints.getDxyAvg(bodyPartIndices[i]); 
+                    count++; 
+                }
+        } 
+        if(count == 0) return {avg: 0, count: 0}; 
+        else {
+            let v =  sum/count;
+            if( isNaN(v)) v = 0;
+            return {avg: v, count: count}; 
+        } 
+    }
+
+    //NOTE -- this measure should grow when more body parts approach max.
+    //TODO -- do that!
+    getMaxBodyPartDx(minConfidence : number = 0.45, winVarMax : number = this.winVarScaleMax )
+    {
+        let maxWindowedVar : number = 0;
+        let thresh : number = 0.55;
+        let keypointsVisibleCount: number = 0;
+
+        let partsOverThresh: number = 0;
+        let highDxThresh : number = 0.7;
+
+        for(let i=0; i<PoseIndex.bodyPartArray.length; i++)
+        {
+            let curDx = this.getAverageBodyPartDXFromIndex(i, this.winVarScaleMax, minConfidence ).avg;
+            maxWindowedVar= Math.max(curDx, maxWindowedVar); 
+            if(curDx > highDxThresh)
+            {
+                partsOverThresh++; 
+            }
+        }
+
+        let finalAvg = 0; 
+        if( partsOverThresh >= 4)
+        {
+            finalAvg =  Math.max(maxWindowedVar, 0.95); 
+        }
+        else
+        {
+            finalAvg = maxWindowedVar;
+        }
+
+        // let finalAvg = maxWindowedVar;
+
+        //update a running average to calm that down dude
+        this.maxVarAvg.update( finalAvg ) ; 
+
+        return maxWindowedVar; //this.maxVarAvg.top();//this.maxVarAvg.top(); //already scaled 0 to 1
+    }
+
+    getAvgXCorrBodyParts(minConfidence : number = 0.65) : number[]
+    {
+        //perhaps use a mix of total body & partial. I felt like when my whole body was moving, I wanted it to do more still, 
+        //than if it was just one body part
+
+        // following `poseConstants#bodyPartArray`'s order
+        let bodyParts: number[] = [
+            this.getHeadXCorrSynchronicity(minConfidence),
+            this.getTorsoXCorrSynchronicity(minConfidence),
+            this.getLeftArmXCorrSynchronicity(minConfidence),
+            this.getRightArmXCorrSynchronicity(minConfidence),
+            this.getLeftLegXCorrSynchronicity(minConfidence),
+            this.getRightLegXCorrSynchronicity(minConfidence)
+        ];
+
+        let maxXCorr : number = -100; 
+
+        //return an averaged
+        let parts : number[] = [];
+        for(let i=0; i<this.xcorrAvg.length; i++)
+        {
+            let part = bodyParts[i];
+            if(!isNaN(part))
+            {
+                this.xcorrAvg[i].update(bodyParts[i]);
+            }
+            parts.push( this.xcorrAvg[i].getNext() ); 
+        }
+
+        return bodyParts; // bodyParts; 
+    }
+    
     //TODO: update everything in one method & just have that as the outside thingy!
     updateTouchingFriend(offsets : THREE.Vector3, hasFriend : boolean): void {
         this.intersection.update(offsets); //TODO only update when have friend
@@ -1150,4 +1026,161 @@ export class Participant {
         else return 0; 
     }
 
+    getAvgBodyPartsLocation(minConfidence : number = 0.45): {x:number, y: number}[]
+    {
+        let bodyPartsLocation : {x:number, y: number}[] = [];
+        PoseIndex.bodyPartArray.forEach( (array) => {
+            bodyPartsLocation.push(this.getAverageBodyPartLocation(array, minConfidence));
+        });
+
+        //If there is the nose, default to that instead of the average. -- ok I was a little sensible here.
+        if(!isNaN(this.avgKeyPoints.getTopX(PoseIndex.nose)))
+        {
+            bodyPartsLocation[PoseIndex.nose].x = this.avgKeyPoints.getTopX(PoseIndex.nose) / this.width;
+            bodyPartsLocation[PoseIndex.nose].y = this.avgKeyPoints.getTopY(PoseIndex.nose) / this.height;
+        }
+
+        return bodyPartsLocation;
+    }
+
+        //this really just assigns particular keypoints to get their locations for the bodyparts.
+        getAverageBodyPartLocation( bodyPartIndices: number[], minConfidence : number = 0.45 ) : {x:number, y:number}
+        {
+            let sumx : number = 0; 
+            let sumy : number = 0; 
+    
+            let count : number = 0;
+    
+            //return the wrist location if wrist exists & it is that other body part, else it essentially returns the elbow.
+            if( ( bodyPartIndices[0] === PoseIndex.leftElbow || bodyPartIndices[0] === PoseIndex.rightElbow  ) && 
+                (this.avgKeyPoints.getAvgScore(bodyPartIndices[1]) > minConfidence))
+            {
+                let res =  {x:this.avgKeyPoints.getTopAvgX(bodyPartIndices[1])/ this.width, y:this.avgKeyPoints.getTopAvgY(bodyPartIndices[1]) / this.height };
+                // console.log(res);
+                return res; 
+            }
+            else
+            {
+                //this is maniacally stupid omfg. I dont know why I would want avg. location. even for the head, the nose would do or how such a concept would be even slightly intuitive.
+                //ToDo: make this not stupid. -- maybe for torso i want center of gravity, something like that & ya, just center - nose for head
+                //for legs, the feet make sense but I don't think people will be using their legs much
+                for(let i = 0 ; i<bodyPartIndices.length; i++)
+                {
+    
+                    if( this.getAvgScore(bodyPartIndices[i]) >= minConfidence )
+                    {
+                        let x = this.avgKeyPoints.getTopX(bodyPartIndices[i]) / this.width;
+                        let y = this.avgKeyPoints.getTopY(bodyPartIndices[i]) / this.height;
+                        if( !isNaN(x) && !isNaN(y) )
+                        { 
+                            sumx += x; 
+                            sumy += y; 
+    
+                            count++; 
+                        }
+                    }
+                }
+            } 
+            //as it is an average, most things won't go to 0 or 1, so just expand the middle
+            sumx = Scale.linear_scale( sumx, 0.1, 0.85, 0, 1 );
+            sumy = Scale.linear_scale( sumy, 0.1, 0.85, 0, 1 );
+    
+            if(count === 0) return { x:0, y:0 }; 
+            else {
+                let v =  { x:sumx/count, y:sumy/count} ;
+                return v; 
+            } 
+        }
+
+        getAvgBodyPartsJerk(minConfidence : number = 0.3): number[]
+        {
+            let bodyPartsJerk : number[] = [];
+            let bodyPartsJerkRaw : number[] = [];
+    
+            //still need to explore this.
+            let bodyPartsJerkMin : number[] = [10, 10, 0, 0, 0, 0];
+    
+    
+            let i = 0;
+            PoseIndex.bodyPartArray.forEach( (array) => {
+                bodyPartsJerk.push(this.getMaxBodyPartJerk(array, minConfidence));
+                bodyPartsJerkRaw.push(this.getMaxBodyPartJerk(array, minConfidence));
+                this.maxJerk[i] = Math.max( this.maxJerk[i], bodyPartsJerk[i]); 
+                bodyPartsJerk[i] = Scale.linear_scale( bodyPartsJerk[i], 10, this.bodyPartsJerkMax[i], 0, 1 ); 
+                i++;
+            });
+    
+            return bodyPartsJerk;
+        }
+
+        getAvgBodyPartAccel( bodyPartIndices : number[], accel:number[], minConfidence :number ) : number
+        {
+            let avg : number = 0; 
+            let count : number = 0;
+            for(let i=0; i<bodyPartIndices.length; i++)
+            {
+                let index = bodyPartIndices[i];
+                if( this.avgKeyPoints.getAvgScore(index) > minConfidence )
+                {
+                    avg += accel[index]; 
+                    count++; 
+                }
+            }
+            if( count === 0 || isNaN(avg) ) return 0;
+            else
+            return avg / count; 
+        }
+    
+        getAvgBodyPartsAccel(minConfidence : number = 0.3): number[]
+        {
+            let bodyPartsAccel : number[] = [];
+            let bodyPartsAccelRaw : number[] = [];
+    
+            //still need to explore this.
+            let bodyPartsAccelMin : number[] = [10, 10, 0, 0, 0, 0];
+            let accel : number[] = this.avgKeyPoints.getMaxAccelXYArray(); 
+    
+    
+            let i = 0;
+            PoseIndex.bodyPartArray.forEach( (array) => {
+                bodyPartsAccel.push(this.getAvgBodyPartAccel(array, accel, minConfidence));
+                // bodyPartsAccelRaw.push(this.getMaxBodyPartJerk(array, minConfidence));
+                bodyPartsAccel[i] = Scale.linear_scale( bodyPartsAccel[i], 10, this.bodyPartsJerkMax[i], 0, 1 ); 
+                i++;
+            });
+    
+            return bodyPartsAccel;
+        }
+
+    //note, perhaps this should be a mix of the actual avg. of skeleton vs. some bodypart avg.
+    getMaxBodyPartJerk( bodyPartIndices: number[], minConfidence : number = 0.45 ) : number
+    {
+        let max : number = 0; 
+        let count : number = 0;
+
+        for(let i = 0 ; i<bodyPartIndices.length; i++)
+        {
+               if( this.getAvgScore(bodyPartIndices[i]) >= minConfidence )
+               {
+                    let x = this.avgKeyPoints.getJerkX(bodyPartIndices[i]) ;
+                    let y = this.avgKeyPoints.getJerkY(bodyPartIndices[i]) ;
+                    let jerk = x*0.5 + y*0.5;
+                    if( !isNaN(jerk) )
+                    { 
+                        max = Math.max(max, x);
+                        max = Math.max(max, y);
+
+                        count++; 
+                    }
+                }
+        } 
+        //as it is an average, most things won't go to 0 or 1, so just expand the middle
+        // sum = Scale.linear_scale( sum, 0.1, 0.85, 0, 1 );
+
+        if(count === 0) return 0; 
+        else {
+            let v =  max;//sum / count ;
+            return v; 
+        } 
+    }
 };

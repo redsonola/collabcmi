@@ -26,7 +26,13 @@ export enum InstrumentID
     pluckedcello,
     clayDrum, 
     mutedcanPercussion, 
-    dumbekPercussion
+    dumbekPercussion, 
+    flute, 
+    marimba, 
+    contrabassoon, 
+    clarinet, 
+    trumpet, 
+    bassClarinetHarmonics
 }
 
 export enum SoundMessageType
@@ -133,9 +139,12 @@ export class TransportTime
 export class SamplerWithID extends Tone.Sampler
 {
     id : InstrumentID = -1;
+    playNote : boolean = false;
+    justPlayed : boolean = false; 
+    timeReleased : number = 0;  
 }
 
-class SamplerFactory 
+export class SamplerFactory 
 {
     type : string = ""; 
     constructor(  ) 
@@ -189,13 +198,29 @@ class SamplerFactory
         {
             return this.loadPluckedCelloSampler();
         }
-        else if( this.type == "clay drum" )
+        else if( this.type === "clay drum" )
         {
             return this.loadClayDrumSampler(); 
         }
-        else 
+        else if( this.type === "cello loud" || this.type === "cello" )
         {
             return this.loadCelloLoudSampler();
+        }
+        else if( type === "flute" ) {
+            return this.loadFluteSampler();
+        }
+        else if( type === "contrabassoon" ) {
+            return this.loadContraBassoonSampler();
+        }
+        else if( type === "clarinet" ) {
+            return this.loadClarinetSampler();
+        }
+        else if( type === "trumpet" )
+        {
+            return this.loadTrumpetSampler(); 
+        }
+        else{ // ( type === "marimba" ) 
+            return this.loadMarimbaSampler();
         }
     }
 
@@ -375,6 +400,133 @@ class SamplerFactory
         sampler.volume.rampTo(7); 
         return sampler; 
     }
+
+    loadFluteSampler() : SamplerWithID
+    {
+        let sampler : SamplerWithID; 
+
+        //todo -- add the rest of the samples
+        sampler = new SamplerWithID({
+            "A4": "flute_A4_1_piano_normal.mp3",
+            "C4": "flute_C4_1_piano_normal.mp3",
+            "D4": "flute_D4_05_piano_normal.mp3",
+            "E4": "flute_E4_very-long_pianissimo_normal.mp3"
+        },
+        {
+            baseUrl: "./audio_samples/flute/"
+        });
+        sampler.id = InstrumentID.flute;
+        return sampler; 
+    }
+
+    loadContraBassoonSampler() : SamplerWithID
+    {
+        let sampler : SamplerWithID; 
+
+        //todo -- add the rest of the samples
+        sampler = new SamplerWithID({
+            "C2": "contrabassoon_C2_15_mezzo-forte_normal.mp3",
+            "A2": "contrabassoon_A2_1_mezzo-forte_normal.mp3",
+            "B2": "contrabassoon_B2_1_mezzo-forte_normal.mp3",
+            "C3": "contrabassoon_C3_15_mezzo-forte_normal.mp3",
+            "A3": "contrabassoon_A3_1_mezzo-forte_normal.mp3",
+            "E4":  "bassoon_E4_1_piano_normal.mp3",
+            "F4" : "bassoon_F4_1_piano_normal.mp3",
+            "A4": "bassoon_A4_1_piano_normal.mp3",
+            "C5" : "bassoon_C5_1_piano_normal.mp3"
+        },
+        {
+            baseUrl: "./audio_samples/contrabassoon/"
+        });
+        sampler.id = InstrumentID.contrabassoon;
+        return sampler; 
+    }
+
+    loadClarinetSampler() : SamplerWithID
+    {
+        let sampler : SamplerWithID; 
+
+        //todo -- add the rest of the samples
+        sampler = new SamplerWithID({
+            "A3": "clarinet_A3_15_piano_normal.mp3",
+            "B3": "clarinet_B3_1_piano_normal.mp3",
+            "B4": "clarinet_B4_very-long_cresc-decresc_normal.mp3",
+            "C4": "clarinet_C4_15_piano_normal.mp3",
+            "F4": "clarinet_F4_1_piano_normal.mp3"
+        },
+        {
+            baseUrl: "./audio_samples/clarinet/"
+        });
+        sampler.id = InstrumentID.clarinet;
+        return sampler; 
+    }
+
+    //TODO: enter in these samples
+    loadMarimbaSampler() : SamplerWithID
+    {
+        let sampler : SamplerWithID; 
+
+        //todo -- add the rest of the samples
+        sampler = new SamplerWithID({
+            "A2": "255680__samulis__marimba-a2.wav",
+            "F2": "255690__samulis__marimba-f2.wav",
+            "C3": "255683__samulis__marimba-c3.wav",
+            "E3": "255688__samulis__marimba-e3.wav",
+            "B3": "255677__samulis__marimba-b3.wav",
+            "D4": "255686__samulis__marimba-d4.wav",
+            "G4": "255689__samulis__marimba-g4.wav",
+            "A4": "255679__samulis__marimba-a4.wav",
+            "E5": "255687__samulis__marimba-e5.wav"
+        },
+        {
+            baseUrl: "./audio_samples/marimba/"
+        });
+        sampler.id = InstrumentID.marimba;
+        return sampler; 
+    }
+
+    loadTrumpetSampler() : SamplerWithID
+    {
+        let sampler : SamplerWithID; 
+
+        //todo -- add the rest of the samples
+        sampler = new SamplerWithID({
+            44 : "trumpet_Gs2_long_pianissimo_normal.mp3",
+            "G3": "trumpet_G3_1_forte_normal.mp3",
+            "B3": "trumpet_B3_1_forte_normal.mp3",
+            "C4": "trumpet_C4_1_forte_normal.mp3",
+            "D4": "trumpet_D4_1_forte_normal.mp3",
+            78 : "trumpet_Fs5_very-long_fortissimo_normal.mp3",
+            "D5": "trumpet_D5_1_pianissimo_normal.mp3"
+        },
+        {
+            baseUrl: "./audio_samples/trumpet/"
+        });
+        sampler.id = InstrumentID.trumpet;
+        return sampler; 
+    }
+
+    loadBassClarinetHarmonicsSampler() : SamplerWithID
+    {
+        let sampler : SamplerWithID; 
+
+        //todo -- add the rest of the samples
+        sampler = new SamplerWithID({
+            // "A2": "bass-clarinet_As2_very-long_mezzo-piano_harmonic.mp3",
+            "A3": "bass-clarinet_A3_very-long_mezzo-piano_harmonic.mp3",
+            "C3": "bass-clarinet_C3_very-long_mezzo-piano_harmonic.mp3",
+            "D3": "bass-clarinet_D3_very-long_mezzo-piano_harmonic.mp3",
+            "B4": "bass-clarinet_B4_very-long_mezzo-piano_harmonic.mp3",
+            "D4": "bass-clarinet_D4_very-long_mezzo-piano_harmonic.mp3",
+            // "G4": "bass-clarinet_Gs4_very-long_mezzo-piano_harmonic.mp3"
+        },
+        {
+            baseUrl: "./audio_samples/BambooFluteSamples/"
+        });
+        sampler.id = InstrumentID.bassClarinetHarmonics;
+        return sampler; 
+    }
+
 }
 
 //get amplitude from waveforms
