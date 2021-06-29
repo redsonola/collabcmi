@@ -42,9 +42,9 @@
     TouchPhrasesEachBar,
   } from "../xcorrSonify";
 
-  import {
-    SynchSonifier
-  } from "../SynchSonification"
+  // import {
+  //   SynchSonifier
+  // } from "../SynchSonification"
 
   import * as Tone from "tone";
   import "../Organism01"; //turn back on for creature
@@ -172,7 +172,7 @@ import { Vector3 } from "three";
 
   let tubaSonfier: SonifierWithTuba;
   let touchMusicalPhrases: TouchPhrasesEachBar;
-  let synchSonifier : SynchSonifier;
+  // let synchSonifier : SynchSonifier;
   let musicLoaded : boolean = false;
   let toneStarted = false;  
 
@@ -208,9 +208,19 @@ import { Vector3 } from "three";
     midiFile = [new Tango332Riffs(mainVolume), new FourFloorRiffs(mainVolume)];
     midiFileBass = [new BodhranTango332(mainVolume)];
 
+
+
+        //this is the new code
+    tubaSonfier = new SonifierWithTuba(participant, mainVolume);
+    // synchSonifier = new SynchSonifier(participant, mainVolume); 
+    touchMusicalPhrases = new TouchPhrasesEachBar(
+      tubaSonfier,
+      midiFile,
+      midiFileBass
+    );
+
     //note: using a for-loop for this caused my browser to crash! WTF MATE GOOD TIMES.
     Tone.Transport.start();
-
     await midiFile[0].parseAllFiles();
     midiFile[0].startLoop();
     await midiFile[1].parseAllFiles();
@@ -218,14 +228,6 @@ import { Vector3 } from "three";
     await midiFileBass[0].parseAllFiles();
     midiFileBass[0].startLoop();
 
-    //this is the new code
-    tubaSonfier = new SonifierWithTuba(participant, mainVolume);
-    synchSonifier = new SynchSonifier(participant, mainVolume); 
-    touchMusicalPhrases = new TouchPhrasesEachBar(
-      tubaSonfier,
-      midiFile,
-      midiFileBass
-    );
     musicLoaded = true; 
   }
 
@@ -342,7 +344,8 @@ import { Vector3 } from "three";
       if(tubaSonfier && touchMusicalPhrases && peerIds.length > 0){
 
       //update music 1st
-      if( musicLoaded ) {
+      if( musicLoaded ) 
+      {
         tubaSonfier.update(
           yposOfTouch,
           xCorrTouching,
@@ -355,18 +358,22 @@ import { Vector3 } from "three";
           yposOfTouch,
           combinedWindowedScore
         );
-        synchSonifier.update( 
-          matchScore, 
-          participant.getAvgBodyPartsLocation(), 
-          xcorrDx, 
-          participant.getAvgBodyPartsJerk(), 
-          friendParticipant.getAvgBodyPartsJerk(), 
-          dxAvg, windowedVarScore, 
-          participant.getAvgBodyPartsAccel() );
+        //  synchSonifier.update( 
+        //   matchScore, 
+        //   participant.getAvgBodyPartsLocation(), 
+        //   xcorrDx, 
+        //   participant.getAvgBodyPartsJerk(), 
+        //   friendParticipant.getAvgBodyPartsJerk(), 
+        //   dxAvg, windowedVarScore, 
+        //   participant.getAvgBodyPartsAccel() );
       }
-    }
 
-    } catch (ex) {
+    }
+      
+
+    } 
+    catch (ex) 
+    {
       console.error("***** FIXME *****");
       console.error("***** check if there's one participant and don't let this break *****");
       console.error(ex);
@@ -392,7 +399,9 @@ import { Vector3 } from "three";
     {
       alert("We detected that you were on a suboptimal browser for Skin Hunger. In order to fully experience our installation, we suggest using Chrome as your web browser. All features may not be fully functional or you might suffer performance problems.");
     }
-
+    mainVolume = new MainVolume((val) => {
+      volumeMeterReading = val;
+    });
     let stopped = false;
     const posenet: PosenetSetup<any> = initPosenet();
 
@@ -403,9 +412,7 @@ import { Vector3 } from "three";
     {
       dxAvg.push(0); 
     }
-    mainVolume = new MainVolume((val) => {
-      volumeMeterReading = val;
-    });
+
 
     //this is from my audiovisual project
     // midiFile = [new Tango332Riffs(mainVolume), new FourFloorRiffs(mainVolume)];
