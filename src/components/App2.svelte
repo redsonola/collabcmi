@@ -42,9 +42,9 @@
     TouchPhrasesEachBar,
   } from "../xcorrSonify";
 
-  // import {
-  //   SynchSonifier
-  // } from "../SynchSonification"
+  import {
+    SynchSonifier
+  } from "../SynchSonification"
 
   import * as Tone from "tone";
   import "../Organism01"; //turn back on for creature
@@ -172,7 +172,7 @@ import { Vector3 } from "three";
 
   let tubaSonfier: SonifierWithTuba;
   let touchMusicalPhrases: TouchPhrasesEachBar;
-  // let synchSonifier : SynchSonifier;
+  let synchSonifier : SynchSonifier;
   let musicLoaded : boolean = false;
   let toneStarted = false;  
 
@@ -212,7 +212,7 @@ import { Vector3 } from "three";
 
         //this is the new code
     tubaSonfier = new SonifierWithTuba(participant, mainVolume);
-    // synchSonifier = new SynchSonifier(participant, mainVolume); 
+    synchSonifier = new SynchSonifier(participant, mainVolume); 
     touchMusicalPhrases = new TouchPhrasesEachBar(
       tubaSonfier,
       midiFile,
@@ -358,14 +358,15 @@ import { Vector3 } from "three";
           yposOfTouch,
           combinedWindowedScore
         );
-        //  synchSonifier.update( 
-        //   matchScore, 
-        //   participant.getAvgBodyPartsLocation(), 
-        //   xcorrDx, 
-        //   participant.getAvgBodyPartsJerk(), 
-        //   friendParticipant.getAvgBodyPartsJerk(), 
-        //   dxAvg, windowedVarScore, 
-        //   participant.getAvgBodyPartsAccel() );
+        
+        synchSonifier.update( 
+          matchScore, 
+          participant.getAvgBodyPartsLocation(), 
+          xcorrDx, 
+          participant.getAvgBodyPartsJerk(), 
+          friendParticipant.getAvgBodyPartsJerk(), 
+          dxAvg, windowedVarScore, 
+          participant.getAvgBodyPartsAccel() );
       }
 
     }

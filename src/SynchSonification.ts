@@ -931,49 +931,39 @@ export class SynchSonifier {
             });
         }
 
-        let frequency = [2,   4,  4.5,   5,    4.5,  4,     4,  4, 4];
-        let chorusDelay =  [0.25, 0.5,  0.75,  1,    1,    1,   1.5,   1.5,  1];
-        let depth =  [0.25,  0.25, 0.3, 0.4,  0.4,  0.65, 0.75, 0.85,  1];
-        this.chorus = [];
-        for( let i=0; i<chorusDelay.length; i++ ){
-            this.chorus.push( new Tone.Chorus( frequency[i], chorusDelay[i], depth[i] ).connect( mainVolume.getVolume() ) );
-            this.chorus[i].wet.value = 0; 
-            this.feedbackDelay.forEach((delay)=>{
-                 {
-                    delay.connect(this.chorus[i]);
-                 } 
-            });
-            //put chorus on them tho
-            this.longPlayingNoteSamplers[2].getOut().forEach( (out)=> {out.connect(this.chorus[i]) }); 
-            this.longPlayingNoteSamplers[3].getOut().forEach( (out)=> {out.connect(this.chorus[i]) }); 
+        // let frequency = [2,   4,  4.5,   5,    4.5,  4,     4,  4, 4];
+        // let chorusDelay =  [0.25, 0.5,  0.75,  1,    1,    1,   1.5,   1.5,  1];
+        // let depth =  [0.25,  0.25, 0.3, 0.4,  0.4,  0.65, 0.75, 0.85,  1];
+        // this.chorus = [];
+        // for( let i=0; i<chorusDelay.length; i++ ){
+        //     this.chorus.push( new Tone.Chorus( frequency[i], chorusDelay[i], depth[i] ).connect( mainVolume.getVolume() ) );
+        //     this.chorus[i].wet.value = 0; 
+        //     this.feedbackDelay.forEach((delay)=>{
+        //          {
+        //             delay.connect(this.chorus[i]);
+        //          } 
+        //     });
+        //     //put chorus on them tho
+        //     this.longPlayingNoteSamplers[2].getOut().forEach( (out)=> {out.connect(this.chorus[i]) }); 
+        //     this.longPlayingNoteSamplers[3].getOut().forEach( (out)=> {out.connect(this.chorus[i]) }); 
 
-        }
+        // }
 
-        // MAX_VOLUME : number = 1; //maybe change even higher         //was 20
-        // FLUTE_MAX_VOLUME : number =2; //maybe change even higher   //was 30
-        // BASSOON_MAX_VOLUME : number = 1; 
-        // REALMAXVOL : number = -18; 
         //bc not going through delays, have to be louder
         this.longPlayingNoteSamplers[2].setMaxVolume( 30 ); 
         this.longPlayingNoteSamplers[3].setRealMaxVolume( -10 ); 
 
 
         //ugh bs
-        this.octaves = []; 
-        this.octaves.push(0); 
-        this.octaves.push(-1); 
-        this.octaves.push(0); 
-        this.octaves.push(0); 
-        this.octaves.push(-2); 
+        this.octaves = [0, -1, 0, 0, -2]; 
 
-
-        let startOctave = -1; 
-        let endOctave = 1;
-        this.melodiesForBusierTimes = [];
-        for(let i=startOctave; i<=endOctave; i++)
-        {
-            this.melodiesForBusierTimes.push( new MelodiesForBusierTimes(mainVolume, i) );
-        }
+        // let startOctave = -1; 
+        // let endOctave = 1;
+        // this.melodiesForBusierTimes = [];
+        // for(let i=startOctave; i<=endOctave; i++)
+        // {
+        //     this.melodiesForBusierTimes.push( new MelodiesForBusierTimes(mainVolume, i) );
+        // }
  
 
         this.masterCompressor = new Tone.Compressor(-20, 1);
@@ -991,7 +981,7 @@ export class SynchSonifier {
             this.samplers[i].connect( mainVolume.getVolume() ); 
         }
 
-        this.masterCompressor.connect(mainVolume.getVolume());
+        // this.masterCompressor.connect(mainVolume.getVolume());
         // this.testSynth = new Tone.Synth().connect(mainVolume.getVolume());
 
 
@@ -1385,7 +1375,7 @@ export class SynchSonifier {
         this.updateMeasureLength(); 
         this.updateAvgDx(now, avgDx); 
         this.updateFeedbackDelay(timeToUpdate, accel);
-        this.updateChorus(timeToUpdate, match); 
+        // this.updateChorus(timeToUpdate, match); 
         this.updateAmpEnvelopes(timeToUpdate, accel);
 
         //TODO: quantize
