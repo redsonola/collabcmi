@@ -16,6 +16,8 @@ import type { MainVolume } from "./midiConversion"
 import * as MovementData from './scaleBasedOnMovementData';
 import { InstrumentID, SamplerWithID, SamplerFactory } from './xcorrSonify';
 
+let TAKE_OUT_HIGH_CPU_CALLS : boolean = true; 
+
 // class SamplerFactory 
 // {
 //     type : string = ""; 
@@ -597,36 +599,34 @@ class MelodiesForBusierTimes
         //this.highWinVarLongPlayingNoteSamplers.push( new LongPlayingNoteSampler( mainVolume, "contrabassoon" ) ); 
         // this.highWinVarLongPlayingNoteSamplers.push( new LongPlayingNoteSampler( mainVolume, "clarinet" ) ); 
         this.highWinVarLongPlayingNoteSamplers.push( new LongPlayingNoteSamplerSpaceBtw( mainVolume, "flute" ) ); 
-        this.highWinVarLongPlayingNoteSamplers.push( new LongPlayingNoteSamplerSpaceBtw( mainVolume, "flute" ) ); 
-        this.highWinVarLongPlayingNoteSamplers.push( new LongPlayingNoteSamplerSpaceBtw( mainVolume, "flute" ) ); 
-        this.highWinVarLongPlayingNoteSamplers.push( new LongPlayingNoteSamplerSpaceBtw( mainVolume, "flute" ) ); 
+
+        if( !TAKE_OUT_HIGH_CPU_CALLS )
+        {
+            this.highWinVarLongPlayingNoteSamplers.push( new LongPlayingNoteSamplerSpaceBtw( mainVolume, "flute" ) ); 
+            this.highWinVarLongPlayingNoteSamplers.push( new LongPlayingNoteSamplerSpaceBtw( mainVolume, "flute" ) ); 
+            this.highWinVarLongPlayingNoteSamplers.push( new LongPlayingNoteSamplerSpaceBtw( mainVolume, "flute" ) ); 
+        }
 
         this.whichOctave = whichOctave;
         this.dxCutOff = MovementData.getMidiFileDxMidwayBtwMaxAndMedian(); 
 
-        // this.feedbackDelay = [];
-        // let delayTimes = ["2n", "4n", "8n", "16n"];
-        // for( let i=0; i<delayTimes.length; i++ ){
-        //     this.feedbackDelay.push( new Tone.FeedbackDelay(delayTimes[i], 0.5).connect( mainVolume.getVolume() ) );
-        //     this.feedbackDelay[0].wet.value = 0; 
-        //     this.highWinVarLongPlayingNoteSamplers.forEach((sampler)=>{
-        //         sampler.getOut().forEach( (out)=> {out.connect(this.feedbackDelay[i]) }); 
-        //     });
-        // }
-
-        this.feedbackDelay = [];
-        let delayTimes = ["2n", "4n", "8n", "16n"];
-        for( let i=0; i<delayTimes.length; i++ ){
-            this.feedbackDelay.push( new Tone.FeedbackDelay(delayTimes[i], 0.5) );
-            this.feedbackDelay[i].wet.value = 0; 
-            this.highWinVarLongPlayingNoteSamplers.forEach((sampler)=>{
-                sampler.getOut().forEach( (out)=> {out.connect(this.feedbackDelay[i]).connect( mainVolume.getVolume() ) }); 
-            });
+        //TOOK THIS OUT -- maybe put back for later
+        if( !TAKE_OUT_HIGH_CPU_CALLS )
+        {
+            this.feedbackDelay = [];
+            let delayTimes = ["2n", "4n", "8n", "16n"];
+            for( let i=0; i<delayTimes.length; i++ ){
+                this.feedbackDelay.push( new Tone.FeedbackDelay(delayTimes[i], 0.5) );
+                this.feedbackDelay[i].wet.value = 0; 
+                this.highWinVarLongPlayingNoteSamplers.forEach((sampler)=>{
+                    sampler.getOut().forEach( (out)=> {out.connect(this.feedbackDelay[i]).connect( mainVolume.getVolume() ) }); 
+                });
+            }
+            this.setMaxVolume(2);
+            this.setMaxVolumeFlute(18); //15
+            this.setMaxVolumeBassoon(2)
+            this.setRealMax(8);
         }
-        this.setMaxVolume(2);
-        this.setMaxVolumeFlute(18); //15
-        this.setMaxVolumeBassoon(2)
-        this.setRealMax(8);
     }
 
     setDXCutOff( cutOff : number )
@@ -870,9 +870,6 @@ export class SynchSonifier {
 
 
     // tubeSampler2 :  Tone.Sampler; 
-    masterCompressor : Tone.Compressor;
-    convolver1s : Tone.Convolver[];
-    // convolver2s : Tone.Convolver[];
     samplersLoaded : boolean = false; 
     playingNote : number = -1;
 
@@ -880,10 +877,7 @@ export class SynchSonifier {
 
     ampEnvs : Tone.AmplitudeEnvelope[];
 
-    limiter : Tone.Limiter;
-
     whichIsPlayingIndex : number = 0; 
-
     measureLen : number; 
     lastTimeCheckedDxMax : number; 
     curAvgDx : number; 
@@ -931,46 +925,33 @@ export class SynchSonifier {
             });
         }
 
-        // let frequency = [2,   4,  4.5,   5,    4.5,  4,     4,  4, 4];
-        // let chorusDelay =  [0.25, 0.5,  0.75,  1,    1,    1,   1.5,   1.5,  1];
-        // let depth =  [0.25,  0.25, 0.3, 0.4,  0.4,  0.65, 0.75, 0.85,  1];
-        // this.chorus = [];
-        // for( let i=0; i<chorusDelay.length; i++ ){
-        //     this.chorus.push( new Tone.Chorus( frequency[i], chorusDelay[i], depth[i] ).connect( mainVolume.getVolume() ) );
-        //     this.chorus[i].wet.value = 0; 
-        //     this.feedbackDelay.forEach((delay)=>{
-        //          {
-        //             delay.connect(this.chorus[i]);
-        //          } 
-        //     });
-        //     //put chorus on them tho
-        //     this.longPlayingNoteSamplers[2].getOut().forEach( (out)=> {out.connect(this.chorus[i]) }); 
-        //     this.longPlayingNoteSamplers[3].getOut().forEach( (out)=> {out.connect(this.chorus[i]) }); 
-
-        // }
-
         //bc not going through delays, have to be louder
         this.longPlayingNoteSamplers[2].setMaxVolume( 30 ); 
         this.longPlayingNoteSamplers[3].setRealMaxVolume( -10 ); 
 
 
         //ugh bs
-        this.octaves = [0, -1, 0, 0, -2]; 
+                //TOOK THIS OUT -- maybe put back for later            
+        let startOctave = -1; 
+        let endOctave = 1;
+        if( !TAKE_OUT_HIGH_CPU_CALLS )
+        {
+            startOctave = -1; 
+            endOctave = 1;
+        }
+        else
+        {
+            startOctave = 0;
+            endOctave = 0;
+        }
 
-        // let startOctave = -1; 
-        // let endOctave = 1;
-        // this.melodiesForBusierTimes = [];
-        // for(let i=startOctave; i<=endOctave; i++)
-        // {
-        //     this.melodiesForBusierTimes.push( new MelodiesForBusierTimes(mainVolume, i) );
-        // }
+        this.melodiesForBusierTimes = [];
+        for(let i=startOctave; i<=endOctave; i++)
+        {
+            this.melodiesForBusierTimes.push( new MelodiesForBusierTimes(mainVolume, i) );
+        }
  
-
-        this.masterCompressor = new Tone.Compressor(-20, 1);
-        this.limiter = new Tone.Limiter(-6);
-
         this.ampEnvs = [];
-        this.convolver1s = [];
         this.vibratos = [];
         this.samplersWaveForms = []; 
         let i = 0;  
