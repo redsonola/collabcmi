@@ -62,6 +62,13 @@ import { Vector3 } from "three";
   let theirVideoUnsubscribe;
   // const videoSources = ["webcam", "/spacebtwTest.mp4", "/synchTestVideo.mp4"];
 
+  enum WhichPiece {
+    SKIN_HUNGER = 0, 
+    SPACE_BTW = 1,
+    TUG_OF_WAR = 2
+  } 
+  export let whichPiece : WhichPiece = WhichPiece.SKIN_HUNGER; //which piece are we realizing in this main 
+
   let theirVideoElement;
   let muteUrl = "./icons/noun_mic_283245_grey.png"; 
   let unmuteURL = "./icons/noun_Mute_2692102_grey.png";
@@ -205,28 +212,37 @@ import { Vector3 } from "three";
   async function loadMusic (mainVolume : MainVolume)
   {
     //this is from my audiovisual project
-    midiFile = [new Tango332Riffs(mainVolume), new FourFloorRiffs(mainVolume)];
-    midiFileBass = [new BodhranTango332(mainVolume)];
-
 
 
         //this is the new code
-    tubaSonfier = new SonifierWithTuba(participant, mainVolume);
-    synchSonifier = new SynchSonifier(participant, mainVolume); 
-    touchMusicalPhrases = new TouchPhrasesEachBar(
-      tubaSonfier,
-      midiFile,
-      midiFileBass
-    );
+    
+    if( whichPiece === WhichPiece.SKIN_HUNGER)
+    {
 
-    //note: using a for-loop for this caused my browser to crash! WTF MATE GOOD TIMES.
-    Tone.Transport.start();
-    await midiFile[0].parseAllFiles();
-    midiFile[0].startLoop();
-    await midiFile[1].parseAllFiles();
-    midiFile[1].startLoop();
-    await midiFileBass[0].parseAllFiles();
-    midiFileBass[0].startLoop();
+      midiFile = [new Tango332Riffs(mainVolume), new FourFloorRiffs(mainVolume)];
+      midiFileBass = [new BodhranTango332(mainVolume)];
+
+      tubaSonfier = new SonifierWithTuba(participant, mainVolume);
+      touchMusicalPhrases = new TouchPhrasesEachBar(
+        tubaSonfier,
+        midiFile,
+        midiFileBass
+      );
+
+      //note: using a for-loop for this caused my browser to crash! WTF MATE GOOD TIMES.
+      Tone.Transport.start();
+      await midiFile[0].parseAllFiles();
+      midiFile[0].startLoop();
+      await midiFile[1].parseAllFiles();
+      midiFile[1].startLoop();
+      await midiFileBass[0].parseAllFiles();
+      midiFileBass[0].startLoop();
+    }
+    else if(whichPiece === WhichPiece.SPACE_BTW )
+    {
+      synchSonifier = new SynchSonifier(participant, mainVolume); 
+      //load other midi files tbd
+    }
 
     musicLoaded = true; 
   }
@@ -341,35 +357,40 @@ import { Vector3 } from "three";
         combinedWindowedScore = ( combinedWindowedScore + friendParticipant.getMaxBodyPartDx() ) / 2;
       }
 
+      //I will fix this. this needs to be refactored out. will def. do this at some point.
       if(tubaSonfier && touchMusicalPhrases && peerIds.length > 0){
 
-      //update music 1st
-      if( musicLoaded ) 
-      {
-        tubaSonfier.update(
-          yposOfTouch,
-          xCorrTouching,
-          justStartedTouching,
-          participant.justStoppedTouching(),
-          howLongTouch
-        );
-        touchMusicalPhrases.update(
-          justStartedTouching,
-          yposOfTouch,
-          combinedWindowedScore
-        );
-        
-        synchSonifier.update( 
-          matchScore, 
-          participant.getAvgBodyPartsLocation(), 
-          xcorrDx, 
-          participant.getAvgBodyPartsJerk(), 
-          friendParticipant.getAvgBodyPartsJerk(), 
-          dxAvg, windowedVarScore, 
-          participant.getAvgBodyPartsAccel() );
+        //update music 1st
+        if( musicLoaded ) 
+        {
+          tubaSonfier.update(
+            yposOfTouch,
+            xCorrTouching,
+            justStartedTouching,
+            participant.justStoppedTouching(),
+            howLongTouch
+          );
+          touchMusicalPhrases.update(
+            justStartedTouching,
+            yposOfTouch,
+            combinedWindowedScore
+          );
+        }
       }
-
-    }
+      else if( synchSonifier )
+      {
+        if( musicLoaded ) 
+        {
+          synchSonifier.update( 
+            matchScore, 
+            participant.getAvgBodyPartsLocation(), 
+            xcorrDx, 
+            participant.getAvgBodyPartsJerk(), 
+            friendParticipant.getAvgBodyPartsJerk(), 
+            dxAvg, windowedVarScore, 
+            participant.getAvgBodyPartsAccel() );
+        }
+      }
       
 
     } 
@@ -413,22 +434,6 @@ import { Vector3 } from "three";
     {
       dxAvg.push(0); 
     }
-
-
-    //this is from my audiovisual project
-    // midiFile = [new Tango332Riffs(mainVolume), new FourFloorRiffs(mainVolume)];
-    // midiFileBass = [new BodhranTango332(mainVolume)];
-
-    //note: using a for-loop for this caused my browser to crash! WTF MATE GOOD TIMES.
-    // Tone.Transport.start();
-
-    //this is the new code
-    // tubaSonfier = new SonifierWithTuba(participant, mainVolume);
-    // touchMusicalPhrases = new TouchPhrasesEachBar(
-    //   tubaSonfier,
-    //   midiFile,
-    //   midiFileBass
-    // );
 
     turnUpVolume = () => 
     {
@@ -632,11 +637,12 @@ import { Vector3 } from "three";
     goLoop(async () => {
       if (stopped) return goLoop.STOP_LOOP;
       await sleep();
-      if (touchMusicalPhrases) {
+      if (touchMusicalPhrases) { //if this is skin hunger.
         touchMusicalPhrases.play();
       }
 
       //********** get the music messages HERE ********************//
+      //note that this needs to be turned on / uncommented in the sonifier class as well
       // if( tubaSonfier )
       // {
       //   tubaSonfier.updateAmplitudeMessages();
