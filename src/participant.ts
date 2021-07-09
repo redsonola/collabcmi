@@ -299,6 +299,22 @@ export class Participant extends EventEmitter {
         return performance.now();
     }
 
+    getVerticalityCorrelation() : number
+    {
+        if(this.verticalityCorrelation)
+            return this.verticalityCorrelation.getCorrelation(); 
+        else return 0; 
+    }
+
+    getVerticalAngleMeasure() : number
+    {
+        if( this.verticalAngle )
+        {
+            return this.verticalAngle.getAngle(); 
+        }
+        else return 0; 
+    }
+
     //update the keypoints from the pose and also update other shiz related to keypoints. 
     addKeypoint(keypoints: Keypoint[], hasFriend : boolean, offsetPos : THREE.Vector3, isLocalParticipant : boolean): void {
 
@@ -318,13 +334,13 @@ export class Participant extends EventEmitter {
         this.keyPointBuffer.add(keypoints);
         this.avgKeyPoints.update(keypoints, now);
         this.updateTouchingFriend(offsetPos, hasFriend);
-        this.verticalAngle.update( this.areTouching() ); 
+        this.verticalAngle.update(); 
         this.fpsTracker.refreshLoop(); 
         this.emit(ParticipantEvents.KeypointsAdded, this.participantID, keypoints);
         if( hasFriend && isLocalParticipant )
         {
-            this.xCorrDistance(this.friendParticipant); //update xcorr velocity/distance
             this.updatePoseSimilarity(this.friendParticipant);
+            this.verticalityCorrelation?.update(); 
         }
 
         let filename = "xCorrTest.csv";

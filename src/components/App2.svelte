@@ -158,6 +158,8 @@ import { Vector3 } from "three";
   let matchScore = 0;
   let xCorrScore = 0;
   let synchScore = 0;
+  let verticalityCorrelation = 0;
+  let verticalAngle = 0; 
 
   //measure of movement 
   let windowedVarScore = 0; // really dx as found it to be a better measure of movement than the variance for this app.
@@ -301,6 +303,15 @@ import { Vector3 } from "three";
     }
 
     try {
+      //pearson correlation is -1 to 1 -- just scale to 0 to 1 to display in debugging window.
+      verticalityCorrelation = Scale.linear_scale( participant.getVerticalityCorrelation(), -1, 1, 0, 1);
+      
+      // leaving in here for debugging
+      // verticalAngle = participant.getVerticalAngleMeasure();
+      // console.log( { verticalAngle } );
+
+      participant.xCorrDistance(friendParticipant); //update xcorr velocity/distance
+
       const r0 = findRadiusOfKeypoint(participant, 0);
       if (!Number.isNaN(r0)) {
         corrData = pose.keypoints
@@ -476,7 +487,7 @@ import { Vector3 } from "three";
         switch (message.type) {
           case "Pose": {
             friendParticipant.setSize(message.size.width, message.size.height);
-            friendParticipant.addKeypoint(message.pose.keypoints,hasFriend,three.getOffsetVidPosition(true), false);
+            friendParticipant.addKeypoint(message.pose.keypoints, hasFriend, three.getOffsetVidPosition(true), false);
             keypointsUpdated(conn.peer, message.pose, message.size);
             break;
           }
@@ -939,8 +950,8 @@ import { Vector3 } from "three";
       <input type="button" on:click={() => webcamVideo.setSource(source)} value="{source}" />
     {/each}
     <br/> -->
-  Data connections: {Object.keys(dataConnections).join(', ')}<br />
-
+  Data connections: {Object.keys(dataConnections).join(', ')}<br />  
+  <ScoreBar label="verticality correlation:" score={verticalityCorrelation} />
   <ScoreBar label="skeleton touching:" score={skeletonTouching} />
     <ScoreBar label="how long touching:" score={howLongTouch} />
     <ScoreBar label="how much touching:" score={howMuchTouch} />

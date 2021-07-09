@@ -43,18 +43,18 @@ export class VerticalityAngle
 
   }
 
-  midpoint( points: { x: number, y: number, score: number }[], i : number, j : number ) : { x: number, y: number } 
+  midpoint( points: { position: {x: number, y: number}, score: number }[], i : number, j : number ) : { x: number, y: number } 
   {
     let pt : { x: number, y: number } = {x:0, y:0}; 
-    pt.x = ( points[i].x - points[j].x  ) / 2;
-    pt.y = ( points[i].y - points[j].y  ) / 2;
+    pt.x = ( points[i].position.x - points[j].position.x  ) / 2;
+    pt.y = ( points[i].position.y - points[j].position.y  ) / 2;
     return pt; 
   }
 
-  update( touching: boolean )
+  update()
   {
     let points = this.keypoints.top(); 
-    if( !this.enoughData(points) || !touching )
+    if( !this.enoughData(points) )
       return; 
 
     let hip = this.midpoint(points, PoseIndex.rightHip, PoseIndex.leftHip);
@@ -99,7 +99,7 @@ export class VerticalityCorrelation
     for( let i=0; i<vAngles.length; i++ )
     {
       this.avgAngles.push( new AveragingFilter( BUFFER_SIZE, 1 ) ); 
-      this.avgAngles.push( new AveragingFilter( BUFFER_SIZE ) );       
+      this.angles.push( new CircularBuffer( BUFFER_SIZE ) );       
     }
   }
 
