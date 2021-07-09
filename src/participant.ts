@@ -16,6 +16,7 @@ import { AppendFunction, deferredFile } from './fileApis';
 import { recordBodyPartsJerkRaw, recordKeypoints } from './persistedFlags';
 import { appStartTimestamp } from './appStartTimestamp';
 import { EventEmitter } from "eventemitter3"; //note Brent added this -- it emits events that's all I know.
+import { VerticalityAngle, VerticalityCorrelation  } from './Verticality'; 
 
 
 // import { Buffer } from "buffer";
@@ -141,7 +142,10 @@ export class Participant extends EventEmitter {
     winVarScaleMax : number = 1;
 
     touch: SkeletonTouch = new SkeletonTouch();
-    intersection: SkeletionIntersection;;
+    intersection: SkeletionIntersection;
+
+    verticalAngle : VerticalityAngle; 
+    verticalityCorrelation : VerticalityCorrelation | null = null; 
 
     constructor() {
         super(); 
@@ -195,6 +199,9 @@ export class Participant extends EventEmitter {
 
 
         this.avgKeyPoints = new AverageFilteredKeyPoints();
+        this.verticalAngle = new VerticalityAngle(this.avgKeyPoints, this.minConfidenceScore); 
+
+    
 
         this.fpsTracker = new FPSTracker();
 
@@ -264,11 +271,15 @@ export class Participant extends EventEmitter {
         this.intersection = new SkeletionIntersection(this);
     }
 
-    
+    getVerticalAngle() : VerticalityAngle
+    {
+        return this.verticalAngle; 
+    }    
 
     addFriendParticipant(p: Participant) {
         this.friendParticipant = p;
         this.intersection.setFriend(p.getSkeletonIntersection());
+        this.verticalityCorrelation = new VerticalityCorrelation([ this.verticalAngle, p.getVerticalAngle() ]); 
     }
 
     getSkeletonIntersection() {
@@ -289,7 +300,7 @@ export class Participant extends EventEmitter {
     }
 
     //update the keypoints from the pose and also update other shiz related to keypoints. 
-    addKeypoint(keypoints: Keypoint[]): void {
+    addKeypoint(keypoints: Keypoint[], hasFriend : boolean, offsetPos : THREE.Vector3, isLocalParticipant : boolean): void {
 
         let now : number = this.now(); //note: maybe want to do this in main.
         if( keypoints === null ) return; 
@@ -306,10 +317,15 @@ export class Participant extends EventEmitter {
 
         this.keyPointBuffer.add(keypoints);
         this.avgKeyPoints.update(keypoints, now);
-
+        this.updateTouchingFriend(offsetPos, hasFriend);
+        this.verticalAngle.update( this.areTouching() ); 
         this.fpsTracker.refreshLoop(); 
-
         this.emit(ParticipantEvents.KeypointsAdded, this.participantID, keypoints);
+        if( hasFriend && isLocalParticipant )
+        {
+            this.xCorrDistance(this.friendParticipant); //update xcorr velocity/distance
+            this.updatePoseSimilarity(this.friendParticipant);
+        }
 
         let filename = "xCorrTest.csv";
         

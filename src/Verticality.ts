@@ -51,7 +51,7 @@ export class VerticalityAngle
     return pt; 
   }
 
-  update(touching: boolean, whereTouching: { x: number, y: number } )
+  update( touching: boolean )
   {
     let points = this.keypoints.top(); 
     if( !this.enoughData(points) || !touching )

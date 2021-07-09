@@ -183,8 +183,6 @@ import { Vector3 } from "three";
   let musicLoaded : boolean = false;
   let toneStarted = false;  
 
-
-
   let isChrome = !!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime);
 
   var connectToRandomPartner = (e) => {}; //function to connect to a random partner
@@ -255,11 +253,13 @@ import { Vector3 } from "three";
     if (participant.isParticipant(particiantId)) {
       thisparticipant = participant;
       three.setWhichIsSelf( particiantId ); //figure out how to just set this once, gah.
+      friendParticipant.updateTouchingFriend(three.getOffsetVidPosition(true), hasFriend);
     } else {
       thisparticipant = friendParticipant;
+      participant.updateTouchingFriend(three.getOffsetVidPosition(false), hasFriend);
+
     }
-
-
+    
     three?.dispatch({
       type: "UpdatePose",
       targetVideoId: particiantId,
@@ -284,15 +284,8 @@ import { Vector3 } from "three";
     let justStartedTouching: boolean = false;
     let yposOfTouch: number = 0;
     let combinedWindowedScore : number = 0;
-    let offset = three.getOffsetVidPosition(false);
-    
-    //ok this is bad because it also gives the points to draw which should be a separate thing, etc. 
-    participant.updateTouchingFriend(three.getOffsetVidPosition(false), hasFriend);
-    
 
     if( peerIds.length !== 0 && hasFriend ){
-
-      friendParticipant.updateTouchingFriend(three.getOffsetVidPosition(true), hasFriend);
 
       if (participant.areTouching()) {
         skeletonTouching = 1;
@@ -308,10 +301,6 @@ import { Vector3 } from "three";
     }
 
     try {
-      // participant.xCorrPositions( friendParticipant ); //update xcorr for position
-      participant.xCorrDistance(friendParticipant); //update xcorr velocity/distance
-      participant.updatePoseSimilarity(friendParticipant);
-
       const r0 = findRadiusOfKeypoint(participant, 0);
       if (!Number.isNaN(r0)) {
         corrData = pose.keypoints
@@ -326,8 +315,6 @@ import { Vector3 } from "three";
 
         let matchMin = 0; //just cut-off lower values to create more spread in higher
         let matchMax = 0.4; //before, 0.25
-        let xCorrMin = 0.2; //-1
-        let xCorrMax = 0.9; // 0.75
 
         let avgXcorr = participant.getHighestAvgXCorrAcrossBodyParts(0.25);
         if (!Number.isNaN(avgXcorr)) {
@@ -471,7 +458,6 @@ import { Vector3 } from "three";
 
         disconnectedBySelf = false;
         hasFriend = false; 
-
     }
 
     function listenToDataConnection(conn: DataConnection) {
@@ -490,7 +476,7 @@ import { Vector3 } from "three";
         switch (message.type) {
           case "Pose": {
             friendParticipant.setSize(message.size.width, message.size.height);
-            friendParticipant.addKeypoint(message.pose.keypoints);
+            friendParticipant.addKeypoint(message.pose.keypoints,hasFriend,three.getOffsetVidPosition(true), false);
             keypointsUpdated(conn.peer, message.pose, message.size);
             break;
           }
@@ -599,7 +585,7 @@ import { Vector3 } from "three";
 
       const size = posenet.getSize();
       participant.setSize(size.width, size.height);
-      participant.addKeypoint(pose.keypoints);
+      participant.addKeypoint(pose.keypoints, hasFriend,three.getOffsetVidPosition(false), true);
       keypointsUpdated(peer.id, pose, size);
 
       // send to peers w/ data connections
