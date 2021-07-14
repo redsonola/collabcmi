@@ -1,5 +1,6 @@
 import * as PoseIndex from './poseConstants.js';
 import type {WhereTouch} from './skeletonIntersection'
+import { distance2d } from './averagedKeypoints'
 
 //represents one touch between 2 skeletons
 export class SkeletonTouch
@@ -12,7 +13,10 @@ export class SkeletonTouch
     startedTouching : number;
     
     //for a specific mapping in the music.
-    positionWhereTouch : { x:number, y:number } = {x:-1, y:-1}; 
+    positionWhereTouch : { x:number, y:number } = {x:-1, y:-1};
+    lastTouchPos :  { x:number, y:number } = {x:-1, y:-1};
+    touchVelocity : number = 0; //distance btw positionWhereTouch & previous
+
     distanceFrom : number = -1;
     // minYTouchIndex : number = -1; 
 
@@ -41,13 +45,6 @@ export class SkeletonTouch
                 this.startedTouching = performance.now();
             }
         }
-        // if( pt.y > 0 && (this.minYTouch < pt.y || this.minYTouch < 0 ) )
-        // {
-        //     this.minYTouch = pt.y;
-        //     this.minYTouchIndex = this.indicesTouching.length-1; 
-        // }
-        // console.log("touching!"); 
-        // console.log(this.indicesTouching); 
     }
 
     //try this for now.
@@ -60,12 +57,32 @@ export class SkeletonTouch
     addWhereTouch(whereTouch : WhereTouch)
     {
         //dummy values
+        if( this.prevTouching )
+        {
+            this.lastTouchPos = this.positionWhereTouch;
+        }
+        else 
+        { 
+            this.lastTouchPos = {x:-1, y:-1};
+            this.touchVelocity = 0;  
+        }
+
         this.positionWhereTouch = whereTouch.intersectPoint;
         this.distanceFrom = whereTouch.dist; 
         for(let i=0; i<whereTouch.myIndex.length; i++)
         {
             this.addTouch( whereTouch.myIndex[i], whereTouch.theirIndex[i] ); 
         }
+
+        if( this.lastTouchPos.x !== -1 )
+        {
+            this.touchVelocity = distance2d( this.positionWhereTouch.x, this.positionWhereTouch.y, this.lastTouchPos.x, this.lastTouchPos.y ); 
+        }
+    }
+
+    getTouchVelocity() : number
+    {
+        return this.touchVelocity; 
     }
 
     getTouchPosition() : {x: number, y: number}

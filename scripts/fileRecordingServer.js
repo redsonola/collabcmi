@@ -80,10 +80,9 @@ app.post("/api/write-recording", async (req, res) => {
 
 app.get("/send-osc", function(httpRequest, httpResponse, next)
 { 
-  osc?.send( new OSC.Message( '/verticalityCorr', httpRequest.query.argument), { port: 8998 } ); 
+  osc?.send( new OSC.Message( httpRequest.query.addr, httpRequest.query.argument), { port: 8998 } ); 
   httpResponse.send("OK");
 });
-
 
 const cert = fs.readFileSync('./snowpack.crt');
 const key = fs.readFileSync('./snowpack.key');

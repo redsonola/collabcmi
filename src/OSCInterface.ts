@@ -16,7 +16,7 @@ export function sendOSC(addr: string, arg:number)
 {
   axios({
     method: 'get',
-    url: "https://localhost:3000/send-osc?argument=" + arg,
+    url: "https://localhost:3000/send-osc?addr=" + addr + "&argument=" + arg,
     responseType: 'text'
   })
     .then(function (response) {

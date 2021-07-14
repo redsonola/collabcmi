@@ -17,7 +17,7 @@ export function distance(keypoints: any, poseIndex1: number, poseIndex2: number)
 
 //NOTE: this is taken from code I wrote for the collab oroject
 //ironic isn't it? but whatever.
-function distance2d(x1: number, y1: number, x2: number, y2: number): number {
+export function distance2d(x1: number, y1: number, x2: number, y2: number): number {
     let dist = (x2 - x1) ** 2 + (y2 - y1) ** 2;
     return Math.sqrt(dist);
 }

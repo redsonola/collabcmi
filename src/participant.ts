@@ -894,16 +894,7 @@ export class Participant extends EventEmitter {
         if (this.friendParticipant && hasFriend) {
             //TODO: refactor so I only do this once.
             let iAmSecond = orderParticipantID(this.participantID, this.friendParticipant.getParticipantID()) === -1;
-
-            let friendKeypoints = this.friendParticipant.getAvgKeyPoints();
-            let minDistanceTouching = 0.09; //in percent, just a guess.
-            if (friendKeypoints) {
-                for (let i = 0; i < friendKeypoints.length; i++) {
-                    this.touch = this.touching(friendKeypoints[i], minDistanceTouching, this.touch, this.width, this.height,
-                        this.friendParticipant.getWidth(), this.friendParticipant.getHeight(), i, iAmSecond);
-                }
-
-            }
+            this.touch = this.touching(this.touch, this.width, this.height, iAmSecond); 
             this.touch.updateTouching();
             this.xcorrTouchingMax.update( this.getAvgXCorrAtTouchingKeypoints()  );
         }
@@ -978,12 +969,16 @@ export class Participant extends EventEmitter {
         }
     }
 
+    getTouchVelocity()
+    {
+        return this.touch.getTouchVelocity(); 
+    }
+
     //moved from avg keypoints... prob need to refactor this shit.
     //TODO: how much of the body & also for how long (scale?)
     //Then -- how fast before the touch? prob just windowedvar @ touch 
     //Then refine the touch measure so is less crude -- ie now it is just distance btw. keypoints but prob need to look at distance from skeleton/connecting line
-    touching(keypointToTest: any, minDistanceTouching: number, sTouch: SkeletonTouch, w: number, h: number,
-        theirW: number, theirH: number, index: number, iAmSecond: boolean = false): SkeletonTouch {
+    touching(sTouch: SkeletonTouch, w: number, h: number, iAmSecond: boolean = false): SkeletonTouch {
         //TODO: this does not return where the touch was. could do that.
         this.intersection.setShouldFlipSelf(iAmSecond)
         let whereTouch = this.intersection.touching(w, h);
