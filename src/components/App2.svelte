@@ -52,7 +52,7 @@
   import * as THREE from "three";
   import { DataConnection, MediaConnection } from "peerjs";
 import { Vector3 } from "three";
-
+import * as OSCInterface from "../OSCInterface"
 
   export let router: RouterState;
   export let showDebugPanel = true;  router.query.debug === "true";
@@ -67,7 +67,7 @@ import { Vector3 } from "three";
     SPACE_BTW = 1,
     TUG_OF_WAR = 2
   } 
-  export let whichPiece : WhichPiece = WhichPiece.SKIN_HUNGER; //which piece are we realizing in this main 
+  export let whichPiece : WhichPiece = WhichPiece.TUG_OF_WAR; //WhichPiece.SKIN_HUNGER; //which piece are we realizing in this main 
 
   let theirVideoElement;
   let muteUrl = "./icons/noun_mic_283245_grey.png"; 
@@ -305,6 +305,11 @@ import { Vector3 } from "three";
     try {
       //pearson correlation is -1 to 1 -- just scale to 0 to 1 to display in debugging window.
       verticalityCorrelation = Scale.linear_scale( participant.getVerticalityCorrelation(), -1, 1, 0, 1);
+      //note the file recording server has to be running for this
+      if( whichPiece === WhichPiece.TUG_OF_WAR ) //send to max patch
+      {
+        OSCInterface.sendOSC('/verticalityCorr', participant.getVerticalityCorrelation());
+      }
       
       // leaving in here for debugging
       // verticalAngle = participant.getVerticalAngleMeasure();
@@ -419,6 +424,12 @@ import { Vector3 } from "three";
     {
       alert("We detected that you were on a suboptimal browser for Skin Hunger. In order to fully experience our installation, we suggest using Chrome as your web browser. All features may not be fully functional or you might suffer performance problems.");
     }
+
+    //only if sending to max -- note the file recording server should be started
+    if( whichPiece === WhichPiece.TUG_OF_WAR )
+      OSCInterface.initOSC();
+
+
     mainVolume = new MainVolume((val) => {
       volumeMeterReading = val;
     });

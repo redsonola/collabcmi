@@ -1,3 +1,4 @@
+
 const fs = require("fs");
 const { promisify } = require("util");
 const path = require("path");
@@ -7,8 +8,10 @@ const writeFile = promisify(fs.writeFile);
 const express = require("express");
 // require('../scripts/devPeerServer');
 var https = require('https');
+const OSC = require('osc-js');
 
 const app = express();
+
 
 // API for files
 const recordingsDir = path.resolve(path.join("public", "recordings"));
@@ -35,6 +38,25 @@ async function updateFileList() {
 }
 updateFileList();
 
+let osc; 
+function oscForMax()
+{
+  const options = {
+    open: {
+      port: 9988
+    }
+  };
+  osc = new OSC({ plugin: new OSC.DatagramPlugin(options) });
+  osc.open();
+}
+oscForMax(); 
+osc?.send( new OSC.Message( "/testMessage"), { port: 8998 } ); 
+
+
+app.post("/api/init-osc", () => {
+  console.log( "osc initialized" ); 
+});
+
 app.use(bodyParser.urlencoded({ extended: false, limit: "4gb" }));
 
 app.use(bodyParser.json({ limit: "4gb" }));;
@@ -52,6 +74,19 @@ app.post("/api/write-recording", async (req, res) => {
 	}
 });
 
+app.post("/api/send-osc", async (req, res) => {
+  osc?.send( new OSC.Message( '/verticalityCorr', req.query.argument), { port: 8998 } ); 
+  console.log( "sending......." ); 
+  res.send("OK"); 
+});
+
+app.get("/send-osc", function(httpRequest, httpResponse, next)
+{ 
+  osc?.send( new OSC.Message( httpRequest.query.addr, httpRequest.query.argument), { port: 8998 } ); 
+  console.log("sending the OSC message....");
+  httpResponse.send(true);
+});
+
 
 const cert = fs.readFileSync('./snowpack.crt');
 const key = fs.readFileSync('./snowpack.key');
@@ -59,5 +94,6 @@ const key = fs.readFileSync('./snowpack.key');
 https.createServer({ cert, key }, app)
 	.listen(3000, (...args) => {
 		console.log('server started', ...args);
+
 	});
 
