@@ -9,8 +9,12 @@ const express = require("express");
 // require('../scripts/devPeerServer');
 var https = require('https');
 const OSC = require('osc-js');
+var cors = require('cors')
+
 
 const app = express();
+app.use( cors() );
+
 
 
 // API for files
@@ -74,17 +78,10 @@ app.post("/api/write-recording", async (req, res) => {
 	}
 });
 
-app.post("/api/send-osc", async (req, res) => {
-  osc?.send( new OSC.Message( '/verticalityCorr', req.query.argument), { port: 8998 } ); 
-  console.log( "sending......." ); 
-  res.send("OK"); 
-});
-
 app.get("/send-osc", function(httpRequest, httpResponse, next)
 { 
-  osc?.send( new OSC.Message( httpRequest.query.addr, httpRequest.query.argument), { port: 8998 } ); 
-  console.log("sending the OSC message....");
-  httpResponse.send(true);
+  osc?.send( new OSC.Message( '/verticalityCorr', httpRequest.query.argument), { port: 8998 } ); 
+  httpResponse.send("OK");
 });
 
 

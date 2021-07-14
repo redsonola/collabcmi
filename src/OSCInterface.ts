@@ -11,22 +11,21 @@ export function initOSC()
   fetch(`/api/init-osc`);
 }
 
+//ok, will change later, but actually doesn't use the address. 
 export function sendOSC(addr: string, arg:number)
 {
-
   axios({
     method: 'get',
-    url: "http://localhost:3000/send-osc?addr=" + addr + "&argument=" + arg,
+    url: "https://localhost:3000/send-osc?argument=" + arg,
     responseType: 'text'
   })
     .then(function (response) {
-      
-    })
 
+    })
     .catch(function (error) {
       // handle error
       console.log(error);
+      console.log("error"); 
       return null;
     });
-  // fetch(`/api/send-osc?argument=${arg}`, {method: "POST"});
 }

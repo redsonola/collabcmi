@@ -305,10 +305,13 @@ import * as OSCInterface from "../OSCInterface"
     try {
       //pearson correlation is -1 to 1 -- just scale to 0 to 1 to display in debugging window.
       verticalityCorrelation = Scale.linear_scale( participant.getVerticalityCorrelation(), -1, 1, 0, 1);
+      console.log( "v: " + participant.getVerticalityCorrelation() );
       //note the file recording server has to be running for this
       if( whichPiece === WhichPiece.TUG_OF_WAR ) //send to max patch
       {
-        OSCInterface.sendOSC('/verticalityCorr', participant.getVerticalityCorrelation());
+        let vert = participant.getVerticalityCorrelation();
+        if( !isNaN( vert ) )
+          OSCInterface.sendOSC('/verticalityCorr', participant.getVerticalityCorrelation());
       }
       
       // leaving in here for debugging
