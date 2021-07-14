@@ -313,6 +313,8 @@ import * as OSCInterface from "../OSCInterface"
           OSCInterface.sendOSC('/verticalityCorr', participant.getVerticalityCorrelation());
       }
       OSCInterface.sendOSC('/touchVelocity', participant.getTouchVelocity());
+      OSCInterface.sendOSC('/touchXPos', participant.getTouchPosition().x); 
+      OSCInterface.sendOSC('/touchYPos', participant.getTouchPosition().y); 
 
       
       // leaving in here for debugging

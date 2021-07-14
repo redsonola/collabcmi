@@ -14,6 +14,11 @@ export function initOSC()
 //ok, will change later, but actually doesn't use the address. 
 export function sendOSC(addr: string, arg:number)
 {
+  if( arg < 0.0001 )
+  {
+    arg = 0; //don't send things in sci. notation. just say its 0. hack hack ahck
+  }
+
   axios({
     method: 'get',
     url: "https://localhost:3000/send-osc?addr=" + addr + "&argument=" + arg,
