@@ -894,7 +894,7 @@ export class Participant extends EventEmitter {
         if (this.friendParticipant && hasFriend) {
             //TODO: refactor so I only do this once.
             let iAmSecond = orderParticipantID(this.participantID, this.friendParticipant.getParticipantID()) === -1;
-            this.touch = this.touching(this.touch, this.width, this.height, iAmSecond); 
+            this.touch = this.touching(this.touch, iAmSecond); 
             this.touch.updateTouching();
             this.xcorrTouchingMax.update( this.getAvgXCorrAtTouchingKeypoints()  );
         }
@@ -978,10 +978,10 @@ export class Participant extends EventEmitter {
     //TODO: how much of the body & also for how long (scale?)
     //Then -- how fast before the touch? prob just windowedvar @ touch 
     //Then refine the touch measure so is less crude -- ie now it is just distance btw. keypoints but prob need to look at distance from skeleton/connecting line
-    touching(sTouch: SkeletonTouch, w: number, h: number, iAmSecond: boolean = false): SkeletonTouch {
+    touching(sTouch: SkeletonTouch, iAmSecond: boolean = false): SkeletonTouch {
         //TODO: this does not return where the touch was. could do that.
         this.intersection.setShouldFlipSelf(iAmSecond)
-        let whereTouch = this.intersection.touching(w, h);
+        let whereTouch = this.intersection.touching(this.width, this.height);
         sTouch.removeAllTouches();
         if (whereTouch.isTouching) {
             sTouch.addWhereTouch(whereTouch); //TODO -- get these values from the skeleton

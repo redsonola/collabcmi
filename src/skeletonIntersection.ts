@@ -107,9 +107,6 @@ export class DrawSkeletonIntersectLine {
     width : number; 
     height : number; 
 
-
-
-
     personId: string;
     limbs: LimbIntersect[];
     minConfidence : number; 
@@ -117,8 +114,8 @@ export class DrawSkeletonIntersectLine {
     geometry: BufferGeometry = new THREE.BufferGeometry();
     touchGeo: BufferGeometry = new THREE.BufferGeometry(); 
 
-    // geometryBox: BufferGeometry =  new THREE.BufferGeometry();
-    // boxLine : THREE.Line = new THREE.Line(); 
+    geometryBox: BufferGeometry =  new THREE.BufferGeometry();
+    boxLine : THREE.Line = new THREE.Line(); 
        
     line : THREE.Line = new THREE.Line();
     touchLine : THREE.Line = new THREE.Line(); 
@@ -127,13 +124,14 @@ export class DrawSkeletonIntersectLine {
 
         this.material = new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent:true, opacity:1});
         this.touchingMaterial = new THREE.LineBasicMaterial({ color: 0xFF00FF, transparent:true, opacity:1});
-        // this.boxMaterial = new THREE.LineBasicMaterial({ color: 0x8888FF, transparent:true, opacity:1});
+        this.boxMaterial = new THREE.LineBasicMaterial({ color: 0xAAAAFF, transparent:true, opacity:1});
 
         this.personId = personId;
         this.limbs = [];
         this.minConfidence = minConfidence; 
         this.width = width; 
         this.height = height; 
+
     }
 
     isPerson(id: string) {
@@ -151,8 +149,6 @@ export class DrawSkeletonIntersectLine {
         let points : THREE.Vector3[] = []; 
         let touchingPoints : THREE.Vector3[] = []; 
         let boxPoints  : THREE.Vector3[] = []; 
-
-
 
         this.limbs.forEach(limb => {
             const keypoints = limb.getKeypoints();
@@ -177,35 +173,38 @@ export class DrawSkeletonIntersectLine {
 
                     touchingPoints.push( v1 ); 
                     touchingPoints.push( v2 );
+
+                    console.log({v1})
+                    console.log({v2})
+
                 }
 
                 //this is just for debugging -- uncomment to show the collision box
                 // console.log("v1:" + v1.x + "," + v1.y + "  v2:" + v2.x + "," + v2.y )
-            //     let i=0; 
-            //     box.forEach((vec)=>{ 
-            //         vec.z = 0.95; 
+                let i=0; 
+                box.forEach((vec)=>{ 
+                    vec.z = 0.95; 
+
+                    if(limb.flip)
+                    {
+                        vec.x += 0.66; 
+                    }
+                    vec.x = 1 - vec.x;
+                    vec.x = vec.x * (this.width);  
+                    vec.y = vec.y * (this.height); 
+
+                    // console.log("vec" + i + ":"+ vec.x + "," + vec.y );
 
 
-                    
-            //         if(limb.flip)
-            //         {
-            //             vec.x += 0.66; 
-            //         }
-            //         vec.x = 1 - vec.x;
-            //         vec.x = vec.x * (this.width);  
-            //         vec.y = vec.y * (this.height); 
-
-            //         // console.log("vec" + i + ":"+ vec.x + "," + vec.y );
-
-
-            //         limbPoints.push(vec);
-            //         i++;
-            //      });
-            //      boxPoints.push(...limbPoints); 
-            //      if(box.length > 0)
-            //      {
-            //         boxPoints.push(limbPoints[0].clone());
-            //      }
+                    limbPoints.push(vec);
+                    i++;
+                 });
+                 boxPoints.push(...limbPoints); 
+                 if(box.length > 0)
+                 {
+                    boxPoints.push(limbPoints[0].clone());
+                 }
+                 console.log({limbPoints}); 
 
             //         // console.log( "here:" + keypoints[0].position.x + "," + keypoints[0].position.y + " to " + keypoints[1].position.x + "," + keypoints[1].position.y  );
             } });
@@ -220,14 +219,14 @@ export class DrawSkeletonIntersectLine {
             this.touchLine.material = this.touchingMaterial;
             this.touchLine.frustumCulled = false;  
             
-            // this.geometryBox.setFromPoints(boxPoints);
-            // this.boxLine.geometry = this.geometryBox; 
-            // this.boxLine.material = this.boxMaterial;
-            // this.boxLine.frustumCulled = false;   
+            this.geometryBox.setFromPoints(boxPoints);
+            this.boxLine.geometry = this.geometryBox; 
+            this.boxLine.material = this.boxMaterial;
+            this.boxLine.frustumCulled = false;   
 
             group.add(this.line);
             group.add(this.touchLine);
-            // group.add(this.boxLine);
+            group.add(this.boxLine);
 
         return group;
     }
@@ -581,7 +580,8 @@ export class LimbIntersect extends DetectIntersect {
         parallelVector.set( dx.x, dx.y).normalize();
        
         // thickness of box / 2 -- so far this is 2X of current 'closeEnough'
-        let boxThick = 0.008;
+        // let boxThick = 0.008;
+        let boxThick = 0.025;
         let normV1 = normVector.multiplyScalar(boxThick);
         let normV2 =  normVector2ndPts.multiplyScalar(boxThick);
         parallelVector.multiplyScalar(boxThick);
@@ -669,26 +669,8 @@ export class LimbIntersect extends DetectIntersect {
         whereIntersect.isTouching = false;
 
         if (this.getScore() > this.minConfidence && limb.getScore() > this.minConfidence) {
-            //  intersect = this.intersectsLine(myLine, otherLine);
-            // if(!intersect)
-            // {
             whereIntersect = this.closeEnough(limb, CLOSE_ENOUGH, whereIntersect); //from previous experimentation
-            // }
         }
-        // if(intersect)
-        // {
-        //     console.log("touch start");
-
-        //     console.log(this.getIndex1() +":"+ myLine.start.x  + "," + myLine.start.y + " | "  
-        //     + myLine.end.x  + "," + myLine.end.y );
-
-        //     console.log(limb.getIndex1() + ": "+otherLine.start.x  + "," + otherLine.start.y + " | "  
-        //     + otherLine.end.x  + "," + otherLine.end.y );
-
-        //     console.log("touch end");
-
-        // }
-
         return whereIntersect;
     }
 
@@ -747,6 +729,8 @@ class BodyPartIntersect extends DetectIntersect {
     setSize(w: number, h: number) {
         this.w = w;
         this.h = h;
+        this.drawSkeleton.width = w; 
+        this.drawSkeleton.height =h; 
         for (let i = 0; i < this.limbs.length; i++) {
             this.limbs[i].setSize(w, h);
         }

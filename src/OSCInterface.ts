@@ -11,6 +11,8 @@ export function initOSC()
   fetch(`/api/init-osc`);
 }
 
+let connectionRefused : boolean = false; 
+
 //ok, will change later, but actually doesn't use the address. 
 export function sendOSC(addr: string, arg:number)
 {
@@ -19,18 +21,29 @@ export function sendOSC(addr: string, arg:number)
     arg = 0; //don't send things in sci. notation. just say its 0. hack hack ahck
   }
 
-  axios({
-    method: 'get',
-    url: "https://localhost:3000/send-osc?addr=" + addr + "&argument=" + arg,
-    responseType: 'text'
-  })
-    .then(function (response) {
+  if(! connectionRefused)
+  {
+    try {
+      axios({
+        method: 'get',
+        url: "https://localhost:3000/send-osc?addr=" + addr + "&argument=" + arg,
+        responseType: 'text'
+      })
+        .then(function (response) {
 
-    })
-    .catch(function (error) {
-      // handle error
-      console.log(error);
-      console.log("error"); 
-      return null;
-    });
+        })
+        .catch(function (error) {
+          // handle error
+          console.log(error);
+          console.log("error"); 
+          return null;
+        });
+      }
+      catch(e)
+      {
+        connectionRefused = true; 
+        console.log(e);
+        console.log("Turning off OSC sending");
+      }
+  }
 }

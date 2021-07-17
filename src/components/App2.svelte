@@ -47,8 +47,9 @@
   } from "../SynchSonification"
 
   import * as Tone from "tone";
-  import "../Organism01"; //turn back on for creature
-  import { onVirtualTouch, startAnimation } from "../Organism01"; //turn back on for creature, uncomment Line 285
+  // import "../Organism01"; //turn back on for creature
+  // import { onVirtualTouch, startAnimation } from "../Organism01"; //turn back on for creature, uncomment Line 285, Line 607
+
   import * as THREE from "three";
   import { DataConnection, MediaConnection } from "peerjs";
 import { Vector3 } from "three";
@@ -299,7 +300,7 @@ import * as OSCInterface from "../OSCInterface"
       combinedWindowedScore = windowedVarScore;
       howLongTouch = participant.howLongTouching();
       howMuchTouch = participant.howMuchTouching();
-      onVirtualTouch(participant.getTouch()); //TURN ON FOR CREATURE
+      // onVirtualTouch(participant.getTouch()); //TURN ON FOR CREATURE
     }
 
     try {
@@ -312,9 +313,12 @@ import * as OSCInterface from "../OSCInterface"
         if( !isNaN( vert ) )
           OSCInterface.sendOSC('/verticalityCorr', participant.getVerticalityCorrelation());
       }
-      OSCInterface.sendOSC('/touchVelocity', participant.getTouchVelocity());
-      OSCInterface.sendOSC('/touchXPos', participant.getTouchPosition().x); 
-      OSCInterface.sendOSC('/touchYPos', participant.getTouchPosition().y); 
+      if( participant.areTouching() )
+      {
+        OSCInterface.sendOSC('/touchVelocity', participant.getTouchVelocity());
+        OSCInterface.sendOSC('/touchXPos', participant.getTouchPosition().x); 
+        OSCInterface.sendOSC('/touchYPos', participant.getTouchPosition().y); 
+      }
 
       
       // leaving in here for debugging
@@ -603,7 +607,7 @@ import * as OSCInterface from "../OSCInterface"
     posenet.onResults((pose) => {
       if(loading)
       {
-        startAnimation(); 
+        // startAnimation(); 
         loadMusic(mainVolume); 
         turnUpVolume();
         musicLoaded = true; 
