@@ -119,6 +119,7 @@ export class DrawSkeletonIntersectLine {
        
     line : THREE.Line = new THREE.Line();
     touchLine : THREE.Line = new THREE.Line(); 
+    offsets : {x:number, y:number} = {x:0, y:0};
 
     constructor(minConfidence:number =0.4, personId: string = "", width: number, height: number) {
 
@@ -137,6 +138,12 @@ export class DrawSkeletonIntersectLine {
     isPerson(id: string) {
         return id === this.personId;
 
+    }
+
+    updateOffsets(offsets: {x:number, y:number} ) : void 
+    {
+        this.offsets.x = offsets.x; 
+        this.offsets.y = offsets.y; 
     }
 
     update(limbs : LimbIntersect[]) : void
@@ -159,60 +166,75 @@ export class DrawSkeletonIntersectLine {
             if( keypoints[0].position.x && keypoints[0].position.y && keypoints[1].position.x && keypoints[1].position.y &&
                 keypoints[0].score > this.minConfidence && keypoints[1].score > this.minConfidence )  
             {
-                let v1=new THREE.Vector3(); 
-                let v2=new THREE.Vector3(); 
-                if( !limb.touching )
-                {
-                    points.push( new THREE.Vector3( keypoints[0].position.x, keypoints[0].position.y, 0.95 ) ); 
-                    points.push( new THREE.Vector3( keypoints[1].position.x, keypoints[1].position.y, 0.95 ) ); 
-                }
-                else
-                {
-                    v1 = new THREE.Vector3( keypoints[0].position.x, keypoints[0].position.y, 0.95 ) ; 
-                    v2 = new THREE.Vector3( keypoints[1].position.x, keypoints[1].position.y, 0.95 ) 
+                // let v1=new THREE.Vector3(); 
+                // let v2=new THREE.Vector3(); 
+                // if( !limb.touching )
+                // {
+                //     points.push( new THREE.Vector3( keypoints[0].position.x, keypoints[0].position.y, 0.95 ) ); 
+                //     points.push( new THREE.Vector3( keypoints[1].position.x, keypoints[1].position.y, 0.95 ) ); 
+                // }
+                // else
+                // {
+                //     v1 = new THREE.Vector3( keypoints[0].position.x, keypoints[0].position.y, 0.95 ) ; 
+                //     v2 = new THREE.Vector3( keypoints[1].position.x, keypoints[1].position.y, 0.95 ) 
 
-                    touchingPoints.push( v1 ); 
-                    touchingPoints.push( v2 );
+                //     touchingPoints.push( v1 ); 
+                //     touchingPoints.push( v2 );
 
-                    console.log({v1})
-                    console.log({v2})
+                //     console.log({v1})
+                //     console.log({v2})
 
-                }
+                // }
 
                 //this is just for debugging -- uncomment to show the collision box
                 // console.log("v1:" + v1.x + "," + v1.y + "  v2:" + v2.x + "," + v2.y )
+
                 let i=0; 
+
+                let w = this.width;
+                let h = this.height;
                 box.forEach((vec)=>{ 
                     vec.z = 0.95; 
+
+                    vec.x -= (this.offsets.x/w)/2; 
+                    vec.y -= (this.offsets.y/h)/2;
 
                     if(limb.flip)
                     {
                         vec.x += 0.66; 
                     }
+
                     vec.x = 1 - vec.x;
-                    vec.x = vec.x * (this.width);  
-                    vec.y = vec.y * (this.height); 
+                    vec.x = vec.x * w;  
+                    vec.y = vec.y * h; 
 
                     // console.log("vec" + i + ":"+ vec.x + "," + vec.y );
-
 
                     limbPoints.push(vec);
                     i++;
                  });
+                 
                  boxPoints.push(...limbPoints); 
                  if(box.length > 0)
                  {
                     boxPoints.push(limbPoints[0].clone());
                  }
-                 console.log({limbPoints}); 
+
+                 if( limb.touching )
+                 {
+                    touchingPoints.push( ...boxPoints );
+                    boxPoints = [];  
+                 }
+
+                //  console.log({limbPoints}); 
 
             //         // console.log( "here:" + keypoints[0].position.x + "," + keypoints[0].position.y + " to " + keypoints[1].position.x + "," + keypoints[1].position.y  );
             } });
 
-            this.geometry.setFromPoints(points);
-            this.line.geometry = this.geometry; 
-            this.line.material = this.material;
-            this.line.frustumCulled = false;  
+            // this.geometry.setFromPoints(points);
+            // this.line.geometry = this.geometry; 
+            // this.line.material = this.material;
+            // this.line.frustumCulled = false;  
 
             this.touchGeo.setFromPoints(touchingPoints);
             this.touchLine.geometry = this.touchGeo; 
@@ -221,7 +243,7 @@ export class DrawSkeletonIntersectLine {
             
             this.geometryBox.setFromPoints(boxPoints);
             this.boxLine.geometry = this.geometryBox; 
-            this.boxLine.material = this.boxMaterial;
+            this.boxLine.material = this.material;
             this.boxLine.frustumCulled = false;   
 
             group.add(this.line);
@@ -749,6 +771,7 @@ class BodyPartIntersect extends DetectIntersect {
     updateOffsets( offsets : THREE.Vector3 )
     {
         this.limbs.forEach( (limb)=>{ limb.updateOffsets(offsets) } );
+        this.drawSkeleton.updateOffsets( {x:offsets.x, y:offsets.y} ); 
     }
 
     draw() : THREE.Group
