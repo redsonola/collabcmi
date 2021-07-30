@@ -35,6 +35,13 @@ export class CircularBuffer<T> {
         return this.buffer[this.buffer.length-1];
     }
 
+    pop() : T
+    {
+        let element : T = this.top(); 
+        this.buffer.splice(this.buffer.length-1, 1);
+        return element; 
+    }
+
     at(index: number) : T
     {
         return this.buffer[index];
@@ -43,6 +50,11 @@ export class CircularBuffer<T> {
     getContents() : T[]
     {
         return this.buffer;
+    }
+
+    clear() : void
+    {
+        this.buffer = []; 
     }
 
     length() : number

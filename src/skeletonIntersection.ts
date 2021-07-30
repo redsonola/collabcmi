@@ -4,6 +4,7 @@ import * as PoseIndex from './poseConstants'
 import { Box2, BufferGeometry, Vector3 } from 'three';
 import * as SAT from 'sat'; 
 import { threeRenderCode } from './draw3js';
+import { CircularBuffer } from './circularBuffer';
 
 //need to put in utilities space
 function distance(keypoints: any, poseIndex1: number, poseIndex2: number): number {
@@ -50,11 +51,32 @@ class DetectIntersect {
 //TODO: keep many of these?
 export class WhereTouch {
     isTouching: boolean = false;
-    intersectPoint: { x: number, y: number } = { x: 0, y: 0 };
     dist: number = Number.MAX_SAFE_INTEGER;
+
+    intersectPoint: { x: number, y: number } = { x: 0, y: 0 };
+    maxIntersectingPoints : number = 25; //how long the history of intersecting points
+    intersectingPoints : Vector3[] = []; //these are to be drawn
 
     myIndex : number []= []; 
     theirIndex : number[] = [];
+    limb : LimbIntersect; //which limb
+
+    //this assumes that indices will update in order of ascending indices
+    updateIntersectPoint(x: number, y:number, touching:boolean, limb : LimbIntersect )
+    {
+        if( touching )
+        {
+            let vec = limb.translateFromInternalRepresentationToDraw( new Vector3(x, y, 0.95) )  ; 
+            this.intersectingPoints.push( vec ); 
+            this.intersectPoint.x = x; 
+            this.intersectPoint.y = y; 
+        }
+
+        if( this.intersectingPoints.length > this.maxIntersectingPoints )
+        {
+            this.intersectingPoints.splice(this.intersectingPoints.length-1, 1);
+        }
+    }
 
     toString() : string
     {
@@ -66,8 +88,18 @@ export class WhereTouch {
         return str; 
     }
 
+    keepHistory(wT:WhereTouch)
+    {
+        this.intersectingPoints.push( ...wT.intersectingPoints ); 
+    }
+
     ifDistIsLessReplace( wT: WhereTouch, myIndex:number[]=[], theirIndex: number[]=[] ): void {
-        if (this.dist > wT.dist) {
+
+        //inherit the history...... 
+        this.intersectingPoints.push( ...wT.intersectingPoints ); 
+
+        if (this.dist > wT.dist) 
+        {
             this.dist = wT.dist;
             this.intersectPoint = wT.intersectPoint;
             this.isTouching = wT.isTouching;
@@ -92,10 +124,70 @@ export class WhereTouch {
             }
              
         }
+
+
     }
 
     constructor() {
     }
+}
+
+export class DrawIntersections {
+
+    width : number; 
+    height : number; 
+
+    material: THREE.LineBasicMaterial; 
+    geometry: BufferGeometry = new THREE.BufferGeometry();
+    intersectionTrail : THREE.LineSegments = new THREE.LineSegments();
+
+    whereTouch : WhereTouch = new WhereTouch; 
+
+    constructor( width: number, height: number ) 
+    {
+        this.material = new THREE.LineBasicMaterial({ color: 0x99FF99, transparent:true, opacity:1});
+        this.width = width; 
+        this.height = height; 
+    }
+
+    update( whereTouch : WhereTouch )
+    {
+        this.whereTouch = whereTouch; 
+    }
+
+    groupToDraw() : THREE.Group 
+    {
+        const group = new THREE.Group();
+        let intersectingLines : THREE.Vector3[] = []; //not drawing the stick figure
+
+        let intersecting = this.whereTouch.intersectingPoints;  ; 
+        if( intersecting.length > 1 )
+        {
+            for( let i=0; i<intersecting.length-1; i++ )
+            {
+                let vec1 = new Vector3(intersecting[i].x, intersecting[i].y, intersecting[i].z  ) ;
+                let vec2 = new Vector3(intersecting[i+1].x, intersecting[i+1].y, intersecting[i+1].z  ) ; 
+                        
+                intersectingLines.push( vec1 );
+                intersectingLines.push( vec2 );
+            }
+        }
+
+        //draws the intersection points
+        if( intersectingLines.length > 0 )
+        {
+            this.geometry.setFromPoints(intersectingLines);
+            this.intersectionTrail.geometry = this.geometry; 
+            this.intersectionTrail.material = this.material;
+            this.intersectionTrail.frustumCulled = false;  
+            //     // console.log( { intersectingLines } );
+        }
+
+        group.add( this.intersectionTrail ); 
+
+        return group; 
+    }
+
 }
 
 export class DrawSkeletonIntersectLine {
@@ -119,13 +211,14 @@ export class DrawSkeletonIntersectLine {
        
     line : THREE.Line = new THREE.Line();
     touchLine : THREE.Line = new THREE.Line(); 
+
     offsets : {x:number, y:number} = {x:0, y:0};
 
     constructor(minConfidence:number =0.4, personId: string = "", width: number, height: number) {
 
         this.material = new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent:true, opacity:1});
         this.touchingMaterial = new THREE.LineBasicMaterial({ color: 0xFF00FF, transparent:true, opacity:1});
-        this.boxMaterial = new THREE.LineBasicMaterial({ color: 0xAAAAFF, transparent:true, opacity:1});
+        this.boxMaterial = new THREE.LineBasicMaterial({ color: 0x99FF99, transparent:true, opacity:1});
 
         this.personId = personId;
         this.limbs = [];
@@ -137,7 +230,6 @@ export class DrawSkeletonIntersectLine {
 
     isPerson(id: string) {
         return id === this.personId;
-
     }
 
     updateOffsets(offsets: {x:number, y:number} ) : void 
@@ -153,10 +245,10 @@ export class DrawSkeletonIntersectLine {
 
     groupToDraw() : THREE.Group {
         const group = new THREE.Group();
-        let points : THREE.Vector3[] = []; 
-        let touchingPoints : THREE.Vector3[] = []; 
-        let boxPoints  : THREE.Vector3[] = []; 
-
+        let points : THREE.Vector3[] = []; //not drawing the stick figure
+        let touchingPoints : THREE.Vector3[] = []; //this are the points of the limbs that are touching not the position of intersection
+        let boxPoints  : THREE.Vector3[] = [];
+        
         this.limbs.forEach(limb => {
             const keypoints = limb.getKeypoints();
 
@@ -193,24 +285,8 @@ export class DrawSkeletonIntersectLine {
 
                 let w = this.width;
                 let h = this.height;
-                box.forEach((vec)=>{ 
-                    vec.z = 0.95; 
-
-                    vec.x -= (this.offsets.x/w)/2; 
-                    vec.y -= (this.offsets.y/h)/2;
-
-                    if(limb.flip)
-                    {
-                        vec.x += 0.66; 
-                    }
-
-                    vec.x = 1 - vec.x;
-                    vec.x = vec.x * w;  
-                    vec.y = vec.y * h; 
-
-                    // console.log("vec" + i + ":"+ vec.x + "," + vec.y );
-
-                    limbPoints.push(vec);
+                box.forEach((vec)=> { 
+                    limbPoints.push( limb.translateFromInternalRepresentationToDraw( vec ) );
                     i++;
                  });
                  
@@ -223,7 +299,25 @@ export class DrawSkeletonIntersectLine {
                  if( limb.touching )
                  {
                     touchingPoints.push( ...boxPoints );
-                    boxPoints = [];  
+                    boxPoints = [];
+
+                    // let intersectingArray = limb.getIntersectingPoints() ; 
+                    // for( let j=0; j<intersectingArray.length; j++ )
+                    // {
+                    //         let intersecting = intersectingArray[j] ; 
+                    //         // console.log( intersecting ); 
+                    //         if( intersecting.length > 1 )
+                    //         {
+                    //         for( let i=0; i<intersecting.length-1; i++ )
+                    //         {
+                    //             let vec1 = new Vector3(intersecting[i].x, intersecting[i].y, intersecting[i].z  ) ;
+                    //             let vec2 = new Vector3(intersecting[i+1].x, intersecting[i+1].y, intersecting[i+1].z  ) ; 
+                        
+                    //             intersectingLines.push( this.translateFromInternalRepresentationToDraw( limb, vec1 ) );
+                    //             intersectingLines.push( this.translateFromInternalRepresentationToDraw( limb, vec2 ) );
+                    //         }
+                    //     }
+                    // }
                  }
 
                 //  console.log({limbPoints}); 
@@ -231,10 +325,22 @@ export class DrawSkeletonIntersectLine {
             //         // console.log( "here:" + keypoints[0].position.x + "," + keypoints[0].position.y + " to " + keypoints[1].position.x + "," + keypoints[1].position.y  );
             } });
 
+            
+
             // this.geometry.setFromPoints(points);
             // this.line.geometry = this.geometry; 
             // this.line.material = this.material;
             // this.line.frustumCulled = false;  
+
+            //draws the intersection points
+            // if( intersectingLines.length > 0 )
+            // {
+            //     this.geometry.setFromPoints(intersectingLines);
+            //     this.intersectionTrail.geometry = this.geometry; 
+            //     this.intersectionTrail.material = this.boxMaterial;
+            //     this.intersectionTrail.frustumCulled = false;  
+            //     // console.log( { intersectingLines } );
+            // }
 
             this.touchGeo.setFromPoints(touchingPoints);
             this.touchLine.geometry = this.touchGeo; 
@@ -246,9 +352,9 @@ export class DrawSkeletonIntersectLine {
             this.boxLine.material = this.material;
             this.boxLine.frustumCulled = false;   
 
-            group.add(this.line);
-            group.add(this.touchLine);
-            group.add(this.boxLine);
+            group.add( this.line ) ;
+            group.add( this.touchLine );
+            group.add( this.boxLine );
 
         return group;
     }
@@ -333,6 +439,7 @@ export class LimbIntersect extends DetectIntersect {
 
     box : Vector3[] = []; 
 
+    whereTouch : WhereTouch = new WhereTouch; 
 
     constructor(w: number, h: number, index1_: number, index2_: number, minConfidence_: number = 0.4) {
         super(minConfidence_);
@@ -342,10 +449,27 @@ export class LimbIntersect extends DetectIntersect {
         this.keypoints = [];
         this.w = w;
         this.h = h;
+    }
 
+    translateFromInternalRepresentationToDraw(vec : Vector3) : Vector3
+    {
+        let w = this.w;
+        let h = this.h;
 
+        vec.z = 0.95; 
+        vec.x -= (this.offsets.x/w)/2; 
+        vec.y -= (this.offsets.y/h)/2;
 
+        if(this.flip)
+        {
+            vec.x += 0.66; 
+        }
 
+        vec.x = 1 - vec.x;
+        vec.x = vec.x * w;  
+        vec.y = vec.y * h; 
+
+        return vec; 
     }
 
     updateOffsets(offs : THREE.Vector3)
@@ -632,8 +756,8 @@ export class LimbIntersect extends DetectIntersect {
             new SAT.Vector(line.end.x, line.end.y),
           ]);
     }
-
-    closeEnough(limb: LimbIntersect, whatIsEnough: number, whereIntersect: WhereTouch): WhereTouch {
+                                                                                        //which limb are we comparing? to keep track.
+    closeEnough(limb: LimbIntersect, whatIsEnough: number, whereIntersect: WhereTouch, index:number): WhereTouch {
         let myLine : THREE.Line3 = this.scaleLine(this.line(), this.flip);
         let otherLine : THREE.Line3 = limb.scaleLine(limb.line(), !this.flip);
 
@@ -649,38 +773,24 @@ export class LimbIntersect extends DetectIntersect {
         let myIndices = this.getIndices();
         let theirIndices = limb.getIndices(); 
 
+
         if( collided )
         {
             whereIntersect.intersectPoint.x =  line1.firstPoint.x - response.overlapV.x / 2; 
             whereIntersect.intersectPoint.y = line1.firstPoint.y  - response.overlapV.y / 2;
             whereIntersect.dist = 0; 
             whereIntersect.myIndex = myIndices; 
-            whereIntersect.theirIndex = theirIndices; 
+            whereIntersect.theirIndex = theirIndices;
+            whereIntersect.limb = this; 
         }
 
-        //find shortest distance btw 2 end points 
-        // let myIndices = [this.index1, this.index2]; 
-        // let theirIndices = [limb.index1, limb.index2];
-        // whereIntersect = this.findDistBetweenPointAndLine(otherLine.start, myLine);
-        // whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(otherLine.end, myLine), myIndices, theirIndices);
-        // whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(myLine.end, otherLine), myIndices, theirIndices);
-        // whereIntersect.ifDistIsLessReplace(this.findDistBetweenPointAndLine(myLine.start, otherLine), myIndices, theirIndices);
-
-        // //find the midpoints & quarter points & eight points
-        // const numberOfMidpointsEach : number = 2; // divide line into 4ths
-
-        // let myLineSegment : THREE.Line3 = myLine;
-        // let otherLineSegment : THREE.Line3 = otherLine;
-
-        // whereIntersect = this.doLinesIntersectAtMidpoint( myLine, otherLine, myIndices, theirIndices, whereIntersect, 2 );
-        // whereIntersect = this.doLinesIntersectAtMidpoint( otherLine, myLine, myIndices, theirIndices, whereIntersect, 2 );   
-
-        // whereIntersect.isTouching = whereIntersect.dist <= whatIsEnough;
+        //repetitious -- cleanup l8r
+        // whereIntersect.updateIntersectPoint(  whereIntersect.intersectPoint.x, whereIntersect.intersectPoint.y, collided, this ); 
 
         return whereIntersect;
     }
-
-    intersects(limb: LimbIntersect, w: number, h: number): WhereTouch {
+                                                            //which limb are we testing? an index -- or really an id for this
+    intersects(limb: LimbIntersect, w: number, h: number, index:number): WhereTouch {
         this.w = w;
         this.h = h;
         let myLine = this.scaleLine(this.line(), this.flip);
@@ -691,7 +801,7 @@ export class LimbIntersect extends DetectIntersect {
         whereIntersect.isTouching = false;
 
         if (this.getScore() > this.minConfidence && limb.getScore() > this.minConfidence) {
-            whereIntersect = this.closeEnough(limb, CLOSE_ENOUGH, whereIntersect); //from previous experimentation
+            whereIntersect = this.closeEnough(limb, CLOSE_ENOUGH, whereIntersect, index); //from previous experimentation
         }
         return whereIntersect;
     }
@@ -706,11 +816,14 @@ export class LimbIntersect extends DetectIntersect {
 class BodyPartIntersect extends DetectIntersect {
 
     limbs: LimbIntersect[]; //lol
-    // line: THREE.Line;
     name: string;
     flip: boolean = false;
     w: number;
     h: number;
+
+    whereTouch : WhereTouch = new WhereTouch; 
+
+    drawIntersections : DrawIntersections; 
     
     // geometry : THREE.BufferGeometry = new THREE.BufferGeometry(); 
     
@@ -723,6 +836,7 @@ class BodyPartIntersect extends DetectIntersect {
         this.w = w;
         this.h = h;
         this.drawSkeleton = new DrawSkeletonIntersectLine(confidence, "", w, h); 
+        this.drawIntersections = new DrawIntersections(w, h); 
         // this.line.geometry = this.geometry; 
 
     }
@@ -776,7 +890,11 @@ class BodyPartIntersect extends DetectIntersect {
 
     draw() : THREE.Group
     {
-        return this.drawSkeleton.groupToDraw(); 
+        let group : THREE.Group = new THREE.Group; 
+
+        group.add(this.drawSkeleton.groupToDraw());
+        group.add(this.drawIntersections.groupToDraw());
+        return group; 
     }
 
     getLimbs(): LimbIntersect[] {
@@ -806,12 +924,16 @@ class BodyPartIntersect extends DetectIntersect {
         for (let i = 0; i < this.limbs.length; i++) {
             for (let j = 0; j < otherLimbs.length; j++) {
                 if (this.limbs[i].getScore() > this.minConfidence) {
-                    whereTouch.ifDistIsLessReplace(this.limbs[i].intersects(otherLimbs[j], w, h), this.limbs[i].getIndices(), otherLimbs[j].getIndices());
+                    whereTouch.ifDistIsLessReplace(this.limbs[i].intersects(otherLimbs[j], w, h, j), this.limbs[i].getIndices(), otherLimbs[j].getIndices());
                 }
                 this.limbs[i].touching = this.limbs[i].touching || whereTouch.isTouching; 
                 otherLimbs[j].touching = otherLimbs[j].touching || whereTouch.isTouching; 
             }
         }
+        whereTouch.keepHistory( this.whereTouch ); 
+        whereTouch.updateIntersectPoint(  whereTouch.intersectPoint.x, whereTouch.intersectPoint.y, whereTouch.isTouching, this.limbs[0] ); 
+        this.whereTouch = whereTouch; 
+        this.drawIntersections.update(whereTouch);  
         return whereTouch;
     }
 
