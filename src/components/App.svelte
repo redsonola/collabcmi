@@ -11,6 +11,7 @@
   <Route exact path="/2apps" component={() => import("./2Apps.svelte")} let:router />
   <Route exact path="/mediapipe-dev" component={() => import("./MediapipeDev.svelte")} let:router />
   <Route exact path="/mediapipe-dev2" component={() => import("./MediapipeDev2.svelte")} let:router />
+  <Route exact path="/newton-raphson" component={() => import("./NewtonRaphson.svelte")} let:router />
 </Router>
 
 <style>
