@@ -333,7 +333,7 @@ export class Participant extends EventEmitter {
 
         this.keyPointBuffer.add(keypoints);
         this.avgKeyPoints.update(keypoints, now);
-        this.updateTouchingFriend(offsetPos, hasFriend);
+        this.updateTouchingFriend(offsetPos, hasFriend, isLocalParticipant);
         this.verticalAngle.update(); 
         this.fpsTracker.refreshLoop(); 
         this.emit(ParticipantEvents.KeypointsAdded, this.participantID, keypoints);
@@ -888,15 +888,19 @@ export class Participant extends EventEmitter {
     }
     
     //TODO: update everything in one method & just have that as the outside thingy!
-    updateTouchingFriend(offsets : THREE.Vector3, hasFriend : boolean): void {
+    updateTouchingFriend(offsets : THREE.Vector3, hasFriend : boolean, isLocalParticipant : boolean): void {
         this.intersection.update(offsets); //TODO only update when have friend
 
-        if (this.friendParticipant && hasFriend) {
+        if (this.friendParticipant && hasFriend ) {
             //TODO: refactor so I only do this once.
             let iAmSecond = orderParticipantID(this.participantID, this.friendParticipant.getParticipantID()) === -1;
-            this.touch = this.touching(this.touch, iAmSecond); 
-            this.touch.updateTouching();
-            this.xcorrTouchingMax.update( this.getAvgXCorrAtTouchingKeypoints()  );
+
+            if( isLocalParticipant )
+            {
+                this.touch = this.touching(this.touch, iAmSecond); 
+                this.touch.updateTouching();
+                this.xcorrTouchingMax.update( this.getAvgXCorrAtTouchingKeypoints()  );
+            }
         }
     }
 

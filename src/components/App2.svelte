@@ -509,6 +509,7 @@ import * as OSCInterface from "../OSCInterface"
           case "Pose": {
             friendParticipant.setSize(message.size.width, message.size.height);
             friendParticipant.addKeypoint(message.pose.keypoints, hasFriend, three.getOffsetVidPosition(true), false);
+            participant.updateTouchingFriend(three.getOffsetVidPosition(false), true); //call skeleton intersection
             keypointsUpdated(conn.peer, message.pose, message.size);
             break;
           }
@@ -531,6 +532,7 @@ import * as OSCInterface from "../OSCInterface"
           {
             //need to send in screen resolution invariant terms
             three.moveVideoCamFromThreeJSCoords( message.which, message.x, message.y );
+            break; 
           }
 
           default: {
