@@ -1,3 +1,5 @@
+//Brent Brimhall wrote this code
+//8/3/2022
 import { Line3, Vector3 } from 'three';
   
   // Given a function f that takes a number x and returns a number y

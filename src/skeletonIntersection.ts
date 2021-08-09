@@ -75,16 +75,15 @@ export class WhereTouch {
     theirIndex : number[] = [];
 
     //this assumes that indices will update in order of ascending indices
-    updateIntersectPoint(x: number, y:number, touching:boolean )
-    {
-        if( touching )
-        {
-            this.intersectingPoints.push( new Vector3(x, y, 0.95) ); 
-            this.intersectPoint.x = x; 
-            this.intersectPoint.y = y; 
-        }
+    // updateIntersectPoint(x: number, y:number, touching:boolean )
+    // {
+    //     if( touching )
+    //     {
+    //         this.intersectPoint.x = x; 
+    //         this.intersectPoint.y = y; 
+    //     }
 
-    }
+    // }
 
     toString() : string
     {
@@ -111,17 +110,23 @@ export class WhereTouch {
         if(  !this.isTouching )
         {
             if( this.intersectingPoints.length > 5 )
+            {
                 this.intersectingPoints.splice(0, 2);
+            }
             else if( this.intersectingPoints.length > 0 )
+            {
                 this.intersectingPoints.splice(0, 1);
+            }
         }
     }
 
     copyFrom( wt : WhereTouch )
     {
-        this.keepHistory( wt );
+        // this.keepHistory( wt );
         this.isTouching = wt.isTouching; 
-        this.intersectPoint = wt.intersectPoint; 
+        this.intersectPoint.x = wt.intersectPoint.x; 
+        this.intersectPoint.y = wt.intersectPoint.y; 
+        this.intersectPoint.z = 0.95;
         this.dist = wt.dist; 
         this.myIndex = wt.myIndex; 
         this.theirIndex = wt.theirIndex; 
@@ -135,6 +140,11 @@ export class WhereTouch {
             //find the centroid of current points
             this.intersectPoint = centroid( this.curPoints )
         }
+        if( this.isTouching )
+        {
+            this.intersectingPoints.push( new Vector3(this.intersectPoint.x, this.intersectPoint.y, 0.95) ); 
+        }
+
         this.curPoints = []; //reset for the next call;
     }
 
@@ -150,7 +160,10 @@ export class WhereTouch {
 
 
             this.dist = wT.dist;
-            this.intersectPoint = wT.intersectPoint;
+            this.intersectPoint.x = wT.intersectPoint.x;
+            this.intersectPoint.y = wT.intersectPoint.y;
+            this.intersectPoint.z = 0.95;
+
             this.isTouching = wT.isTouching;
 
             //this is...... awkward and prob. could be refactored out in some way but oh well I will fix later.
@@ -196,7 +209,6 @@ export class DrawIntersections {
         this.material = new THREE.LineBasicMaterial({ color: materialcolor, transparent:true, opacity:1});
         this.width = width; 
         this.height = height; 
-
     }
 
     update( whereTouch : WhereTouch )
@@ -1034,12 +1046,10 @@ class BodyPartIntersect extends DetectIntersect {
 
     updateWhereTouch(whereTouch: WhereTouch)
     {
-        whereTouch.keepHistory( this.whereTouch ); 
-        whereTouch.updateIntersectPoint(  whereTouch.intersectPoint.x, whereTouch.intersectPoint.y, whereTouch.isTouching); 
+        // whereTouch.updateIntersectPoint(  whereTouch.intersectPoint.x, whereTouch.intersectPoint.y, whereTouch.isTouching ); 
         this.whereTouch.copyFrom(whereTouch); 
+        this.whereTouch.setCurrentIntersectPoint();
         this.drawIntersections.update(this.whereTouch);  
-        this.whereTouch.age(); 
-        this.whereTouch.setCurrentIntersectPoint(); 
     }
 
     intersects(bodypart: BodyPartIntersect, w: number, h: number): WhereTouch {
@@ -1379,12 +1389,13 @@ export class SkeletionIntersection {
             i++;
         }
 
-        touch.keepHistory( this.whereTouch ); 
-        touch.updateIntersectPoint(  touch.intersectPoint.x, touch.intersectPoint.y, touch.isTouching ); 
+        // touch.updateIntersectPoint(  touch.intersectPoint.x, touch.intersectPoint.y, touch.isTouching ); 
         this.whereTouch.copyFrom( touch ); 
         this.whereTouch.age();
         this.whereTouch.setCurrentIntersectPoint();
         this.drawIntersections.update( this.whereTouch );  
+
+        this.parts.forEach( (part)=>{  part.whereTouch.age(); } );
 
         //     console.log("Touching! "+i+ " with " + j);
         // } else console.log( "Not touching!!");
