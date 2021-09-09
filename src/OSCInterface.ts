@@ -20,6 +20,10 @@ export function sendOSC(addr: string, arg:number)
   {
     arg = 0; //don't send things in sci. notation. just say its 0. hack hack ahck
   }
+  else if( isNaN(arg) )
+  {
+    return;
+  }
 
   if(! connectionRefused)
   {

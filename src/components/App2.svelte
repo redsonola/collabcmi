@@ -54,6 +54,7 @@
   import { DataConnection, MediaConnection } from "peerjs";
 import { Vector3 } from "three";
 import * as OSCInterface from "../OSCInterface"
+import * as PoseIndex from "../poseConstants.js"
 
   export let router: RouterState;
   export let showDebugPanel = true;  router.query.debug === "true";
@@ -256,10 +257,10 @@ import * as OSCInterface from "../OSCInterface"
     if (participant.isParticipant(particiantId)) {
       thisparticipant = participant;
       three.setWhichIsSelf( particiantId ); //figure out how to just set this once, gah.
-      friendParticipant.updateTouchingFriend(three.getOffsetVidPosition(true), hasFriend);
+      friendParticipant.updateTouchingFriend(three.getOffsetVidPosition(true), hasFriend, false);
     } else {
       thisparticipant = friendParticipant;
-      participant.updateTouchingFriend(three.getOffsetVidPosition(false), hasFriend);
+      participant.updateTouchingFriend(three.getOffsetVidPosition(false), hasFriend, true);
 
     }
     
@@ -299,13 +300,18 @@ import * as OSCInterface from "../OSCInterface"
       yposOfTouch = participant.getTouchPosition().y;
       combinedWindowedScore = windowedVarScore;
       howLongTouch = participant.howLongTouching();
-      howMuchTouch = participant.howMuchTouching();
+      //howMuchTouch = participant.howMuchTouching();
       // onVirtualTouch(participant.getTouch()); //TURN ON FOR CREATURE
     }
 
     try {
       //pearson correlation is -1 to 1 -- just scale to 0 to 1 to display in debugging window.
-      verticalityCorrelation = Scale.linear_scale( participant.getVerticalityCorrelation(), -1, 1, 0, 1);
+      //verticalityCorrelation = Scale.linear_scale( participant.getVerticalityCorrelation(), -1, 1, 0, 1);
+      
+      //high negative correlation is still high correlation for this measure
+      verticalityCorrelation = Math.abs( participant.getVerticalityCorrelation() ); 
+
+
       //note the file recording server has to be running for this
       if( whichPiece === WhichPiece.TUG_OF_WAR ) //send to max patch
       {
@@ -316,9 +322,14 @@ import * as OSCInterface from "../OSCInterface"
       if( participant.areTouching() )
       {
         OSCInterface.sendOSC('/touchVelocity', participant.getTouchVelocity());
-        OSCInterface.sendOSC('/touchXPos', participant.getTouchPosition().x); 
-        OSCInterface.sendOSC('/touchYPos', participant.getTouchPosition().y); 
+        OSCInterface.sendOSC('/touchXPos', Scale.linear_scale( participant.getTouchPosition().x, -1, 1, 0, 1)); 
+        OSCInterface.sendOSC('/touchYPos', participant.getTouchPosition().y ); 
+        OSCInterface.sendOSC('/localParticipant/jerk', participant.getAvgJerk());
+        OSCInterface.sendOSC('/touchPointCorrelation', participant.getAvgXCorrAtTouchingKeypoints()); 
       }
+      OSCInterface.sendOSC('/howLongTouch', howLongTouch); //send no matter what
+      OSCInterface.sendOSC('/noseX', participant.avgKeyPoints.getTopX(PoseIndex.nose)); 
+
 
       
       // leaving in here for debugging
@@ -509,7 +520,7 @@ import * as OSCInterface from "../OSCInterface"
           case "Pose": {
             friendParticipant.setSize(message.size.width, message.size.height);
             friendParticipant.addKeypoint(message.pose.keypoints, hasFriend, three.getOffsetVidPosition(true), false);
-            participant.updateTouchingFriend(three.getOffsetVidPosition(false), true); //call skeleton intersection
+            participant.updateTouchingFriend(three.getOffsetVidPosition(false), true, true); //call skeleton intersection
             keypointsUpdated(conn.peer, message.pose, message.size);
             break;
           }
@@ -913,7 +924,7 @@ import * as OSCInterface from "../OSCInterface"
 
 
 <div class="valueSliders">
-  <label for="mainVolume">Music Volume:</label>
+  <!-- <label for="mainVolume">Music Volume:</label>
   <div class={glowClass} width="75%">
   <input
     type="range"
@@ -925,9 +936,10 @@ import * as OSCInterface from "../OSCInterface"
     value="0"
     width="100%"
     on:input={onChangeVolumeSlider} />
-  </div>
+  </div> -->
   <!-- <br /> -->
-  <svg
+  <!--
+    <svg
     class="meter"
     xmlns="http://www.w3.org/2000/svg"
     width="75%"
@@ -945,6 +957,7 @@ import * as OSCInterface from "../OSCInterface"
   {#if volSliderReading <= 0 }
   Turn up the volume to hear music.
   {/if}
+-->
 
   <!-- <text>{volumeMeterReading}</text> -->
   <!-- <br/><br/> -->
@@ -977,7 +990,7 @@ import * as OSCInterface from "../OSCInterface"
   <ScoreBar label="verticality correlation:" score={verticalityCorrelation} />
   <ScoreBar label="skeleton touching:" score={skeletonTouching} />
     <ScoreBar label="how long touching:" score={howLongTouch} />
-    <ScoreBar label="how much touching:" score={howMuchTouch} />
+    <!--<ScoreBar label="how much touching:" score={howMuchTouch} /> -->
     <ScoreBar label="match score:" score={matchScore} />
     <ScoreBar label="touching xcorr score:" score={xCorrTouching} />
     <ScoreBar label="total xcorr score:"score={xCorrScore} />

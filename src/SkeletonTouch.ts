@@ -152,7 +152,7 @@ export class SkeletonTouch
 
     howLong()
     {
-        if(this.touching)
+        if( this.touching )
             return (performance.now() - this.startedTouching ) / 1000.0; //just return seconds for now 
         else return 0; 
     }
@@ -163,6 +163,7 @@ export class SkeletonTouch
     }
 
     //percent of total skeleton touching, disregarding confidence at the moment
+    //depreciated -- this doesn't work anymore 
     howMuchTouching() : number
     {
         return this.indicesTouching.length / PoseIndex.posePointCount;

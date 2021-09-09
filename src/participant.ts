@@ -1149,6 +1149,34 @@ export class Participant extends EventEmitter {
             return bodyPartsJerk;
         }
 
+        getBodyPartConfidence(index : number, minConfidence:number = this.minConfidenceScore) : boolean
+        {
+            let bArray = PoseIndex.bodyPartArray[index]; 
+            let aboveConfidenceThresh = false; 
+            
+            for(let i=0; i<bArray.length; i++)
+            {
+                aboveConfidenceThresh = aboveConfidenceThresh || bArray[i] >= minConfidence; 
+            } 
+            return aboveConfidenceThresh;
+        }
+
+        getAvgJerk() : number
+        {
+            let avgJerks : number[] = this.getAvgBodyPartsJerk(); 
+            let avg : number = 0; 
+            let count : number = 0;
+            for( let i=0; i<avgJerks.length; i++ )
+            {
+                if( this.getBodyPartConfidence(i) )
+                {
+                    avg += avgJerks[i];
+                    count++;
+                }
+            }
+            return avg/count;
+        }
+
         getAvgBodyPartAccel( bodyPartIndices : number[], accel:number[], minConfidence :number ) : number
         {
             let avg : number = 0; 
