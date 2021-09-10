@@ -6,6 +6,8 @@ import * as SAT from 'sat';
 import { newtonRaphson, distanceBetweenLines } from './intersectionPoint'
 import { resultHasLandmarks } from './mediaPipePose';
 
+let percentXOver = 0.66;
+
 //need to put in utilities space
 function distance(keypoints: any, poseIndex1: number, poseIndex2: number): number {
     let x1 = keypoints[poseIndex1].position.x;
@@ -368,47 +370,12 @@ export class DrawSkeletonIntersectLine {
                  {
                     touchingPoints.push( ...boxPoints );
                     boxPoints = [];
-
-                    // let intersectingArray = limb.getIntersectingPoints() ; 
-                    // for( let j=0; j<intersectingArray.length; j++ )
-                    // {
-                    //         let intersecting = intersectingArray[j] ; 
-                    //         // console.log( intersecting ); 
-                    //         if( intersecting.length > 1 )
-                    //         {
-                    //         for( let i=0; i<intersecting.length-1; i++ )
-                    //         {
-                    //             let vec1 = new Vector3(intersecting[i].x, intersecting[i].y, intersecting[i].z  ) ;
-                    //             let vec2 = new Vector3(intersecting[i+1].x, intersecting[i+1].y, intersecting[i+1].z  ) ; 
-                        
-                    //             intersectingLines.push( this.translateFromInternalRepresentationToDraw( limb, vec1 ) );
-                    //             intersectingLines.push( this.translateFromInternalRepresentationToDraw( limb, vec2 ) );
-                    //         }
-                    //     }
-                    // }
                  }
 
                 //  console.log({limbPoints}); 
 
             //         // console.log( "here:" + keypoints[0].position.x + "," + keypoints[0].position.y + " to " + keypoints[1].position.x + "," + keypoints[1].position.y  );
             } });
-
-            
-
-            // this.geometry.setFromPoints(points);
-            // this.line.geometry = this.geometry; 
-            // this.line.material = this.material;
-            // this.line.frustumCulled = false;  
-
-            //draws the intersection points
-            // if( intersectingLines.length > 0 )
-            // {
-            //     this.geometry.setFromPoints(intersectingLines);
-            //     this.intersectionTrail.geometry = this.geometry; 
-            //     this.intersectionTrail.material = this.boxMaterial;
-            //     this.intersectionTrail.frustumCulled = false;  
-            //     // console.log( { intersectingLines } );
-            // }
 
             this.touchGeo.setFromPoints(touchingPoints);
             this.touchLine.geometry = this.touchGeo; 
@@ -530,7 +497,7 @@ export class LimbIntersect extends DetectIntersect {
 
         if(this.flip)
         {
-            vec.x += 0.66; 
+            vec.x += percentXOver; 
         }
 
         vec.x = 1 - vec.x;
@@ -717,7 +684,6 @@ export class LimbIntersect extends DetectIntersect {
     scaleVector(v: THREE.Vector3, flip: boolean, i : number=-1): THREE.Vector3 
     {
         //TODO: ok this should be a passed in value -- but it is passed in via draw3js.ts line 84 
-        let percentXOver = 0.66;
 
         let scaledX = 1 - (v.x / this.w); //x is flipped 
         if (flip) {
@@ -1016,8 +982,8 @@ class BodyPartIntersect extends DetectIntersect {
         let group : THREE.Group = new THREE.Group; 
 
         group.add(this.drawSkeleton.groupToDraw());
-        if( !this.isFriend )
-            group.add(this.drawIntersections.groupToDraw());
+        // if( !this.isFriend ) //don't draw yr. own intersections for now
+        //     group.add(this.drawIntersections.groupToDraw());
         return group; 
     }
 
@@ -1265,6 +1231,11 @@ export class SkeletionIntersection {
 
     drawIntersections : DrawIntersections; 
 
+    xMax : number = 1; 
+    yMax : number = 1; 
+    yMin : number = 0; 
+    xMin : number = -percentXOver; 
+
     constructor(participant_: Participant, minConfidence: number = 0.3, w: number = 1, h: number = 1) {
         this.participant = participant_;
         this.w = w; 
@@ -1335,6 +1306,12 @@ export class SkeletionIntersection {
         {
             this.parts[i].updateOffsets(offsets);
         }
+
+        //try
+        this.xMax += (offsets.x/this.w)/2; 
+        this.yMax += (offsets.y/this.h)/2; 
+        this.xMin += (offsets.x/this.w)/2; 
+        this.yMin += (offsets.y/this.h)/2; 
     }
 
     getDrawGroup() : THREE.Group
@@ -1399,6 +1376,7 @@ export class SkeletionIntersection {
 
         //     console.log("Touching! "+i+ " with " + j);
         // } else console.log( "Not touching!!");
+
         return touch;
     }
 

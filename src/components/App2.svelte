@@ -321,8 +321,14 @@ import * as PoseIndex from "../poseConstants.js"
       }
       if( participant.areTouching() )
       {
+        //this is a hack. let's see tho.
+        let si = participant.getSkeletonIntersection(); 
+        let x = Scale.linear_scale( participant.getTouchPosition().x, si.xMin, si.xMax, 0, 1); 
+        let y = Scale.linear_scale( participant.getTouchPosition().y, si.yMin, si.yMax, 0, 1); 
+
+
         OSCInterface.sendOSC('/touchVelocity', participant.getTouchVelocity());
-        OSCInterface.sendOSC('/touchXPos', Scale.linear_scale( participant.getTouchPosition().x, -1, 1, 0, 1)); 
+        OSCInterface.sendOSC('/touchXPos', x ); 
         OSCInterface.sendOSC('/touchYPos', participant.getTouchPosition().y ); 
         OSCInterface.sendOSC('/localParticipant/jerk', participant.getAvgJerk());
         OSCInterface.sendOSC('/touchPointCorrelation', participant.getAvgXCorrAtTouchingKeypoints()); 

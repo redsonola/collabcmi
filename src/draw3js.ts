@@ -34,7 +34,7 @@ export interface ThreeRenderer {
   moveVideoCam : (which:number, x2:number, y2:number) => void;
   moveVideoCamFromThreeJSCoords : (which:number, x2:number, y2:number) => void;
   getOffsetVidPosition : (isFriend : boolean) => Vector3
-
+  positionToScreen: (x: number, y: number) => Vector3;
 }
 
 export type MakeThreeRenderer = (props: ThreeRenderProps) => ThreeRenderer;
@@ -468,6 +468,10 @@ export function threeRenderCode({
       const videoGroup = findGroup(personId);
       if (!videoGroup) return;
       whichIndexIsSelf = allVideosGroup.children.indexOf(videoGroup); 
+    },
+    positionToScreen(x: number, y: number) : THREE.Vector3
+    {
+      return posToScreen(x, y); 
     },
     getOffsetVidPosition( isFriend : boolean ) : THREE.Vector3
     {
