@@ -26,6 +26,7 @@ export class VerticalityAngle
   vAngle : number = 0; 
   vAngleMean : AveragingFilter;
   minConfidence = 0.3; 
+  useNoseShoulder: boolean = false; //sub for nose/shoulder if only portrait view/sitting down
 
   constructor( keypoints : AverageFilteredKeyPoints, minConfidence : number )
   {
@@ -36,11 +37,19 @@ export class VerticalityAngle
 
   enoughData( points : { x: number, y: number, score: number }[]   ) : boolean
   {
-    return points[ PoseIndex.rightHip].score >= this.minConfidence &&
+    this.useNoseShoulder = !( points[ PoseIndex.rightHip].score >= this.minConfidence &&
            points[ PoseIndex.leftHip].score >= this.minConfidence &&
            points[ PoseIndex.leftShoulder].score >= this.minConfidence &&
-           points[ PoseIndex.rightShoulder].score >= this.minConfidence; 
-
+           points[ PoseIndex.rightShoulder].score >= this.minConfidence ) ; 
+    
+    if( this.useNoseShoulder )
+    {  
+      this.useNoseShoulder =  points[ PoseIndex.nose].score >= this.minConfidence &&
+      points[ PoseIndex.leftShoulder].score >= this.minConfidence &&
+      points[ PoseIndex.rightShoulder].score >= this.minConfidence;
+      return this.useNoseShoulder; 
+    }
+    else return true; 
   }
 
   midpoint( points: { position: {x: number, y: number}, score: number }[], i : number, j : number ) : { x: number, y: number } 
@@ -59,6 +68,13 @@ export class VerticalityAngle
 
     let hip = this.midpoint(points, PoseIndex.rightHip, PoseIndex.leftHip);
     let shoulder = this.midpoint(points, PoseIndex.rightShoulder, PoseIndex.leftShoulder);
+
+    //if using nose/shoulder -- use that.
+    if( this.useNoseShoulder )
+    {
+      hip = shoulder; //lol KINDA
+      shoulder = points[ PoseIndex.nose ].position; //again, lol KINDA!
+    }
 
     //note: y is flipped from the paper, so should check whether there is sign flippage, etc.
     let v = { x:hip.x-shoulder.x, y:hip.y-shoulder.y };

@@ -57,7 +57,7 @@ import * as OSCInterface from "../OSCInterface"
 import * as PoseIndex from "../poseConstants.js"
 
   export let router: RouterState;
-  export let showDebugPanel = true;  router.query.debug === "true";
+  export let showDebugPanel = false;  router.query.debug === "true";
 
   const webcamVideo = videoSubscription("webcam");
   const theirVideo = videoSubscription();
@@ -334,7 +334,14 @@ import * as PoseIndex from "../poseConstants.js"
         OSCInterface.sendOSC('/touchPointCorrelation', participant.getAvgXCorrAtTouchingKeypoints()); 
       }
       OSCInterface.sendOSC('/howLongTouch', howLongTouch); //send no matter what
-      OSCInterface.sendOSC('/noseX', participant.avgKeyPoints.getTopX(PoseIndex.nose)); 
+      OSCInterface.sendOSC('/self/noseX', participant.avgKeyPoints.getTopX(PoseIndex.nose)); 
+      OSCInterface.sendOSC('/self/noseY', participant.avgKeyPoints.getTopY(PoseIndex.nose)); 
+
+      if( hasFriend )
+      {
+        OSCInterface.sendOSC('/friend/noseX', friendParticipant.avgKeyPoints.getTopX(PoseIndex.nose)); 
+        OSCInterface.sendOSC('/friend/noseY', friendParticipant.avgKeyPoints.getTopY(PoseIndex.nose)); 
+      }
 
 
       

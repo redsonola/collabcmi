@@ -1323,7 +1323,8 @@ export class SkeletionIntersection {
                 group.add(part.draw());
             }
         );
-        group.add( this.drawIntersections.groupToDraw() );
+        //turning off drawing the intersections for now.
+        //group.add( this.drawIntersections.groupToDraw() );
 
         return group; 
     }
