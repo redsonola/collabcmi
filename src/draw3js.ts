@@ -216,13 +216,13 @@ export function threeRenderCode({
     let leftMargin : number = 0.67; 
     if( allVideosGroup.children.length <= 1 )
     {
-      leftMargin = 0.5; 
+      leftMargin = 0.25; 
     }
 
     for (let i = 0; i < allVideosGroup.children.length; i++) {
       const group = allVideosGroup.children[i];
       group.position.x = ( videoOverlapAmount * i ) + leftMargin;
-      group.position.y = 0.3;
+      group.position.y = 0.4;
 
       //leaving the overlapped videos for now
 

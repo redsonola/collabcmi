@@ -461,7 +461,7 @@ import * as PoseIndex from "../poseConstants.js"
 
     //only if sending to max -- note the file recording server should be started
     if( whichPiece === WhichPiece.TUG_OF_WAR )
-      OSCInterface.initOSC();
+       OSCInterface.initOSC();
 
 
     mainVolume = new MainVolume((val) => {
