@@ -12,7 +12,7 @@ import { orderParticipantID } from './participant'
 import type { SkeletionIntersection } from './skeletonIntersection';
 import { number } from 'mathjs';
 
-export const videoOverlapAmount = 0.;
+export const videoOverlapAmount = 0.25;
 
 export interface PoseVideo {
   video: CameraVideo;
@@ -214,12 +214,12 @@ export function threeRenderCode({
     }
     
     let leftMargin : number = 0.67; 
-    if( allVideosGroup.children.length <= 1 )
-    {
-      // leftMargin = 0.5; 
-      leftMargin = 0.6; 
+    // if( allVideosGroup.children.length <= 1 )
+    // {
+    //   // leftMargin = 0.5; 
+    //   leftMargin = 0.58; 
 
-    }
+    // }
 
     for (let i = 0; i < allVideosGroup.children.length; i++) {
       const group = allVideosGroup.children[i];
