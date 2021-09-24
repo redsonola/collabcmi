@@ -7,7 +7,7 @@ import { newtonRaphson, distanceBetweenLines } from './intersectionPoint'
 // import { videoOverlapAmount } from './draw3js'
 import { resultHasLandmarks } from './mediaPipePose';
 
-let videoOverlapAmount = 0.33 ;
+let videoOverlapAmount = 0.2 ;
 
 //need to put in utilities space
 function distance(keypoints: any, poseIndex1: number, poseIndex2: number): number {
