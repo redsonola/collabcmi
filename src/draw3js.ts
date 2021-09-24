@@ -248,9 +248,13 @@ export function threeRenderCode({
       //   });
     }
 
+    // lookAt(new Box3(
+    //   new Vector3(0, -0.5, 0),
+    //   new Vector3(allVideosGroup.children.length, 1, 0),
+    // ));
     lookAt(new Box3(
       new Vector3(0, -0.5, 0),
-      new Vector3(allVideosGroup.children.length, 1, 0),
+      new Vector3(1, 1, 0),
     ));
   }
 
