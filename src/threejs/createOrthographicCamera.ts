@@ -87,7 +87,7 @@ export function createOrthographicCamera(canvas, _width, _height) {
       }
 
       boundingBox.getCenter(camera.position)
-      camera.position.z = 170
+      camera.position.z = 150
 
       camera.updateProjectionMatrix();
     }
