@@ -216,7 +216,7 @@ export function threeRenderCode({
     let leftMargin : number = 0.67; 
     if( allVideosGroup.children.length <= 1 )
     {
-      leftMargin = 0.75; 
+      leftMargin = 0.1; 
     }
 
     for (let i = 0; i < allVideosGroup.children.length; i++) {
@@ -248,13 +248,9 @@ export function threeRenderCode({
       //   });
     }
 
-    // lookAt(new Box3(
-    //   new Vector3(0, -0.5, 0),
-    //   new Vector3(allVideosGroup.children.length, 1, 0),
-    // ));
     lookAt(new Box3(
       new Vector3(0, -0.5, 0),
-      new Vector3(1, 1, 0),
+      new Vector3(allVideosGroup.children.length, 1, 0),
     ));
   }
 
