@@ -4,9 +4,10 @@ import * as PoseIndex from './poseConstants'
 import { Box2, BufferGeometry, Vector3 } from 'three';
 import * as SAT from 'sat'; 
 import { newtonRaphson, distanceBetweenLines } from './intersectionPoint'
+// import { videoOverlapAmount } from './draw3js'
 import { resultHasLandmarks } from './mediaPipePose';
 
-let percentXOver = 0.66;
+let videoOverlapAmount = 0.33 ;
 
 //need to put in utilities space
 function distance(keypoints: any, poseIndex1: number, poseIndex2: number): number {
@@ -497,7 +498,7 @@ export class LimbIntersect extends DetectIntersect {
 
         if(this.flip)
         {
-            vec.x += percentXOver; 
+            vec.x += videoOverlapAmount; 
         }
 
         vec.x = 1 - vec.x;
@@ -687,7 +688,7 @@ export class LimbIntersect extends DetectIntersect {
 
         let scaledX = 1 - (v.x / this.w); //x is flipped 
         if (flip) {
-            scaledX -= percentXOver;
+            scaledX -= videoOverlapAmount;
         }
 
         let scaledY = v.y / this.h;
@@ -1234,7 +1235,7 @@ export class SkeletionIntersection {
     xMax : number = 1; 
     yMax : number = 1; 
     yMin : number = 0; 
-    xMin : number = -percentXOver; 
+    xMin : number = -videoOverlapAmount; 
 
     constructor(participant_: Participant, minConfidence: number = 0.3, w: number = 1, h: number = 1) {
         this.participant = participant_;
