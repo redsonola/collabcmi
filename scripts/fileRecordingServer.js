@@ -57,8 +57,9 @@ oscForMax();
 osc?.send( new OSC.Message( "/testMessage"), { port: 8998 } ); 
 
 
-app.post("/api/init-osc", () => {
+app.get("/api/init-osc", (req, res) => {
   console.log( "osc initialized" ); 
+  res.send("ok");
 });
 
 app.use(bodyParser.urlencoded({ extended: false, limit: "4gb" }));

@@ -12,11 +12,11 @@ export function initOSC()
 
   try {
     axios({
-      method: 'post',
+      method: 'get',
       url: "https://localhost:3000/api/init-osc",
     })
       .then(function (response) {
-
+        console.log("osc initialized"); 
       })
       .catch(function (error) {
         // handle error
