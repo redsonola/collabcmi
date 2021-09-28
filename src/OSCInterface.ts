@@ -8,29 +8,29 @@ import axios from 'axios'; //TODO: https://github.com/axios/axios
 
 export function initOSC()
 {
-  // fetch(`/api/init-osc`);
+  fetch(`/api/init-osc`);
 
-  // try {
-  //   axios({
-  //     method: 'get',
-  //     url: "https://localhost:3000/api/init-osc",
-  //   })
-  //     .then(function (response) {
-  //       console.log("osc initialized"); 
-  //     })
-  //     .catch(function (error) {
-  //       // handle error
-  //       console.log(error);
-  //       console.log("error with init osc"); 
-  //       return null;
-  //     });
-  //   }
-  //   catch(e)
-  //   {
-  //     connectionRefused = true; 
-  //     console.log(e);
-  //     console.log("Turning off OSC sending");
-  //   }
+  try {
+    axios({
+      method: 'get',
+      url: "https://localhost:3000/api/init-osc",
+    })
+      .then(function (response) {
+        console.log("osc initialized"); 
+      })
+      .catch(function (error) {
+        // handle error
+        console.log(error);
+        console.log("error with init osc"); 
+        return null;
+      });
+    }
+    catch(e)
+    {
+      connectionRefused = true; 
+      console.log(e);
+      console.log("Turning off OSC sending");
+    }
 
 }
 
@@ -39,38 +39,38 @@ let connectionRefused : boolean = false;
 //ok, will change later, but actually doesn't use the address. 
 export function sendOSC(addr: string, arg:number)
 {
-  // if( arg < 0.0001 )
-  // {
-  //   arg = 0; //don't send things in sci. notation. just say its 0. hack hack ahck
-  // }
-  // else if( isNaN(arg) )
-  // {
-  //   return;
-  // }
+  if( arg < 0.0001 )
+  {
+    arg = 0; //don't send things in sci. notation. just say its 0. hack hack ahck
+  }
+  else if( isNaN(arg) )
+  {
+    return;
+  }
 
-  // if(! connectionRefused)
-  // {
-  //   try {
-  //     axios({
-  //       method: 'get',
-  //       url: "https://localhost:3000/send-osc?addr=" + addr + "&argument=" + arg,
-  //       responseType: 'text'
-  //     })
-  //       .then(function (response) {
+  if(! connectionRefused)
+  {
+    try {
+      axios({
+        method: 'get',
+        url: "https://localhost:3000/send-osc?addr=" + addr + "&argument=" + arg,
+        responseType: 'text'
+      })
+        .then(function (response) {
 
-  //       })
-  //       .catch(function (error) {
-  //         // handle error
-  //         console.log(error);
-  //         console.log("error"); 
-  //         return null;
-  //       });
-  //     }
-  //     catch(e)
-  //     {
-  //       connectionRefused = true; 
-  //       console.log(e);
-  //       console.log("Turning off OSC sending");
-  //     }
-  // }
+        })
+        .catch(function (error) {
+          // handle error
+          console.log(error);
+          console.log("error"); 
+          return null;
+        });
+      }
+      catch(e)
+      {
+        connectionRefused = true; 
+        console.log(e);
+        console.log("Turning off OSC sending");
+      }
+  }
 }
