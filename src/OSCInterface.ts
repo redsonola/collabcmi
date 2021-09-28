@@ -10,27 +10,27 @@ export function initOSC()
 {
   // fetch(`/api/init-osc`);
 
-  try {
-    axios({
-      method: 'get',
-      url: "https://localhost:3000/api/init-osc",
-    })
-      .then(function (response) {
-        console.log("osc initialized"); 
-      })
-      .catch(function (error) {
-        // handle error
-        console.log(error);
-        console.log("error with init osc"); 
-        return null;
-      });
-    }
-    catch(e)
-    {
-      connectionRefused = true; 
-      console.log(e);
-      console.log("Turning off OSC sending");
-    }
+  // try {
+  //   axios({
+  //     method: 'get',
+  //     url: "https://localhost:3000/api/init-osc",
+  //   })
+  //     .then(function (response) {
+  //       console.log("osc initialized"); 
+  //     })
+  //     .catch(function (error) {
+  //       // handle error
+  //       console.log(error);
+  //       console.log("error with init osc"); 
+  //       return null;
+  //     });
+  //   }
+  //   catch(e)
+  //   {
+  //     connectionRefused = true; 
+  //     console.log(e);
+  //     console.log("Turning off OSC sending");
+  //   }
 
 }
 
