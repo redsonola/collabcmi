@@ -2,7 +2,6 @@
   "name": "space-between",
   "version": "0.1.0",
   "private": true,
-  "proxy": "http://localhost:3000",
   "dependencies": {
     "@mediapipe/pose": "0.3.1621277220",
     "@snowpack/plugin-babel": "^2.1.6",
