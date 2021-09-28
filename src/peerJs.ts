@@ -33,7 +33,8 @@ export function findChatRoulettePartner(myId: string): Promise<string | null>
   return axios({
     method: 'get',
     url: "https://skinhunger-peerserver.herokuapp.com/find?id=" + myId,
-    responseType: 'text'
+    responseType: 'text', 
+    proxy:false,
   })
 
     .then(function (response) {
