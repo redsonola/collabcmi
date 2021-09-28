@@ -63,6 +63,7 @@ export function sendOSC(addr: string, arg:number)
         })
         .catch(function (error) {
           // handle error
+          connectionRefused = true; 
           console.log(error);
           console.log("error"); 
           return null;
