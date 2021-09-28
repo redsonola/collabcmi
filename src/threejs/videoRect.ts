@@ -25,9 +25,9 @@ export function videoRect(video: CameraVideo) {
   // transparent material for video
   const material = new MeshBasicMaterial({
     map: texture,
-    transparent: true,
+    // transparent: true,
     opacity: 0.9,
-    // color: color3
+    color: color3
   });
   // const material = new MeshBasicMaterial({ map: texture });
 
