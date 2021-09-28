@@ -8,7 +8,30 @@ import axios from 'axios'; //TODO: https://github.com/axios/axios
 
 export function initOSC()
 {
-  fetch(`/api/init-osc`);
+  // fetch(`/api/init-osc`);
+
+  try {
+    axios({
+      method: 'post',
+      url: "https://localhost:3000/api/init-osc",
+    })
+      .then(function (response) {
+
+      })
+      .catch(function (error) {
+        // handle error
+        console.log(error);
+        console.log("error with init osc"); 
+        return null;
+      });
+    }
+    catch(e)
+    {
+      connectionRefused = true; 
+      console.log(e);
+      console.log("Turning off OSC sending");
+    }
+
 }
 
 let connectionRefused : boolean = false; 
