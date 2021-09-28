@@ -14,6 +14,7 @@ export function initOSC()
     axios({
       method: 'get',
       url: "https://localhost:3000/api/init-osc",
+      proxy:false,
     })
       .then(function (response) {
         console.log("osc initialized"); 
@@ -54,7 +55,8 @@ export function sendOSC(addr: string, arg:number)
       axios({
         method: 'get',
         url: "https://localhost:3000/send-osc?addr=" + addr + "&argument=" + arg,
-        responseType: 'text'
+        responseType: 'text', 
+        proxy: false
       })
         .then(function (response) {
 
