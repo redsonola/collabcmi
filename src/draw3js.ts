@@ -52,7 +52,7 @@ export function threeRenderCode({
     camera,
     renderer,
     updateSize,
-    setFrustum
+    lookAt
   } = createOrthographicCamera(canvas, window.innerWidth, window.innerHeight);
 
   setTimeout(() => {
@@ -248,7 +248,11 @@ export function threeRenderCode({
       //   });
     }
 
-    setFrustum(-0.5, group.position.y);
+    // setFrustum(-0.5, group.position.y);
+    lookAt(new Box3(
+      new Vector3(0, -0.5, 0),
+      new Vector3(allVideosGroup.children.length, 1, 0),
+    ));
   }
 
 

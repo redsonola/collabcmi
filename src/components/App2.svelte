@@ -8,8 +8,8 @@
   import Loading from "./Loading.svelte";
   // import { interceptFileRequest } from "../hackXhrInterceptor";
   import '@tensorflow/tfjs-backend-webgl';
-  import { initPosenet } from "../threejs/posenetcopy";
-  // import { initPosenet } from "../threejs/mediapipePose";
+  // import { initPosenet } from "../threejs/posenetcopy";
+  import { initPosenet } from "../threejs/mediapipePose";
   // import { initPosenet } from "../threejs/posenetMock";
 
   import { videoSubscription } from "../threejs/cameraVideoElement";
@@ -52,12 +52,12 @@
 
   import * as THREE from "three";
   import { DataConnection, MediaConnection } from "peerjs";
-import { Vector3 } from "three";
-import * as OSCInterface from "../OSCInterface"
-import * as PoseIndex from "../poseConstants.js"
+  import { Vector3 } from "three";
+  import * as OSCInterface from "../OSCInterface"
+  import * as PoseIndex from "../poseConstants.js"
 
   export let router: RouterState;
-  export let showDebugPanel = false;  router.query.debug === "true";
+  export let showDebugPanel = router.query.debug === "true";
 
   const webcamVideo = videoSubscription("webcam");
   const theirVideo = videoSubscription();
@@ -120,6 +120,22 @@ import * as PoseIndex from "../poseConstants.js"
   // or, for the storybook app, you can just say this app is making the call or not.
   export let idToCall: string | null = querystringCallId || null;
   export let size: { width: number; height: number };
+
+  onMount(() => {
+    function onWindowResize() {
+      const width = canvas.parentElement.clientWidth;
+      const height = canvas.parentElement.clientHeight;
+      size = { width, height };
+    }
+    onWindowResize();
+
+    window.addEventListener('resize', onWindowResize, false);
+
+    // onMount can return a cleanup function
+    return () => {
+      window.removeEventListener('resize', onWindowResize);
+    }
+  });
 
   let loading = true;
   let progressNumber = 0;
