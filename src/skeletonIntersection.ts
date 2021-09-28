@@ -1309,11 +1309,16 @@ export class SkeletionIntersection {
             this.parts[i].updateOffsets(offsets);
         }
 
+        // xMax : number = 1; 
+        // yMax : number = 1; 
+        // yMin : number = 0; 
+        // xMin : number = -videoOverlapAmount; 
+
         //try
-        this.xMax += (offsets.x/this.w)/2; 
-        this.yMax += (offsets.y/this.h)/2; 
-        this.xMin += (offsets.x/this.w)/2; 
-        this.yMin += (offsets.y/this.h)/2; 
+        this.xMax += -(offsets.x/this.w)/2; 
+        this.yMax += -(offsets.y/this.h)/2; 
+        this.xMin += -(offsets.x/this.w)/2; 
+        this.yMin += -(offsets.y/this.h)/2; 
     }
 
     getDrawGroup() : THREE.Group
