@@ -8,7 +8,7 @@ import axios from 'axios'; //TODO: https://github.com/axios/axios
 
 export function initOSC()
 {
-  fetch(`/api/init-osc`);
+  // fetch(`/api/init-osc`);
 
   try {
     axios({
