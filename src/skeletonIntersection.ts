@@ -288,7 +288,8 @@ export class DrawSkeletonIntersectLine {
     constructor(minConfidence:number =0.4, personId: string = "", width: number, height: number) {
 
         this.material = new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent:true, opacity:1});
-        this.touchingMaterial = new THREE.LineBasicMaterial({ color: 0xFF00FF, transparent:true, opacity:1});
+        //was xFF00FF, 
+        this.touchingMaterial = new THREE.LineBasicMaterial({ color: 0xef8efa, transparent:true, opacity:1});
         this.boxMaterial = new THREE.LineBasicMaterial({ color: 0x99FF99, transparent:true, opacity:1});
 
         this.personId = personId;

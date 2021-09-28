@@ -14,7 +14,7 @@ export function cameraSizeRectangle(x, y, width, height) {
 export function createOrthographicCamera(canvas, _width, _height) {
   let width = _width, height = _height;
   const frustumSize = 1000;
-  const aspect = width / height;
+  let aspect = width / height;
   const camera = new OrthographicCamera(
     frustumSize * aspect / - 2,
     frustumSize * aspect / 2,
@@ -41,7 +41,7 @@ export function createOrthographicCamera(canvas, _width, _height) {
     camera,
     renderer,
     updateSize(width, height) {
-      const aspect = width / height;
+      aspect = width / height;
 
       camera.left = (frustumSize * aspect / -2)*0.75;
       camera.right = (frustumSize * aspect / 2)*0.75;;
@@ -52,6 +52,16 @@ export function createOrthographicCamera(canvas, _width, _height) {
 
       renderer.setSize(width, height, false);
     },
+
+    setFrustum(left: number, right: number)
+    {
+      camera.left = left;
+      camera.right = right;
+      const width = right - left;
+      camera.top = width / aspect;
+      camera.bottom = -camera.top;
+    },
+
     /**
      * Move & resize the camera so it includes obj
      * https://stackoverflow.com/questions/42865240/how-to-fit-object-to-camera-in-threejs-using-orthographiccamera
