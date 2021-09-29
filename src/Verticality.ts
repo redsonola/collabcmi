@@ -149,7 +149,7 @@ export class VerticalityCorrelation
     {
       this.avgAngles[i].update( this.vAngles[i].getAngle() );
       this.angles[i].add( this.vAngles[i].getAngle()  );
-      console.log( this.vAngles[i].getAngle() ); 
+      // console.log( this.vAngles[i].getAngle() ); 
     }
     
     //find current correlation value

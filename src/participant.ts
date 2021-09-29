@@ -804,7 +804,7 @@ export class Participant extends EventEmitter {
         {
             if( this.getAvgScore(bodyPartIndices[i]) >= minConfidence )
                 {
-                    sum += this.avgKeyPoints.getDxyAvg(bodyPartIndices[i]); 
+                    sum += this.avgKeyPoints.getDxyAvg2(bodyPartIndices[i]); 
                     count++; 
                 }
         } 

@@ -12,7 +12,7 @@ import { orderParticipantID } from './participant'
 import type { SkeletionIntersection } from './skeletonIntersection';
 import { number } from 'mathjs';
 
-export const videoOverlapAmount = 0.25;
+export const videoOverlapAmount = 0.2;
 
 export interface PoseVideo {
   video: CameraVideo;

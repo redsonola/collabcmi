@@ -50,6 +50,8 @@ export class AverageFilteredKeyPoints
     dyAvg : AveragingFilter[];
     dxAvgScaled : AveragingFilter[]; // these are scaled by eye distance
     dyAvgScaled : AveragingFilter[]; // these are scaled by eye distance
+    dxAvgScaled2 : AveragingFilter[]; // these are scaled by eye distance
+    dyAvgScaled2 : AveragingFilter[]; // these are scaled by eye distance
     dxScaledNoAbs : CircularBuffer<number>[]; // these are scaled by eye distance
     dyScaledNoAbs : CircularBuffer<number>[]; // these are scaled by eye distance
     updateTimesDx : CircularBuffer<number>[]; //when has dx  been updated
@@ -134,6 +136,8 @@ export class AverageFilteredKeyPoints
 
         this.dxAvgScaled = []; // these are scaled by eye distance
         this.dyAvgScaled = []; // these are scaled by eye distance
+        this.dxAvgScaled2 = []; // these are scaled by eye distance
+        this.dyAvgScaled2 = []; // these are scaled by eye distance
         this.dxScaledNoAbs = []; // these are scaled by eye distance
         this.dyScaledNoAbs = []; // these are scaled by eye distance
     
@@ -193,6 +197,9 @@ export class AverageFilteredKeyPoints
             this.dyAvg.push(new AveragingFilter(this.AVG_DX_BUFFER_SIZE, avgOutBufferSize));
             this.dxAvgScaled.push(new AveragingFilter(this.AVG_DX_BUFFER_SIZE, avgOutBufferSize)); // these are scaled by eye distance
             this.dyAvgScaled.push(new AveragingFilter(this.AVG_DX_BUFFER_SIZE, avgOutBufferSize)); // these are scaled by eye distance
+            this.dxAvgScaled2.push(new AveragingFilter(2, avgOutBufferSize)); // these are scaled by eye distance
+            this.dyAvgScaled2.push(new AveragingFilter(2, avgOutBufferSize)); // these are scaled by eye distance
+
             
             this.dxScaledNoAbs.push(new CircularBuffer<number>(this.dxOutBufferSize)); 
             this.dyScaledNoAbs.push(new CircularBuffer<number>(this.dxOutBufferSize)); 
@@ -342,6 +349,8 @@ export class AverageFilteredKeyPoints
                 if( !isNaN(scaledDxXcorr) )
                 {
                     this.dxAvgScaled[i].update( scaledDxXcorr ); 
+                    this.dxAvgScaled2[i].update( scaledDxXcorr ); 
+
                     if( this.xDx[i].top() >= 0  )
                     {
                         this.dxScaledNoAbs[i].add( scaledDxXcorr );
@@ -357,6 +366,8 @@ export class AverageFilteredKeyPoints
                 if( !isNaN(scaledDyXcorr) )
                 {
                     this.dyAvgScaled[i].update( scaledDyXcorr ); 
+                    this.dyAvgScaled2[i].update( scaledDyXcorr ); 
+
                     if( this.xDx[i].top() >= 0  )
                     {
                         this.dyScaledNoAbs[i].add( scaledDyXcorr );
@@ -758,6 +769,11 @@ export class AverageFilteredKeyPoints
     getDxyAvg( i: number )
     {
         return Math.max( this.dxAvgScaled[i].top(), this.dyAvgScaled[i].top() ) ;
+    }
+
+    getDxyAvg2( i: number ) //returns only 2 samples
+    {
+        return Math.max( this.dxAvgScaled2[i].top(), this.dyAvgScaled2[i].top() ) ;
     }
 
     getDxyMax( i: number )

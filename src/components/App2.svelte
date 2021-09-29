@@ -90,6 +90,8 @@
   let cursorStyle : string = "default";
   let hasFriend : boolean = false; //set this when there is another participant to true & read value
 
+  //******** IMPORTANT!!!!!!!!!!!!!!!!!! REMINDER TO SELF -- TURN BACK ON VIDEO CALL AUDIO & MUTE BUTTONS AFTER PERFORMANCE ***********/
+
 
   //is the webcam moving, if so, where?
   let movingWebCamWindow : {which:number, startX:number, startY:number, isMoving: boolean } = 
@@ -341,6 +343,7 @@
         let si = participant.getSkeletonIntersection(); 
         let x = Scale.linear_scale( participant.getTouchPosition().x, si.xMin, si.xMax, 0, 1); 
         let y = Scale.linear_scale( participant.getTouchPosition().y, si.yMin, si.yMax, 0, 1); 
+        // console.log("x: "+participant.getTouchPosition().x+ " y: " + participant.getTouchPosition().y + " xmax: " + si.xMax + " xmin: " + si.xMin);
 
 
         OSCInterface.sendOSC('/touchVelocity', participant.getTouchVelocity());
@@ -357,6 +360,11 @@
       {
         OSCInterface.sendOSC('/friend/noseX', friendParticipant.avgKeyPoints.getTopX(PoseIndex.nose)); 
         OSCInterface.sendOSC('/friend/noseY', friendParticipant.avgKeyPoints.getTopY(PoseIndex.nose)); 
+
+        combinedWindowedScore += friendParticipant.getMaxBodyPartDx(minConfidence); 
+        combinedWindowedScore /= 2; 
+        OSCInterface.sendOSC('/combinedDxDy', combinedWindowedScore); 
+        OSCInterface.sendOSC('/synchScore', synchScore); 
       }
 
 
@@ -992,16 +1000,16 @@
   <!-- <br/><br/> -->
 </div>
 
-{#if peerIds.length !== 0 || idToCall !== null}
+<!-- {#if peerIds.length !== 0 || idToCall !== null}
 <div class="myMute" style={`left:${myMutePosition.x}px; top:${myMutePosition.y}px`}>
   <input type="image" on:click={muteSelf} alt="muteButton" src={myMuteButtonText} width="23px" height="23px" />
 </div>
 
 <!-- I just made the myMutePosition.y position top for this one, bc they should be the same anyways. fix for real l8rz -->
-<div class="theirMute" style={`left:${theirMutePosition.x}px; top:${theirMutePosition.y}px`}> 
+<!-- <div class="theirMute" style={`left:${theirMutePosition.x}px; top:${theirMutePosition.y}px`}> 
   <input type="image" on:click={muteThem} alt="theirMuteButton" src={theirMuteButtonText} width="23px" height="23px" />
-</div>
-{/if}
+</div> 
+{/if} -->
 {#if showDebugPanel}
   <DebugPanel myId={myId}>
   <!--
