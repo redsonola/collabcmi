@@ -26,7 +26,7 @@ export function createOrthographicCamera(canvas, _width, _height) {
 
   camera.position.x = 100;
   camera.position.y = 100;
-  camera.position.z = 100;
+  camera.position.z = 75;
 
   camera.lookAt(new Vector3(100, 100, 0));
   camera.updateMatrixWorld();
@@ -43,10 +43,10 @@ export function createOrthographicCamera(canvas, _width, _height) {
     updateSize(width, height) {
       aspect = width / height;
 
-      camera.left = (frustumSize * aspect / -2)*0.75;
-      camera.right = (frustumSize * aspect / 2)*0.75;;
-      camera.top = (frustumSize / 2)*0.75;
-      camera.bottom = (frustumSize / -2)*0.75;
+      camera.left = (frustumSize * aspect / -2)*0.65;
+      camera.right = (frustumSize * aspect / 2)*0.65;;
+      camera.top = (frustumSize / 2)*0.65;
+      camera.bottom = (frustumSize / -2)*0.65;
 
       camera.updateProjectionMatrix();
 
@@ -95,9 +95,8 @@ export function createOrthographicCamera(canvas, _width, _height) {
         // if view is taller than it is wide, zoom to fit width
         camera.zoom = width / size.x;
       }
-
+      camera.position.z = 75;
       boundingBox.getCenter(camera.position)
-      camera.position.z = 150
 
       camera.updateProjectionMatrix();
     }

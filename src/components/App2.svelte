@@ -1080,9 +1080,9 @@
 {/if}
 
 <br />
-<div class="linksPanel">
+<!-- <div class="linksPanel">
   <a href="/about" target="_blank">About Skin Hunger</a> | <a href="/instructions" target="_blank">Instructions</a>
-</div>
+</div> -->
 
 {#if loading}
   <Loading {progress} />
