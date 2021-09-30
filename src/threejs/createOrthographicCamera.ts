@@ -43,7 +43,7 @@ export function createOrthographicCamera(canvas, _width, _height) {
     updateSize(width, height) {
       aspect = width / height;
 
-      camera.left = (frustumSize * aspect / -2)*0.65;
+      camera.left = (frustumSize * aspect / -2)*0.65; //this is where you change the camera window sizes
       camera.right = (frustumSize * aspect / 2)*0.65;;
       camera.top = (frustumSize / 2)*0.65;
       camera.bottom = (frustumSize / -2)*0.65;

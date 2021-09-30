@@ -264,6 +264,7 @@ export class DrawIntersections {
 export class DrawSkeletonIntersectLine {
 
     material: THREE.LineBasicMaterial;
+    material2: THREE.LineBasicMaterial;
     touchingMaterial: THREE.LineBasicMaterial; 
     boxMaterial: THREE.LineBasicMaterial; 
 
@@ -288,6 +289,9 @@ export class DrawSkeletonIntersectLine {
     constructor(minConfidence:number =0.4, personId: string = "", width: number, height: number) {
 
         this.material = new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent:true, opacity:1});
+
+        this.material2 = new THREE.LineBasicMaterial({ color: 0xc3df6fc, transparent:true, opacity:1});
+
         //was xFF00FF, 
         this.touchingMaterial = new THREE.LineBasicMaterial({ color: 0xf955fa, transparent:true, opacity:1});
         this.boxMaterial = new THREE.LineBasicMaterial({ color: 0x99FF99, transparent:true, opacity:1});
@@ -386,7 +390,14 @@ export class DrawSkeletonIntersectLine {
             
             this.geometryBox.setFromPoints(boxPoints);
             this.boxLine.geometry = this.geometryBox; 
-            this.boxLine.material = this.material;
+            if( this.limbs[0].flip )
+            {
+                this.boxLine.material = this.material;
+            }
+            else
+            {
+                this.boxLine.material = this.material2;
+            }
             this.boxLine.frustumCulled = false;   
 
             group.add( this.line ) ;
@@ -403,12 +414,14 @@ class DrawHead extends DrawSkeletonIntersectLine {
     radius : number = 0;
     ellipseCurve : THREE.EllipseCurve = new THREE.EllipseCurve(0, 0, 0, 0, 0, 0, false, 0); 
     touching : boolean; 
+    flip : boolean
     
-    updateHead(center : THREE.Vector3, radius : number, touching:boolean ) : void
+    updateHead(center : THREE.Vector3, radius : number, touching:boolean, flip:boolean ) : void
     {
         this.center = center; 
         this.radius = radius; 
         this.touching = touching; 
+        this.flip = flip;
     }
 
     groupToDraw() : THREE.Group {
@@ -428,24 +441,28 @@ class DrawHead extends DrawSkeletonIntersectLine {
             this.ellipseCurve.aEndAngle = 2 * Math.PI; 
             this.ellipseCurve.aClockwise = false;
             this.ellipseCurve.aRotation = 0;
-
-            // const curve = new THREE.EllipseCurve(
-            //     this.center.x,  this.center.y,            // ax, aY
-            //     x_radius, y_radius,           // xRadius, yRadius
-            //     0,  2 * Math.PI,  // aStartAngle, aEndAngle
-            //     false,            // aClockwise
-            //     0                 // aRotation
-            // );
             
             points = this.ellipseCurve.getPoints( 30 );
-            // points2.forEach( ( point ) => { points.push( new THREE.Vector3( points2. ) ) } );
         }
 
         this.geometry.setFromPoints(points);
         this.line.geometry = this.geometry;
-        if( !this.touching ) 
-            this.line.material = this.material; 
-        else this.line.material = this.touchingMaterial; 
+        if( this.touching ) 
+        {
+            this.line.material = this.touchingMaterial; 
+        }
+        else 
+        {
+            if( this.flip )
+            {
+                this.line.material = this.material;
+            }
+            else
+            {
+                this.line.material = this.material2;
+            }
+        }
+
         this.line.frustumCulled = false; 
         group.add(this.line);
 
@@ -1010,8 +1027,6 @@ class BodyPartIntersect extends DetectIntersect {
         return this.getVectorsFromLimbs(this.limbs);
     }
 
-
-
     updateWhereTouch(whereTouch: WhereTouch)
     {
         // whereTouch.updateIntersectPoint(  whereTouch.intersectPoint.x, whereTouch.intersectPoint.y, whereTouch.isTouching ); 
@@ -1195,7 +1210,7 @@ class HeadIntersect extends BodyPartIntersect {
             this.touching = this.touching || bound.touching; 
         });
 
-        (this.drawSkeleton as DrawHead).updateHead(headCenter, noseToEarDistance, this.touching);
+        (this.drawSkeleton as DrawHead).updateHead(headCenter, noseToEarDistance, this.touching, this.limbs[0].flip);
 
     }
 
