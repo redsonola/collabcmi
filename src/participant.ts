@@ -999,6 +999,8 @@ export class Participant extends EventEmitter {
     //I PROMISE I will refactor this fucking BS. --> copied & pasted from xCorrDistance lol
     xCorrWithDifferentKeypoints(myIndex: number, theirIndex: number, minConfidence: number): number {
 
+        try {
+
         let maxXCorrBtwMeAndFriend: number = 0;
 
         if (!this.friendParticipant) {
@@ -1059,7 +1061,13 @@ export class Participant extends EventEmitter {
             }
             return maxXCorrBtwMeAndFriend;
         }
-        else return 0; 
+        else return 0;
+        }
+        catch(e)
+        {
+            console.log(e); 
+            return 0; 
+        } 
     }
 
     getAvgBodyPartsLocation(minConfidence : number = 0.45): {x:number, y: number}[]
