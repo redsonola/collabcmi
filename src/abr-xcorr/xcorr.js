@@ -10,11 +10,13 @@ import * as dsp from '../dsp.js/dsp.js';
 
 export function Xcorr (sig1, sig2) {
 	if (sig1.length !== sig2.length) {
-		throw new Error(`Xcorr: signal have different lengths ${sig1.length} vs ${sig2.length}`);
+		// throw new Error(`Xcorr: signal have different lengths ${sig1.length} vs ${sig2.length}`);
+		return 0;
 	}
 
 	if (sig1.length % 2 !== 0 || sig1.length === 0) {
-		throw new Error('Xcorr: signals do no seem to be 16-bit PCM.');
+		// throw new Error('Xcorr: signals do no seem to be 16-bit PCM.');
+		return 0;
 	}
 
 	// detect if the signal has not a length equal to a power of 2 (2, 4, 8, 16…), then pad the signals with zeroes.

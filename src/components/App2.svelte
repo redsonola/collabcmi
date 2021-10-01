@@ -24,7 +24,7 @@
   import { threeRenderCode } from "../draw3js";
   import type { ThreeRenderer } from "../draw3js";
   import type { Size, PeerMessage, PoseMessage } from "./PoseMessages";
-  import { Participant } from "../participant";
+  import { Participant, orderParticipantID } from "../participant";
   import { findRadiusOfKeypoint } from "../main";
   import type { Keypoint, Pose } from "@tensorflow-models/posenet";
   import ScoreBar from "./scoreBar.svelte";
@@ -204,6 +204,7 @@
   let synchSonifier : SynchSonifier;
   let musicLoaded : boolean = false;
   let toneStarted = false;  
+  let lastSent = 0; 
 
   let isChrome = !!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime);
 
@@ -330,43 +331,51 @@
       verticalityCorrelation = Math.abs( participant.getVerticalityCorrelation() ); 
 
 
-      //note the file recording server has to be running for this
-      if( whichPiece === WhichPiece.TUG_OF_WAR ) //send to max patch
+      let iAmSecond = orderParticipantID(particiantId, friendParticipant.participantID) === -1;
+      if( Date.now() - lastSent >= 200  )
       {
-        let vert = participant.getVerticalityCorrelation();
-        if( !isNaN( vert ) )
-          OSCInterface.sendOSC('/verticalityCorr', participant.getVerticalityCorrelation());
+        lastSent = Date.now();
+        if( iAmSecond )
+        {
+
+          //note the file recording server has to be running for this
+          if( whichPiece === WhichPiece.TUG_OF_WAR ) //send to max patch
+          {
+            let vert = participant.getVerticalityCorrelation();
+            if( !isNaN( vert ) )
+              OSCInterface.sendOSC('/verticalityCorr', participant.getVerticalityCorrelation());
+          }
+          if( participant.areTouching() )
+          {
+            //this is a hack. let's see tho.
+            let si = participant.getSkeletonIntersection(); 
+            let x = Scale.linear_scale( participant.getTouchPosition().x, si.xMin, si.xMax, 0, 1); 
+            let y = Scale.linear_scale( participant.getTouchPosition().y, si.yMin, si.yMax, 0, 1); 
+            // console.log("x: "+participant.getTouchPosition().x+ " y: " + participant.getTouchPosition().y + " xmax: " + si.xMax + " xmin: " + si.xMin);
+
+
+            OSCInterface.sendOSC('/touchVelocity', participant.getTouchVelocity());
+            OSCInterface.sendOSC('/touchXPos', x ); 
+            OSCInterface.sendOSC('/touchYPos', participant.getTouchPosition().y ); 
+            OSCInterface.sendOSC('/localParticipant/jerk', participant.getAvgJerk());
+            OSCInterface.sendOSC('/touchPointCorrelation', participant.getAvgXCorrAtTouchingKeypoints()); 
+          }
+          OSCInterface.sendOSC('/howLongTouch', howLongTouch); //send no matter what
+          OSCInterface.sendOSC('/self/noseX', participant.avgKeyPoints.getTopX(PoseIndex.nose)); 
+          OSCInterface.sendOSC('/self/noseY', participant.avgKeyPoints.getTopY(PoseIndex.nose)); 
+
+          if( hasFriend )
+          {
+            OSCInterface.sendOSC('/friend/noseX', friendParticipant.avgKeyPoints.getTopX(PoseIndex.nose)); 
+            OSCInterface.sendOSC('/friend/noseY', friendParticipant.avgKeyPoints.getTopY(PoseIndex.nose)); 
+
+            combinedWindowedScore += friendParticipant.getMaxBodyPartDx(minConfidence); 
+            combinedWindowedScore /= 2; 
+            OSCInterface.sendOSC('/combinedDxDy', combinedWindowedScore); 
+            OSCInterface.sendOSC('/synchScore', synchScore); 
+          }
       }
-      if( participant.areTouching() )
-      {
-        //this is a hack. let's see tho.
-        let si = participant.getSkeletonIntersection(); 
-        let x = Scale.linear_scale( participant.getTouchPosition().x, si.xMin, si.xMax, 0, 1); 
-        let y = Scale.linear_scale( participant.getTouchPosition().y, si.yMin, si.yMax, 0, 1); 
-        // console.log("x: "+participant.getTouchPosition().x+ " y: " + participant.getTouchPosition().y + " xmax: " + si.xMax + " xmin: " + si.xMin);
-
-
-        OSCInterface.sendOSC('/touchVelocity', participant.getTouchVelocity());
-        OSCInterface.sendOSC('/touchXPos', x ); 
-        OSCInterface.sendOSC('/touchYPos', participant.getTouchPosition().y ); 
-        OSCInterface.sendOSC('/localParticipant/jerk', participant.getAvgJerk());
-        OSCInterface.sendOSC('/touchPointCorrelation', participant.getAvgXCorrAtTouchingKeypoints()); 
-      }
-      OSCInterface.sendOSC('/howLongTouch', howLongTouch); //send no matter what
-      OSCInterface.sendOSC('/self/noseX', participant.avgKeyPoints.getTopX(PoseIndex.nose)); 
-      OSCInterface.sendOSC('/self/noseY', participant.avgKeyPoints.getTopY(PoseIndex.nose)); 
-
-      if( hasFriend )
-      {
-        OSCInterface.sendOSC('/friend/noseX', friendParticipant.avgKeyPoints.getTopX(PoseIndex.nose)); 
-        OSCInterface.sendOSC('/friend/noseY', friendParticipant.avgKeyPoints.getTopY(PoseIndex.nose)); 
-
-        combinedWindowedScore += friendParticipant.getMaxBodyPartDx(minConfidence); 
-        combinedWindowedScore /= 2; 
-        OSCInterface.sendOSC('/combinedDxDy', combinedWindowedScore); 
-        OSCInterface.sendOSC('/synchScore', synchScore); 
-      }
-
+  }
 
       
       // leaving in here for debugging

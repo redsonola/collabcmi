@@ -17,6 +17,7 @@ import { recordBodyPartsJerkRaw, recordKeypoints } from './persistedFlags';
 import { appStartTimestamp } from './appStartTimestamp';
 import { EventEmitter } from "eventemitter3"; //note Brent added this -- it emits events that's all I know.
 import { VerticalityAngle, VerticalityCorrelation  } from './Verticality'; 
+import { getProgramUniformLocation } from '@tensorflow/tfjs-backend-webgl/dist/webgl_util';
 
 
 // import { Buffer } from "buffer";
@@ -1034,11 +1035,22 @@ export class Participant extends EventEmitter {
 
         if (!(myArrayX[0].length < this.windowSize || otherArrayX[0].length < this.windowSize ||
             myArrayY[0].length < this.windowSize || otherArrayY[0].length < this.windowSize)) {
+
+
             const sig1X = Buffer.from(myArrayX[0]);
             const sig2X = Buffer.from(otherArrayX[0]);
 
             const sig1Y = Buffer.from(myArrayY[0]);
             const sig2Y = Buffer.from(otherArrayY[0]);
+
+            if ((sig1X.length % 2 !== 0 || sig1X.length === 0) ||
+            (sig2X.length % 2 !== 0 || sig2X.length === 0) ||
+            (sig1Y.length % 2 !== 0 || sig1Y.length === 0) ||
+            (sig2Y.length % 2 !== 0 || sig2Y.length === 0) )
+            {
+                return 0;
+            }
+
 
             if (this.getAvgScore(myIndex) >= this.minConfidenceScore && this.friendParticipant.getAvgScore(theirIndex) >= minConfidence
                 && sig1X.length == sig2X.length && sig1Y.length == sig2Y.length) {

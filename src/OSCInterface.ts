@@ -49,12 +49,38 @@ export function sendOSC(addr: string, arg:number)
     return;
   }
 
-  if(! connectionRefused)
-  {
+  // if(! connectionRefused)
+  // {
+    // try {
+    //   axios({
+    //     method: 'post',
+    //     url: "https://10.8.124.132:3000/send-osc",
+    //     responseType: 'text', 
+    //     proxy: false
+    //   })
+    //     .then(function (response) {
+
+    //     })
+    //     .catch(function (error) {
+    //       // handle error
+    //       connectionRefused = true; 
+    //       console.log(error);
+    //       console.log("error"); 
+    //       return null;
+    //     });
+    //   }
+    //   catch(e)
+    //   {
+    //     connectionRefused = true; 
+    //     console.log(e);
+    //     console.log("Turning off OSC sending");
+    //   }
+  // }
+
     try {
       axios({
         method: 'get',
-        url: "https://localhost:3000/send-osc?addr=" + addr + "&argument=" + arg,
+        url: "https://10.8.124.132:3000/send-osc?addr=" + addr + "&argument=" + arg,
         responseType: 'text', 
         proxy: false
       })
@@ -75,5 +101,4 @@ export function sendOSC(addr: string, arg:number)
         console.log(e);
         console.log("Turning off OSC sending");
       }
-  }
 }
