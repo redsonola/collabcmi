@@ -618,9 +618,6 @@ export class Participant extends EventEmitter {
                     else {
                         this.xcorrMaxPositionDY[i].update(0.0);
                     }
-
-                    this.iMaxPositionsDX[i].update(xcorr_outX.iMax);
-                    this.iMaxPositionsDY[i].update(xcorr_outY.iMax);
                 }
                 else {
                     this.xcorrMaxPositionDY[i].update(-1);

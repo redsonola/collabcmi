@@ -107,7 +107,8 @@ export class AveragingFilter extends UGEN {
 
         if (this.getContents().length > 0) {
             let mean : number = math.mean(this.getContents());
-            console.assert(!isNaN(mean)); 
+            // console.assert(!isNaN(mean)); 
+            if( isNaN(mean) ) return 0; 
             return mean; 
         }
         else return 0;
@@ -121,7 +122,7 @@ export class AveragingFilter extends UGEN {
         // console.assert(windowSize <= this.buffer.length());
         let tempBuf = this.getContents(windowSize);
         let mean = math.mean(tempBuf);
-        console.assert(!isNaN(mean)); 
+        if(isNaN(mean)) return 0 ; 
         return mean; 
     }
 

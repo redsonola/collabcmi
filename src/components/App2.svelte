@@ -330,20 +330,34 @@
       //high negative correlation is still high correlation for this measure
       verticalityCorrelation = Math.abs( participant.getVerticalityCorrelation() ); 
 
+      //omfg
+      let verticalityCorrOSC: number = -1; 
+      let touchVelocityOSC:number = -1; 
+      let touchXPosOSC: number = -1; 
+      let touchYPosOSC:number = -1; 
+      let localParticipant_jerkOSC:number = -1; 
+      let touchPointCorrelationOSC:number = -1; 
+      let howLongTouchOSC:number = -1; 
+      let self_noseXOSC:number = -1; 
+      let self_noseYOSC:number = -1; 
+      let friend_noseXOSC:number = -1; 
+      let friend_noseYOSC:number = -1; 
+      let combinedDxDyOSC:number = -1; 
+      let synchScoreOSC:number = -1; 
 
       let iAmSecond = orderParticipantID(particiantId, friendParticipant.participantID) === -1;
-      if( Date.now() - lastSent >= 200  )
+      if( Date.now() - lastSent >= 100  )
       {
         lastSent = Date.now();
-        if( iAmSecond )
-        {
+        // if( iAmSecond )
+        // {
 
           //note the file recording server has to be running for this
           if( whichPiece === WhichPiece.TUG_OF_WAR ) //send to max patch
           {
             let vert = participant.getVerticalityCorrelation();
             if( !isNaN( vert ) )
-              OSCInterface.sendOSC('/verticalityCorr', participant.getVerticalityCorrelation());
+            verticalityCorrOSC = participant.getVerticalityCorrelation();
           }
           if( participant.areTouching() )
           {
@@ -353,28 +367,43 @@
             let y = Scale.linear_scale( participant.getTouchPosition().y, si.yMin, si.yMax, 0, 1); 
             // console.log("x: "+participant.getTouchPosition().x+ " y: " + participant.getTouchPosition().y + " xmax: " + si.xMax + " xmin: " + si.xMin);
 
+            touchVelocityOSC = participant.getTouchVelocity();
+            touchXPosOSC = x; 
+            touchYPosOSC = y ;
+            localParticipant_jerkOSC = participant.getAvgJerk();
+            touchPointCorrelationOSC = participant.getAvgXCorrAtTouchingKeypoints(); 
 
-            OSCInterface.sendOSC('/touchVelocity', participant.getTouchVelocity());
-            OSCInterface.sendOSC('/touchXPos', x ); 
-            OSCInterface.sendOSC('/touchYPos', participant.getTouchPosition().y ); 
-            OSCInterface.sendOSC('/localParticipant/jerk', participant.getAvgJerk());
-            OSCInterface.sendOSC('/touchPointCorrelation', participant.getAvgXCorrAtTouchingKeypoints()); 
           }
-          OSCInterface.sendOSC('/howLongTouch', howLongTouch); //send no matter what
-          OSCInterface.sendOSC('/self/noseX', participant.avgKeyPoints.getTopX(PoseIndex.nose)); 
-          OSCInterface.sendOSC('/self/noseY', participant.avgKeyPoints.getTopY(PoseIndex.nose)); 
+          howLongTouchOSC =  howLongTouch; //send no matter what
+          
+          self_noseXOSC =  participant.avgKeyPoints.getTopX(PoseIndex.nose); 
+          self_noseYOSC = participant.avgKeyPoints.getTopY(PoseIndex.nose); 
 
           if( hasFriend )
           {
-            OSCInterface.sendOSC('/friend/noseX', friendParticipant.avgKeyPoints.getTopX(PoseIndex.nose)); 
-            OSCInterface.sendOSC('/friend/noseY', friendParticipant.avgKeyPoints.getTopY(PoseIndex.nose)); 
+            friend_noseXOSC = friendParticipant.avgKeyPoints.getTopX(PoseIndex.nose); 
+            friend_noseYOSC = friendParticipant.avgKeyPoints.getTopY(PoseIndex.nose); 
 
             combinedWindowedScore += friendParticipant.getMaxBodyPartDx(minConfidence); 
             combinedWindowedScore /= 2; 
-            OSCInterface.sendOSC('/combinedDxDy', combinedWindowedScore); 
-            OSCInterface.sendOSC('/synchScore', synchScore); 
+            combinedDxDyOSC = combinedWindowedScore; 
+            synchScoreOSC =  synchScore; 
           }
-      }
+          OSCInterface.sendOSC(verticalityCorrOSC,
+              touchVelocityOSC, 
+              touchXPosOSC, 
+              touchYPosOSC,
+              localParticipant_jerkOSC, 
+              touchPointCorrelationOSC,
+              howLongTouchOSC, 
+              self_noseXOSC, 
+              self_noseYOSC,
+              friend_noseXOSC,
+              friend_noseYOSC,
+              combinedDxDyOSC,
+              synchScoreOSC );
+
+      // }
   }
 
       

@@ -76,6 +76,7 @@ export class WhereTouch {
 
     myIndex : number []= []; 
     theirIndex : number[] = [];
+    alreadyFound : boolean = false; 
 
     //this assumes that indices will update in order of ascending indices
     // updateIntersectPoint(x: number, y:number, touching:boolean )
@@ -134,21 +135,22 @@ export class WhereTouch {
         this.myIndex = wt.myIndex; 
         this.theirIndex = wt.theirIndex; 
         this.curPoints = this.curPoints; 
+        this.alreadyFound = wt.alreadyFound || this.alreadyFound;
     }
 
     setCurrentIntersectPoint()
     {
-        if(  this.curPoints.length > 1)
-        {
-            //find the centroid of current points
-            this.intersectPoint = centroid( this.curPoints )
-        }
-        if( this.isTouching )
-        {
-            this.intersectingPoints.push( new Vector3(this.intersectPoint.x, this.intersectPoint.y, 0.95) ); 
-        }
+        // if(  this.curPoints.length > 1)
+        // {
+        //     //find the centroid of current points
+        //     this.intersectPoint = centroid( this.curPoints )
+        // }
+        // if( this.isTouching )
+        // {
+        //     this.intersectingPoints.push( new Vector3(this.intersectPoint.x, this.intersectPoint.y, 0.95) ); 
+        // }
 
-        this.curPoints = []; //reset for the next call;
+        // this.curPoints = []; //reset for the next call;
     }
 
     ifDistIsLessReplace( wT: WhereTouch, myIndex:number[]=[], theirIndex: number[]=[] ): void {
@@ -156,18 +158,22 @@ export class WhereTouch {
         //inherit the history...... 
         //this.keepHistory( wT );
 
-        if (this.dist >= wT.dist) 
+        if (this.dist > wT.dist) 
         {
-            this.curPoints.push( ...wT.curPoints ); 
-            this.curPoints.push( wT.intersectPoint ); 
+            //not keeping track.
+            // this.curPoints.push( ...wT.curPoints ); 
+            // this.curPoints.push( wT.intersectPoint ); 
+
+            if( this.alreadyFound === false )
+            {
+                this.dist = wT.dist;
+                this.intersectPoint.x = wT.intersectPoint.x;
+                this.intersectPoint.y = wT.intersectPoint.y;
+                this.intersectPoint.z = 0.95;
+            }
+            this.isTouching = true;
 
 
-            this.dist = wT.dist;
-            this.intersectPoint.x = wT.intersectPoint.x;
-            this.intersectPoint.y = wT.intersectPoint.y;
-            this.intersectPoint.z = 0.95;
-
-            this.isTouching = wT.isTouching;
 
             //this is...... awkward and prob. could be refactored out in some way but oh well I will fix later.
             if( myIndex.length > 0 )
@@ -884,10 +890,13 @@ export class LimbIntersect extends DetectIntersect {
             whereIntersect.dist = 0; 
             whereIntersect.myIndex = myIndices; 
             whereIntersect.theirIndex = theirIndices;
-
-            let intersectionPoint : Vector3 = this.findIntersectionPoint( limb ); 
-            whereIntersect.intersectPoint.x = intersectionPoint.x;
-            whereIntersect.intersectPoint.y = intersectionPoint.y;
+            if( whereIntersect.alreadyFound === false)
+            {
+                let intersectionPoint : Vector3 = this.findIntersectionPoint( limb ); 
+                whereIntersect.intersectPoint.x = intersectionPoint.x;
+                whereIntersect.intersectPoint.y = intersectionPoint.y;
+                whereIntersect.alreadyFound = true; 
+            }
         }
 
         //repetitious -- cleanup l8r
@@ -896,14 +905,14 @@ export class LimbIntersect extends DetectIntersect {
         return whereIntersect;
     }
                                                             //which limb are we testing? an index -- or really an id for this
-    intersects(limb: LimbIntersect, w: number, h: number, index:number): WhereTouch {
+    intersects(limb: LimbIntersect, w: number, h: number, index:number, whereIntersect:WhereTouch): WhereTouch {
         this.w = w;
         this.h = h;
         let myLine = this.scaleLine(this.line(), this.flip);
         let otherLine = limb.scaleLine(limb.line(), !this.flip);
 
         const CLOSE_ENOUGH: number = 0.05;
-        let whereIntersect: WhereTouch = new WhereTouch();
+        // let whereIntersect: WhereTouch = new WhereTouch();
         whereIntersect.isTouching = false;
 
         if (this.getScore() > this.minConfidence && limb.getScore() > this.minConfidence) {
@@ -1035,8 +1044,8 @@ class BodyPartIntersect extends DetectIntersect {
         this.drawIntersections.update(this.whereTouch);  
     }
 
-    intersects(bodypart: BodyPartIntersect, w: number, h: number): WhereTouch {
-        let whereTouch = new WhereTouch();
+    intersects(bodypart: BodyPartIntersect, w: number, h: number, whereTouch : WhereTouch): WhereTouch {
+
         let otherLimbs = bodypart.getLimbs();
         for (let i = 0; i < this.limbs.length; i++) {
             for (let j = 0; j < otherLimbs.length; j++) 
@@ -1045,7 +1054,7 @@ class BodyPartIntersect extends DetectIntersect {
                 this.limbs[i].h = h; 
 
                 if (this.limbs[i].getScore() > this.minConfidence) {
-                    whereTouch.ifDistIsLessReplace(this.limbs[i].intersects(otherLimbs[j], w, h, j), this.limbs[i].getIndices(), otherLimbs[j].getIndices());
+                    whereTouch.ifDistIsLessReplace(this.limbs[i].intersects(otherLimbs[j], w, h, j, whereTouch), this.limbs[i].getIndices(), otherLimbs[j].getIndices());
                 }
                 this.limbs[i].touching = this.limbs[i].touching || whereTouch.isTouching; 
                 otherLimbs[j].touching = otherLimbs[j].touching || whereTouch.isTouching; 
@@ -1361,6 +1370,7 @@ export class SkeletionIntersection {
     resetTouch() : void
     {
         this.parts.forEach( (part)=>{ part.resetTouch() } );
+
         
     }
 
@@ -1383,23 +1393,25 @@ export class SkeletionIntersection {
         {
             j = 0;
             while (j < friendParts.length) {
-                touch.ifDistIsLessReplace(this.parts[i].intersects(friendParts[j], w, h));
+                let newTouch = new WhereTouch; 
+                touch.ifDistIsLessReplace( this.parts[i].intersects(friendParts[j], w, h, newTouch) );
                 j++;
             }
             i++;
+
         }
 
         // touch.updateIntersectPoint(  touch.intersectPoint.x, touch.intersectPoint.y, touch.isTouching ); 
-        this.whereTouch.copyFrom( touch ); 
-        this.whereTouch.age();
-        this.whereTouch.setCurrentIntersectPoint();
-        this.drawIntersections.update( this.whereTouch );  
+        // this.whereTouch.copyFrom( touch ); 
+        // this.whereTouch.age();
+        // this.whereTouch.setCurrentIntersectPoint();
+        // this.drawIntersections.update( this.whereTouch );  
 
-        this.parts.forEach( (part)=>{  part.whereTouch.age(); } );
+        // this.parts.forEach( (part)=>{  part.whereTouch.age(); } );
 
         //     console.log("Touching! "+i+ " with " + j);
         // } else console.log( "Not touching!!");
-
+        // console.log( this.whereTouch.intersectPoint.x + "," + this.whereTouch.intersectPoint.x );
         return touch;
     }
 

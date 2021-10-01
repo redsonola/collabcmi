@@ -80,11 +80,82 @@ app.post("/api/write-recording", async (req, res) => {
 	}
 });
 
-app.get("/send-osc", function(httpRequest, httpResponse, next)
-{ 
-  osc?.send( new OSC.Message( httpRequest.query.addr, httpRequest.query.argument), { port: 8998 } ); 
-  httpResponse.send("OK");
-});
+// app.get("/send-osc", function(httpRequest, httpResponse, next)
+// { 
+//   osc?.send( new OSC.Message( httpRequest.query.addr, httpRequest.query.argument), { port: 8998 } ); 
+//   httpResponse.send("OK");
+// });
+
+  app.post("/send-osc", (req, res) => {
+
+    if(req.body.verticalityCorr !== "-1")
+    {
+      osc?.send( new OSC.Message( "/verticalityCorr", parseFloat(req.body.verticalityCorr)), { port: 8998 } ); 
+    }
+
+    if(req.body.touchVelocity !== "-1")
+    {
+      osc?.send( new OSC.Message( "/touchVelocity", parseFloat(req.body.touchVelocity)), { port: 8998 } ); 
+    }
+
+    if(req.body.touchXPos !== "-1")
+    {
+      osc?.send( new OSC.Message( "/touchXPos", parseFloat(req.body.touchXPos)), { port: 8998 } ); 
+    }
+
+    if(req.body.touchYPos !== "-1")
+    {
+      osc?.send( new OSC.Message( "/touchYPos", parseFloat(req.body.touchXPos)), { port: 8998 } ); 
+    }
+
+    if(req.body.localParticipant_jerk !== "-1")
+    {
+      osc?.send( new OSC.Message( "/localParticipant/jerk", parseFloat(req.body.localParticipant_jerk)), { port: 8998 } ); 
+    }
+
+    if(req.body.touchPointCorrelation !== "-1")
+    {
+      osc?.send( new OSC.Message( "/touchPointCorrelation", parseFloat(req.body.touchPointCorrelation)), { port: 8998 } ); 
+    }
+
+    if(req.body.howLongTouch !== "-1")
+    {
+      osc?.send( new OSC.Message( "/howLongTouch", parseFloat(req.body.howLongTouch)), { port: 8998 } ); 
+    }
+
+    if(req.body.self_noseX !== "-1")
+    {
+      osc?.send( new OSC.Message( "/self/noseX", parseFloat(req.body.self_noseX)), { port: 8998 } ); 
+    }
+
+    if(req.body.self_noseY !== "-1")
+    {
+      osc?.send( new OSC.Message( "/self/noseY", parseFloat(req.body.self_noseY)), { port: 8998 } ); 
+    }
+
+    if(req.body.friend_noseX !== "-1")
+    {
+      osc?.send( new OSC.Message( "friend/noseX", parseFloat(req.body.friend_noseX)), { port: 8998 } ); 
+    }
+
+    if(req.body.friend_noseY !== "-1")
+    {
+      osc?.send( new OSC.Message( "friend/noseY", parseFloat(req.body.friend_noseY)), { port: 8998 } ); 
+    }
+
+    if(req.body.combinedDxDy !== "-1")
+    {
+      osc?.send( new OSC.Message( "combinedDxDy", parseFloat(req.body.combinedDxDy)), { port: 8998 } ); 
+    }
+
+    if(req.body.synchScore !== "-1")
+    {
+      osc?.send( new OSC.Message( "synchScore", parseFloat(req.body.synchScore)), { port: 8998 } ); 
+    }
+
+    res.end("ok");
+
+  });
 
 const cert = fs.readFileSync('./snowpack.crt');
 const key = fs.readFileSync('./snowpack.key');
