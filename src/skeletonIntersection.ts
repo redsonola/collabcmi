@@ -656,8 +656,13 @@ export class LimbIntersect extends DetectIntersect {
         }
         else
         {
-            this.hairyLine.update(pt1, pt2); 
+            let vec1 = new Vector3(  pt1.x, pt2.y, 1.1);
+            let vec2 = new Vector3(  pt1.x, pt2.y, 1.3);
+
+            this.hairyLine.update(vec1, vec2); 
         }
+        this.hairyLine?.live();
+
 
     }
 
