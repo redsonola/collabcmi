@@ -6,6 +6,9 @@ import * as SAT from 'sat';
 import { newtonRaphson, distanceBetweenLines } from './intersectionPoint'
 // import { videoOverlapAmount } from './draw3js'
 import { resultHasLandmarks } from './mediaPipePose';
+import { HairyLine } from './HairyGeom/HairyLine';
+import { off } from 'process';
+
 
 let videoOverlapAmount = 0.2 ;
 
@@ -496,6 +499,7 @@ export class LimbIntersect extends DetectIntersect {
     offsets : THREE.Vector3 = new THREE.Vector3(0,0,0); 
     lastOffsetX : number = 0;
     lastOffsetXIndex : number = 0;
+    hairyLine : HairyLine | null; 
 
     box : Vector3[] = []; 
 
@@ -509,6 +513,8 @@ export class LimbIntersect extends DetectIntersect {
         this.keypoints = [];
         this.w = w;
         this.h = h;
+
+        this.hairyLine = null; 
     }
 
     translateFromInternalRepresentationToDraw(vec : Vector3) : Vector3
@@ -639,10 +645,20 @@ export class LimbIntersect extends DetectIntersect {
         this.keypoints.push(keypoints[this.index1]);
         this.keypoints.push(keypoints[this.index2]);
 
-        let pt1: THREE.Vector3 = new THREE.Vector3(keypoints[this.index1].position.x, keypoints[this.index1].position.y, 2);
-        let pt2: THREE.Vector3 = new THREE.Vector3(keypoints[this.index2].position.x, keypoints[this.index2].position.y, 2);
+        let pt1: THREE.Vector3 = new THREE.Vector3(keypoints[this.index1].position.x, keypoints[this.index1].position.y, 0.95);
+        let pt2: THREE.Vector3 = new THREE.Vector3(keypoints[this.index2].position.x, keypoints[this.index2].position.y, 0.95);
 
         this.setLimbLine(pt1, pt2);
+
+        if( !this.hairyLine)
+        {
+            this.hairyLine = new HairyLine( pt1, pt2, 100, 10, .2);
+        }
+        else
+        {
+            this.hairyLine.update(pt1, pt2); 
+        }
+
     }
 
     //modified from : https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
@@ -1012,6 +1028,20 @@ class BodyPartIntersect extends DetectIntersect {
         group.add(this.drawSkeleton.groupToDraw());
         // if( !this.isFriend ) //don't draw yr. own intersections for now
         //     group.add(this.drawIntersections.groupToDraw());
+
+        //add all the hairylimbs
+        for( let i=0; i<this.limbs.length; i++ )
+        {
+            if( this.limbs[i].hairyLine !== null )
+            {
+                if( this.limbs[i].touching )
+                {
+                    this.limbs[i].hairyLine?.grow(); 
+                }
+                group.add( this.limbs[i].hairyLine as THREE.Group ); 
+            }
+        }
+
         return group; 
     }
 

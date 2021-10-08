@@ -141,6 +141,23 @@ export function threeRenderCode({
   light.position.set(1, 1, 1).normalize();
   scene.add(light);
 
+  //IRA'S LIGHT
+  // Simple lighting calculations
+const color = 0xEEEEFF;
+const intensity = .85;
+const light3 = new THREE.AmbientLight(color, intensity);
+scene.add(light3);
+
+const color2 = 0xFFFFDD;
+const intensity2 = 1;
+const light2 = new THREE.DirectionalLight(color, intensity);
+light2.position.set(-2, 6, 1);
+//light2.target.position.set(0, 0, 0);
+scene.add(light2);
+//scene.add(light2.target);
+
+//end IRA'S LIGHT
+
   const allVideosGroup = new Group(); //TODO: kill videoGroups & only use AllVideoGroups -- good times.
   scene.add(allVideosGroup);
 

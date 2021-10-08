@@ -6,15 +6,14 @@
 // Creates Verlet Tendrils - motion/springing based on displacement
 
 import * as THREE from 'three';
-import { VerletNode, addVertToPositions } from './VerletNode';
+import { VerletNode } from './VerletNode';
 import { VerletStick } from './VerletStick';
 import { AnchorPoint, GeometryDetail } from './IJGUtils';
+import { BufferAttribute, BufferGeometry, Color, Group, Line, LineBasicMaterial, MathUtils, MeshBasicMaterial, Vector3 } from 'three';
 
-
-
-export class VerletStrand extends THREE.Group {
-    head: THREE.Vector3
-    tail: THREE.Vector3
+export class VerletStrand extends Group {
+    head: Vector3
+    tail: Vector3
     segmentCount: number;
     segments: VerletStick[];
     nodes: VerletNode[];
@@ -24,17 +23,18 @@ export class VerletStrand extends THREE.Group {
     elasticity: number;
     nodeType: GeometryDetail;
     areNodesVisible: boolean = true;
-    geometry = new THREE.Geometry();
-    material = new THREE.MeshBasicMaterial({ color: 0xffffff, });
-    public tendril: THREE.Line;
+
+    tendrilGeometry: BufferGeometry;
+    material = new MeshBasicMaterial({ color: 0xffffff, });
+    public tendril: Line;
 
     // used to cheaply rotate nodes around their local axis
     // should eventually be set as a per node property
     testRot = 0;
 
-    constructor(head: THREE.Vector3, tail: THREE.Vector3, segmentCount: number,
-        anchorPointDetail: AnchorPoint = AnchorPoint.NONE, elasticity: number = .5,
-        nodeType: GeometryDetail = GeometryDetail.SPHERE_LOW, nodeRadius: number = THREE.MathUtils.randFloat(.0002, .0007)) {
+    constructor(head: Vector3, tail: Vector3, segmentCount: number,
+        anchorPointDetail: AnchorPoint = AnchorPoint.NONE, elasticity: number = .1,
+        nodeType: GeometryDetail = GeometryDetail.SPHERE_LOW, nodeRadius: number = MathUtils.randFloat(.0002, .0007)) {
         super();
         this.head = head;
         this.tail = tail;
@@ -45,31 +45,30 @@ export class VerletStrand extends THREE.Group {
         this.elasticity = elasticity;
         this.nodeType = nodeType;
         // encapsulaes stick data
-        this.tendril = new THREE.Line();
-
+        this.tendril = new Line();
 
         // local vars for segment calcuations
-        let deltaVec = new THREE.Vector3();
+        let deltaVec = new Vector3();
         // get chain vector
-        deltaVec.subVectors(this.tail, this.head);
+        deltaVec.subVectors(this.head, this.tail);
         let chainLen = deltaVec.length();
         // get chain segment length
         let segLen = chainLen / this.segments.length;
         deltaVec.normalize();
-
+        deltaVec.multiplyScalar(segLen);
+        // console.log(deltaVec);
         for (var i = 0; i < this.nodes.length; i++) {
             // working, but copies values - so lose reference to node object pesition in memory
-            this.nodes[i] = new VerletNode(new THREE.Vector3(this.head.x + deltaVec.x * segLen * i,
-                this.head.y + deltaVec.y * segLen * i, this.head.z + deltaVec.z * segLen * i),
-                THREE.MathUtils.randFloat(.0002, .0007),
-                new THREE.Color(.5, .5, .5), this.nodeType);
+            this.nodes[i] = new VerletNode(new Vector3(
+                this.head.x + deltaVec.x * i,
+                this.head.y + deltaVec.y * i,
+                this.head.z + deltaVec.z * i
+            ),
+                MathUtils.randFloat(.0002, .0007),
+                new Color(1, 1, 1), this.nodeType);
 
-            // NOT working
-            // deltaVec.multiplyScalar(segLen * i);
-            // this.head.add(deltaVec);
-            // console.log(this.head);
-            // this.nodes[i] = new VerletNode(this.head, THREE.MathUtils.randFloat(.0002, .0007),
-            //     new THREE.Color(.5, .5, .5), this.nodeType);
+            this.nodes[i].setNodeVisible(true);
+            this.nodes[i].setNodeAlpha(.6);
 
             // show nodes
             this.add(this.nodes[i]);
@@ -80,8 +79,6 @@ export class VerletStrand extends THREE.Group {
             case AnchorPoint.NONE:
                 for (var i = 0; i < this.segments.length; i++) {
                     this.segments[i] = new VerletStick(this.nodes[i], this.nodes[i + 1], this.elasticity, AnchorPoint.NONE);
-                    this.geometry.vertices.push(this.segments[i].start.position);
-                    if (i === this.segments.length - 1) { this.geometry.vertices.push(this.segments[i].end.position) }
                 }
                 break;
             case AnchorPoint.HEAD:
@@ -91,8 +88,6 @@ export class VerletStrand extends THREE.Group {
                     } else {
                         this.segments[i] = new VerletStick(this.nodes[i], this.nodes[i + 1], this.elasticity, AnchorPoint.NONE);
                     }
-                    this.geometry.vertices.push(this.segments[i].start.position);
-                    if (i === this.segments.length - 1) { this.geometry.vertices.push(this.segments[i].end.position) }
                 }
                 break;
             case AnchorPoint.TAIL:
@@ -102,8 +97,6 @@ export class VerletStrand extends THREE.Group {
                     } else {
                         this.segments[i] = new VerletStick(this.nodes[i], this.nodes[i + 1], this.elasticity, AnchorPoint.NONE);
                     }
-                    this.geometry.vertices.push(this.segments[i].start.position);
-                    if (i === this.segments.length - 1) { this.geometry.vertices.push(this.segments[i].end.position) }
                 }
                 break;
             case AnchorPoint.HEAD_TAIL:
@@ -115,8 +108,6 @@ export class VerletStrand extends THREE.Group {
                     } else {
                         this.segments[i] = new VerletStick(this.nodes[i], this.nodes[i + 1], this.elasticity, AnchorPoint.NONE);
                     }
-                    this.geometry.vertices.push(this.segments[i].start.position);
-                    if (i === this.segments.length - 1) { this.geometry.vertices.push(this.segments[i].end.position) }
                 }
                 break;
             case AnchorPoint.MOD2:
@@ -126,41 +117,53 @@ export class VerletStrand extends THREE.Group {
                     } else {
                         this.segments[i] = new VerletStick(this.nodes[i], this.nodes[i + 1], this.elasticity, AnchorPoint.NONE);
                     }
-                    this.geometry.vertices.push(this.segments[i].start.position);
-                    if (i === this.segments.length - 1) { this.geometry.vertices.push(this.segments[i].end.position) }
                 }
                 break;
             case AnchorPoint.RAND:
                 for (var i = 0; i < this.segments.length; i++) {
-                    if (THREE.MathUtils.randInt(0, 1) === 0) {
+                    if (MathUtils.randInt(0, 1) === 0) {
                         this.segments[i] = new VerletStick(this.nodes[i], this.nodes[i + 1], this.elasticity, AnchorPoint.RAND);
                     } else {
                         this.segments[i] = new VerletStick(this.nodes[i], this.nodes[i + 1], this.elasticity, AnchorPoint.NONE);
                     }
-                    this.geometry.vertices.push(this.segments[i].start.position);
-                    if (i === this.segments.length - 1) { this.geometry.vertices.push(this.segments[i].end.position) }
                 }
                 break;
             default:
                 for (var i = 0; i < this.segments.length; i++) {
                     this.segments[i] = new VerletStick(this.nodes[i], this.nodes[i + 1], this.elasticity, AnchorPoint.NONE);
-                    this.geometry.vertices.push(this.segments[i].start.position);
-                    if (i === this.segments.length - 1) { this.geometry.vertices.push(this.segments[i].end.position) }
                 }
         }
-        let lineMaterial = new THREE.LineBasicMaterial({ color: 0xcc55cc });
-        this.tendril = new THREE.Line(this.geometry, lineMaterial);
-        let tenMat = this.tendril.material as THREE.Material; // assertion to keep TS Intellisence happy
-        tenMat.transparent = true; //annoying ide can't accurately track this w/o insertion
-        tenMat.opacity = .25; //annoying ide can't accurately track this w/o insertion
-        //this.tendril.
+
+        // uncomment to draw VereltSticks
+        // for (let i = 0; i < this.segments.length; i++) {
+        //     this.add(this.segments[i])
+        // }
+
+        // create tendril
+        let pts: Vector3[] = [];
+        for (let i = 0; i < this.nodes.length; i++) {
+            pts[i] = this.nodes[i].position;
+        }
+        this.tendrilGeometry = new BufferGeometry().setFromPoints(pts);
+        let tendrilMaterial = new LineBasicMaterial({ color: 0x0000ff });
+        tendrilMaterial.transparent = true;
+        tendrilMaterial.opacity = .95;
+        this.tendril = new Line(this.tendrilGeometry, tendrilMaterial);
         this.add(this.tendril);
     }
 
-    public moveNode(index: number, vec: THREE.Vector3): void {
+    // Euler
+    public moveNode(index: number, vec: Vector3): void {
         this.nodes[index].position.x += vec.x;
         this.nodes[index].position.y += vec.y;
         this.nodes[index].position.z += vec.z;
+    }
+
+    // sets postion
+    public moveToNode(index: number, vec: Vector3): void {
+        this.nodes[index].position.x = vec.x;
+        this.nodes[index].position.y = vec.y;
+        this.nodes[index].position.z = vec.z;
     }
 
     public verlet(isConstrained: boolean = true): void {
@@ -177,15 +180,21 @@ export class VerletStrand extends THREE.Group {
     }
 
     private constrain(): void {
+        // constrain nodes using VerletStick
         for (var i = 0; i < this.segmentCount; i++) {
             this.segments[i].constrainLen();
         }
-        this.geometry.verticesNeedUpdate = true;
+
+        // update tendril line
+        (this.tendril.geometry as BufferGeometry).attributes.position.needsUpdate = true;
+        for (var i = 0; i < this.nodes.length; i++) {
+            (this.tendril.geometry as BufferGeometry).attributes.position.setXYZ(i, this.nodes[i].position.x, this.nodes[i].position.y, this.nodes[i].position.z);
+        }
     }
 
-    public constrainBounds(bounds: THREE.Vector3, offset: THREE.Vector3 = new THREE.Vector3()): void {
+    public constrainBounds(bounds: Vector3, offset: Vector3 = new Vector3()): void {
         for (var i = 0; i < this.nodes.length; i++) {
-            let v = new THREE.Vector3(bounds.x + offset.x, bounds.y + offset.y, bounds.z + offset.z);
+            let v = new Vector3(bounds.x + offset.x, bounds.y + offset.y, bounds.z + offset.z);
             this.nodes[i].constrainBounds(v);
         }
     }
@@ -201,13 +210,13 @@ export class VerletStrand extends THREE.Group {
         }
     }
 
-    setHeadPosition(pos: THREE.Vector3): void {
+    setHeadPosition(pos: Vector3): void {
         this.nodes[0].position.x = pos.x;
         this.nodes[0].position.y = pos.y;
         this.nodes[0].position.z = pos.z;
     }
 
-    setTailPosition(pos: THREE.Vector3): void {
+    setTailPosition(pos: Vector3): void {
         this.nodes[this.nodes.length - 1].position.x = pos.x;
         this.nodes[this.nodes.length - 1].position.y = pos.y;
         this.nodes[this.nodes.length - 1].position.z = pos.z;
@@ -224,35 +233,15 @@ export class VerletStrand extends THREE.Group {
         this.nodes[index].setNodeVisible(isNodesVisible);
     }
 
-    setNodesColor(color: THREE.Color): void {
+    setNodesColor(color: Color): void {
         for (var i = 0; i < this.nodes.length; i++) {
             this.nodes[i].setNodeColor(color);
         }
     }
 
-    setStrandOpacity(alpha: number): void {
-        let tenMat = this.tendril.material as THREE.MeshBasicMaterial;
-        tenMat.transparent = true; //annoying ide can't
-        tenMat.opacity = alpha;
-    }
-
-    setStrandMaterials(tendrilColor: THREE.Color, alpha: number): void {
-        let tenMat = this.tendril.material as THREE.MeshBasicMaterial;
-        tenMat.color = tendrilColor;
-        tenMat.transparent = true; //annoying ide can't
-        tenMat.opacity = alpha;
-    }
-
-
-    setMaterials(tendrilColor: THREE.Color, alpha: number, nodeColor: THREE.Color): void {
-        let tenMat = this.tendril.material as THREE.MeshBasicMaterial;
-        tenMat.color = tendrilColor;
-        tenMat.transparent = true; //annoying ide can't
-        tenMat.opacity = alpha;
-
+    setNodesOpacity(alpha: number): void {
         for (var i = 0; i < this.nodes.length; i++) {
-            let tenMat = this.nodes[i].material as THREE.MeshBasicMaterial;
-            tenMat.color = nodeColor;
+            this.nodes[i].setNodeAlpha(alpha);
         }
     }
 
@@ -262,11 +251,43 @@ export class VerletStrand extends THREE.Group {
         }
     }
 
+    setStrandOpacity(alpha: number): void {
+        let tenMat = this.tendril.material as MeshBasicMaterial;
+        tenMat.transparent = true; //annoying ide can't
+        tenMat.opacity = alpha;
+    }
+
+    setStrandColor(tendrilColor: Color) {
+        let tenMat = this.tendril.material as MeshBasicMaterial;
+        tenMat.color = tendrilColor;
+    }
+
+    setStrandMaterials(tendrilColor: Color, alpha: number): void {
+        let tenMat = this.tendril.material as MeshBasicMaterial;
+        tenMat.color = tendrilColor;
+        tenMat.transparent = true; //annoying ide can't
+        tenMat.opacity = alpha;
+    }
+
+    setMaterials(tendrilColor: Color, alpha: number, nodeColor: Color): void {
+        let tenMat = this.tendril.material as MeshBasicMaterial;
+        tenMat.color = tendrilColor;
+        tenMat.transparent = true; //annoying ide can't
+        tenMat.opacity = alpha;
+
+        for (var i = 0; i < this.nodes.length; i++) {
+            let tenMat = this.nodes[i].material as MeshBasicMaterial;
+            tenMat.color = nodeColor;
+        }
+    }
+
+
+
     // createSkin() {
     //     const path = new CustomSinCurve(10);
-    //     const geometry = new THREE.TubeGeometry(path, 20, 2, 8, false);
-    //     const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    //     const mesh = new THREE.Mesh(geometry, material);
+    //     const geometry = new TubeGeometry(path, 20, 2, 8, false);
+    //     const material = new MeshBasicMaterial({ color: 0x00ff00 });
+    //     const mesh = new Mesh(geometry, material);
     //     scene.add(mesh);
 
     // }
