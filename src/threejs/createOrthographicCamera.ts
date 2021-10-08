@@ -1,6 +1,6 @@
 import { OrthographicCamera, Vector3, WebGLRenderer, Geometry, Box3, Object3D } from 'three';
 
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+// import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 export function cameraSizeRectangle(x, y, width, height) {
   return new Geometry().setFromPoints([
@@ -37,9 +37,11 @@ export function createOrthographicCamera(canvas, _width, _height) {
 
   // const controls = new OrbitControls( camera, renderer.domElement );
 
+
   return {
     camera,
     renderer,
+    // controls,
     updateSize(width, height) {
       aspect = width / height;
 

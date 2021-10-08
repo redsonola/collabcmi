@@ -52,7 +52,8 @@ export function threeRenderCode({
     camera,
     renderer,
     updateSize,
-    lookAt
+    lookAt,
+    // controls,
   } = createOrthographicCamera(canvas, window.innerWidth, window.innerHeight);
 
   setTimeout(() => {
@@ -60,6 +61,8 @@ export function threeRenderCode({
   })
 
   const scene = new Scene();
+
+  let hairyLineLive = ()=>{};
 
   const circles: THREE.Mesh[] = [];
 
@@ -292,7 +295,9 @@ scene.add(light2);
       updateCircle(delta);
       renderer.render(scene, camera);
 
+      hairyLineLive(); 
       lastUpdate = now;
+      // controls.update();
       requestAnimationFrame(animate);
     }
   }
@@ -324,6 +329,8 @@ scene.add(light2);
         ));
 
         const groupOfStuffToRender = new Group();
+
+        hairyLineLive = skeletonIntersect.hairyLineLive.bind(skeletonIntersect);
 
         // do the drawing
         const isInArray = (element) => element.isPerson(personId);

@@ -650,20 +650,31 @@ export class LimbIntersect extends DetectIntersect {
 
         this.setLimbLine(pt1, pt2);
 
+
+    }
+
+    updateHairyLimbs()
+    {
+        let pt1: THREE.Vector3 = new THREE.Vector3(this.keypoints[0].position.x, this.keypoints[0].position.y, 0.95);
+        let pt2: THREE.Vector3 = new THREE.Vector3(this.keypoints[1].position.x, this.keypoints[1].position.y, 0.95);
+
         if( !this.hairyLine)
         {
-            this.hairyLine = new HairyLine( pt1, pt2, 100, 10, .2);
+            this.hairyLine = new HairyLine( pt1, pt2, 50, 5, .2);
         }
         else
         {
-            let vec1 = new Vector3(  pt1.x, pt2.y, 1.1);
-            let vec2 = new Vector3(  pt1.x, pt2.y, 1.3);
+            let vec1 = new Vector3(  pt1.x, pt1.y, 1.1);
+            let vec2 = new Vector3(  pt2.x, pt2.y, 1.3);
 
             this.hairyLine.update(vec1, vec2); 
+            this.hairyLine?.live();
         }
+    }
+
+    hairyLineLive()
+    {
         this.hairyLine?.live();
-
-
     }
 
     //modified from : https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
@@ -1019,6 +1030,14 @@ class BodyPartIntersect extends DetectIntersect {
         this.drawSkeleton.update(this.limbs);
     }
 
+    hairyLineLive()
+    {
+        this.limbs.forEach(
+            (limb) => { limb.hairyLineLive(); }
+        );
+    }
+
+
     //just so I don't have to propagate changes to inherited classes.
     updateOffsets( offsets : THREE.Vector3 )
     {
@@ -1039,11 +1058,15 @@ class BodyPartIntersect extends DetectIntersect {
         {
             if( this.limbs[i].hairyLine !== null )
             {
-                if( this.limbs[i].touching )
+                let enoughConfidence : boolean =  this.limbs[i].getScore() >  this.limbs[i].minConfidence;
+                if( this.limbs[i].touching && enoughConfidence )
                 {
                     this.limbs[i].hairyLine?.grow(); 
                 }
-                group.add( this.limbs[i].hairyLine as THREE.Group ); 
+                if( enoughConfidence )
+                {
+                    group.add( this.limbs[i].hairyLine as THREE.Group ); 
+                }
             }
         }
 
@@ -1136,6 +1159,18 @@ class ArmsLegsIntersect extends BodyPartIntersect {
             ];
         this.drawIntersections.setReferenceLimb(this.limbs[0]); 
 
+    }
+
+    update(keypoints: any[]): void 
+    {
+        super.update(keypoints);
+        this.limbs.forEach( (limb)=>
+        { 
+            if(limb.getScore() >  limb.minConfidence)
+            {
+                limb.updateHairyLimbs() ;
+            }
+        });
     }
 }
 
@@ -1393,6 +1428,13 @@ export class SkeletionIntersection {
         //group.add( this.drawIntersections.groupToDraw() );
 
         return group; 
+    }
+
+    hairyLineLive()
+    {
+        this.parts.forEach(
+            (part)=>{ part.hairyLineLive(); }
+        );
     }
 
     getBodyPartIntersections(): BodyPartIntersect[] {
