@@ -23,6 +23,7 @@
     "compute-covariance": "^1.0.1",
     "compute-l2norm": "^1.1.0",
     "cors": "^2.8.5",
+    "entity-decode": "^2.0.2",
     "husky": "^4.3.6",
     "mathjs": "^7.6.0",
     "mermaid": "^8.9.2",
