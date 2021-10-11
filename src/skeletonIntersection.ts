@@ -501,6 +501,8 @@ export class LimbIntersect extends DetectIntersect {
     lastOffsetXIndex : number = 0;
     hairyLine : HairyLine | null; 
 
+    countGrow : number = 0; 
+
     box : Vector3[] = []; 
 
     whereTouch : WhereTouch = new WhereTouch; 
@@ -658,9 +660,10 @@ export class LimbIntersect extends DetectIntersect {
         let pt1: THREE.Vector3 = new THREE.Vector3(this.keypoints[0].position.x, this.keypoints[0].position.y, 0.95);
         let pt2: THREE.Vector3 = new THREE.Vector3(this.keypoints[1].position.x, this.keypoints[1].position.y, 0.95);
 
-        if( !this.hairyLine)
+        if( this.hairyLine===null)
         {
-            this.hairyLine = new HairyLine( pt1, pt2, 50, 5, .2);
+            this.hairyLine = new HairyLine(new Vector3(-.82, 0, 0), new Vector3(.82, 0, 0), 120, 4, .85, .05);
+            console.log( "hairy lines created" );
         }
         else
         {
@@ -1060,8 +1063,13 @@ class BodyPartIntersect extends DetectIntersect {
             {
                 let enoughConfidence : boolean =  this.limbs[i].getScore() >  this.limbs[i].minConfidence;
                 if( this.limbs[i].touching && enoughConfidence )
-                {
-                    this.limbs[i].hairyLine?.grow(); 
+                {   
+                    let hairyLine = this.limbs[i].hairyLine ;
+                    if(hairyLine !== null  ){
+                        hairyLine.grow();
+                        this.limbs[i].countGrow++;
+                        console.log( "count grow: " + this.limbs[i].countGrow)
+                    } 
                 }
                 if( enoughConfidence )
                 {
