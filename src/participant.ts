@@ -96,7 +96,6 @@ export class Participant extends EventEmitter {
 
     xcorriMaxPos: AveragingFilter[];
 
-
     //this is for the positions
     // xcorrMaxPositions: AveragingFilter[];
     // iMaxPositions: AveragingFilter[];  
@@ -281,6 +280,16 @@ export class Participant extends EventEmitter {
         this.friendParticipant = p;
         this.intersection.setFriend(p.getSkeletonIntersection());
         this.verticalityCorrelation = new VerticalityCorrelation([ this.verticalAngle, p.getVerticalAngle() ]); 
+    }
+
+    getZeroConfidenceTime()
+    {
+        return this.avgKeyPoints.getZeroConfidenceTime(); 
+    }
+
+    resetZeroConfidenceTime()
+    {
+        this.avgKeyPoints.resetZeroConfidenceTime();
     }
 
     getSkeletonIntersection() {

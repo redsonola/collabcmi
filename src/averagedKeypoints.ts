@@ -42,6 +42,9 @@ export class AverageFilteredKeyPoints
 
     rawScore : number[]; 
 
+    timeWithZeroConfidenceScore = 0; 
+    lastTimeChecked = -1; 
+
     xDx : Derivative[]; 
     yDx : Derivative[];
     xDxMax : number[]; 
@@ -297,9 +300,38 @@ export class AverageFilteredKeyPoints
         }
     }
 
+    updateZeroConfidenceTime( keypoints : any[] )
+    {
+        let greaterThanMin : boolean = false; 
+        let maxConfidence : number = 0; 
+        keypoints.forEach( ( keypoint ) => 
+            { 
+                greaterThanMin = greaterThanMin || ( keypoint.score > 0.90 ) ;
+                maxConfidence = Math.max( maxConfidence, keypoint.score );
+            });
+
+        console.log( maxConfidence );
+        
+        if( !greaterThanMin )
+        {
+            if( this.lastTimeChecked !== -1 )
+            {
+                 this.timeWithZeroConfidenceScore += Date.now() - this.lastTimeChecked;
+            }
+        }
+        else
+        {
+            this.timeWithZeroConfidenceScore = 0;
+        }
+        this.lastTimeChecked = Date.now(); 
+    }
+
     update( keypoints : any[], now : number ) : void
     {
         if( keypoints == null ) return; 
+
+         this.updateZeroConfidenceTime( keypoints );
+
         let scaledKeypoints = PoseMatch.reScaleTo1(keypoints, this.width, this.height);
 
         let avgDx : number = 0; 
@@ -467,6 +499,17 @@ export class AverageFilteredKeyPoints
 
         if( avgDy > this.maxDy  )
             this.maxDy = avgDy; 
+    }
+
+    //return in ms how long we haven't been able to verify any part of a human in the frames
+    getZeroConfidenceTime()
+    {
+        return this.timeWithZeroConfidenceScore;
+    }
+
+    resetZeroConfidenceTime()
+    {
+        this.timeWithZeroConfidenceScore = 0;
     }
 
     getWindowedVarianceX( index: number ) : number

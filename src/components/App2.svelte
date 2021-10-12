@@ -206,6 +206,9 @@
   let toneStarted = false;  
   let lastSent = 0; 
 
+
+  let lastTimeWithPoseResults = -1; 
+
   let isChrome = !!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime);
 
   var connectToRandomPartner = (e) => {}; //function to connect to a random partner
@@ -267,6 +270,35 @@
 
     musicLoaded = true; 
   }
+
+  /**************************  switch spaces if no one is here  ************************/
+  function resetTestsForParticipantPresence()
+  {
+      lastTimeWithPoseResults = -1; 
+      this.resetZeroConfidenceTime();
+  }
+
+
+  function  switchSpacesIfNoUser()
+  {
+    if(lastTimeWithPoseResults === -1 )
+    {
+      return; 
+    }
+
+    let timeWithoutUser = ( Date.now() - lastTimeWithPoseResults)  / 1000.0 ; //ms to sec
+    let timeWithLowConfidence = participant.getZeroConfidenceTime()  / 1000.0 ; //ms to sec
+  
+    let TIME_TO_WAIT = 5; //test -- 5 seconds   //5 * 60.0; //waiting 5min of no user to switch 
+    if( timeWithoutUser > TIME_TO_WAIT || timeWithLowConfidence > TIME_TO_WAIT )
+    {
+      connectToRandomPartner( document.getElementById('btnChatRoulette') ); 
+      resetTestsForParticipantPresence();
+
+    }
+  }
+
+  /*********************  SEND OSC   ***********************/
 
   /***************** main update function *****************/
 
@@ -689,8 +721,6 @@
         }
       });
     });
-  
-
 
     posenet.onResults((pose) => {
       if(loading)
@@ -703,6 +733,8 @@
       loading = false;
       fpsTracker.refreshLoop();
 
+      lastTimeWithPoseResults = Date.now(); 
+
       const size = posenet.getSize();
       participant.setSize(size.width, size.height);
       participant.addKeypoint(pose.keypoints, hasFriend,three.getOffsetVidPosition(false), true);
@@ -712,6 +744,9 @@
       Object.values(dataConnections).forEach((conn) => {
         if (conn.open) conn.send({ type: "Pose", pose, size });
       });
+
+      //connect to a partner upon load.
+      // connectToRandomPartner( document.getElementById('btnChatRoulette') ); 
 
     });
 
@@ -743,6 +778,8 @@
     goLoop(async () => {
       if (stopped) return goLoop.STOP_LOOP;
       await sleep();
+      switchSpacesIfNoUser(); //if there is not a user, switch spaces
+
       if (touchMusicalPhrases) { //if this is skin hunger.
         touchMusicalPhrases.play();
       }
@@ -767,6 +804,7 @@
     });
 
     connectToRandomPartner = async (e) => {
+      console.log( "connecting to random partner" );
       let theirId = await findChatRoulettePartner( peer.id );
 
       if( theirId )
@@ -1097,18 +1135,18 @@
 />
 
 <div class="callPanel">
-  {#if peerIds.length === 0 && idToCall === null}
-    <Call myId={myId} {turnUpVolume} on:call-link-changed={(e) => {
+  <!-- {#if peerIds.length === 0 && idToCall === null} -->
+    <!-- <Call myId={myId} {turnUpVolume} on:call-link-changed={(e) => {
       window.postMessage({ name: "call-call-link-changed", ...e.detail });
-    }} />
-    <br/><br/><div class="callText">or<br/></div>
-    <button type="button" class="chatRouletteButton" on:click={connectToRandomPartner}>Connect to a random partner!</button>
+    }} /> -->
+    <!-- <br/><br/><div class="callText">or<br/></div> -->
+    <button type="button" class="chatRouletteButton" id="btnChatRoulette" on:click={connectToRandomPartner}>Connect to a new remote space!</button>
     <br /><br />
     <div class="callText"><label id="chatStatus">{chatstatusMessage}</label></div>
-  {:else if !myId}
+  <!-- {:else if !myId}
     Preparing to answer<br />
     {idToCall}
-  {/if}
+  {/if} -->
 </div>  
 
 {#if peerIds.length > 0}
@@ -1136,7 +1174,7 @@
     position: absolute;
     top: 15px;
     right: 35px;
-    width: 200px;
+    width: 250px;
     z-index: 1; 
   }
 
@@ -1217,6 +1255,7 @@ a:hover {
     z-index: 1;
     position: relative; 
     top: 10px;  
+    font-size: 16px; 
   }
 
   .valueSliders {
