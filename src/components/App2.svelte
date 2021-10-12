@@ -1154,16 +1154,18 @@
   {/if} -->
 </div>  
 
-{#if peerIds.length > 0}
+
+<!-- for the telematic version, just keep it connected if possible -->
+<!-- {#if peerIds.length > 0}
 <div class="disconnectButton">
   <button on:click={endCall} class="disconnectButtonColor">End Video Call</button>
   </div>>
-{/if}
+{/if} -->
 
 <br />
-<!-- <div class="linksPanel">
+<div class="linksPanel">
   <a href="/about" target="_blank">About Skin Hunger</a> | <a href="/instructions" target="_blank">Instructions</a>
-</div> -->
+</div>
 
 {#if loading}
   <Loading {progress} />
