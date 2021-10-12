@@ -1,5 +1,5 @@
 import * as Scale  from './scale'
-import { clone } from "ramda";
+import { clone } from "lodash";
 
 //old
 // export const scaleDataClose = require('./dataAnalysisForScaling/eyeDistanceCloseDataFrame1Analysis.json');

@@ -1,5 +1,4 @@
 const preprocess = require('svelte-preprocess')();
-// const nodePolyfills = require('rollup-plugin-node-polyfills');
 
 /** @type {import("snowpack").SnowpackUserConfig } */
 module.exports = {
@@ -36,10 +35,11 @@ module.exports = {
       // REACT_APP_PEER_SERVER_HOST: true,
       // REACT_APP_PEER_SERVER_PORT: true,
       // REACT_APP_PEER_SERVER_PATH: true
-    }
-    // knownEntrypoints: [
-    //   "@tensorflow/tfjs-backend-webgl"
-    // ]
+    },
+    knownEntrypoints: [
+      "seedrandom",
+      "@tensorflow/tfjs-core/dist/ops/ops_for_converter"
+    ]
     /* ... */
   },
   devOptions: {

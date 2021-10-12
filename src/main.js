@@ -8,7 +8,7 @@
 
 //posenet import -- CDB 5/18/2020
 //https://github.com/tensorflow/tfjs-models/blob/master/posenet/demos/camera.js
-import * as posenet from '@tensorflow-models/posenet';
+// import * as posenet from '@tensorflow-models/posenet';
 
 import * as Tone from "tone";
 import * as soundDesign from './soundDesignSpaceBtwSketch1.js';
@@ -26,7 +26,6 @@ import * as THREE from 'three';
 
 import { Tango332Riffs } from './midiConversion'
 
-  
 const USING_TEST_VIDEO = true;
 
 var FLIP_SELFPORTRAIT = true; 

@@ -1,4 +1,4 @@
-import type Peer from 'peerjs';
+import type { PeerJSOption } from 'peerjs';
 import axios from 'axios'; //TODO: https://github.com/axios/axios
 
 // const REACT_APP_PEER_SERVER_HOST = "spacebtw-peerserver.herokuapp.com";
@@ -13,7 +13,7 @@ const REACT_APP_PEER_SERVER_PATH = "/signaling";
 // const REACT_APP_PEER_SERVER_PORT = "9000";
 
 //TODO: will need to make the express server secure
-export const peerServerParams: Peer.PeerJSOption = {
+export const peerServerParams: PeerJSOption = {
   host: REACT_APP_PEER_SERVER_HOST || window.location.hostname,
   port: REACT_APP_PEER_SERVER_PORT ? parseInt(REACT_APP_PEER_SERVER_PORT) : 9000,
   path: REACT_APP_PEER_SERVER_PATH || "/",
@@ -33,14 +33,14 @@ export function findChatRoulettePartner(myId: string): Promise<string | null>
   return axios({
     method: 'get',
     url: "https://skinhunger-telematic-install.herokuapp.com/find?id=" + myId,
-    responseType: 'text', 
-    proxy:false,
+    responseType: 'text',
+    proxy: false,
   })
 
     .then(function (response) {
       const theirID = response.data;
       console.log("Got their id! :" + theirID);
-      return theirID;
+      return theirID as string;
     })
 
     .catch(function (error) {
