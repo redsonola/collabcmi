@@ -310,8 +310,6 @@ export class AverageFilteredKeyPoints
                 maxConfidence = Math.max( maxConfidence, keypoint.score );
             });
 
-        console.log( maxConfidence );
-        
         if( !greaterThanMin )
         {
             if( this.lastTimeChecked !== -1 )
@@ -323,6 +321,7 @@ export class AverageFilteredKeyPoints
         {
             this.timeWithZeroConfidenceScore = 0;
         }
+        // console.log( "timeWithZeroConfidenceScore" + this.timeWithZeroConfidenceScore ); 
         this.lastTimeChecked = Date.now(); 
     }
 

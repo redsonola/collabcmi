@@ -8,8 +8,8 @@
   import Loading from "./Loading.svelte";
   // import { interceptFileRequest } from "../hackXhrInterceptor";
   import '@tensorflow/tfjs-backend-webgl';
-  // import { initPosenet } from "../threejs/posenetcopy";
-  import { initPosenet } from "../threejs/mediapipePose";
+  import { initPosenet } from "../threejs/posenetcopy";
+  // import { initPosenet } from "../threejs/mediapipePose";
   // import { initPosenet } from "../threejs/posenetMock";
 
   import { videoSubscription } from "../threejs/cameraVideoElement";
@@ -218,6 +218,8 @@
 
   var endCall : ()=>void ;
 
+  var chatRouletteButton; 
+
   const BEGINNING_VOLUME = 0.66;
   // var selfMute;
   // var friendMute;  
@@ -275,7 +277,7 @@
   function resetTestsForParticipantPresence()
   {
       lastTimeWithPoseResults = -1; 
-      this.resetZeroConfidenceTime();
+      participant.resetZeroConfidenceTime();
   }
 
 
@@ -289,12 +291,11 @@
     let timeWithoutUser = ( Date.now() - lastTimeWithPoseResults)  / 1000.0 ; //ms to sec
     let timeWithLowConfidence = participant.getZeroConfidenceTime()  / 1000.0 ; //ms to sec
   
-    let TIME_TO_WAIT = 5; //test -- 5 seconds   //5 * 60.0; //waiting 5min of no user to switch 
+    let TIME_TO_WAIT = 5 * 60.0; //waiting 5min of no user to switch 
     if( timeWithoutUser > TIME_TO_WAIT || timeWithLowConfidence > TIME_TO_WAIT )
     {
-      connectToRandomPartner( document.getElementById('btnChatRoulette') ); 
+      connectToRandomPartner( chatRouletteButton ); 
       resetTestsForParticipantPresence();
-
     }
   }
 
@@ -729,6 +730,10 @@
         loadMusic(mainVolume); 
         turnUpVolume();
         musicLoaded = true; 
+        
+        //connect to a partner upon load.
+        connectToRandomPartner( document.getElementById('btnChatRoulette') ); 
+
       }
       loading = false;
       fpsTracker.refreshLoop();
@@ -744,10 +749,6 @@
       Object.values(dataConnections).forEach((conn) => {
         if (conn.open) conn.send({ type: "Pose", pose, size });
       });
-
-      //connect to a partner upon load.
-      // connectToRandomPartner( document.getElementById('btnChatRoulette') ); 
-
     });
 
     const myVideoUnsubscribe = webcamVideo.subscribe(async (video) => {
@@ -803,7 +804,11 @@
       // }
     });
 
+
+    chatRouletteButton = document.getElementById('btnChatRoulette');
     connectToRandomPartner = async (e) => {
+
+      endCall(); 
       console.log( "connecting to random partner" );
       let theirId = await findChatRoulettePartner( peer.id );
 
