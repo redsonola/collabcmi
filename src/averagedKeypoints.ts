@@ -107,8 +107,7 @@ export class AverageFilteredKeyPoints
 
     curEyeDistance : number = 0;
 
-    minConfidence : number = 0.35; 
-
+    minConfidence : number = 0.35; s
 
     constructor(avgSz : number = 12, avgOutBufferSize : number = 2, minConfidence=0.35, width=640, height=480)
     {

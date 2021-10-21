@@ -330,7 +330,7 @@ scene.add(light2);
 
         const groupOfStuffToRender = new Group();
 
-        hairyLineLive = skeletonIntersect.hairyLineLive.bind(skeletonIntersect);
+        // hairyLineLive = skeletonIntersect.hairyLineLive.bind(skeletonIntersect);
 
         // do the drawing
         const isInArray = (element) => element.isPerson(personId);

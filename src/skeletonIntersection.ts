@@ -6,7 +6,7 @@ import * as SAT from 'sat';
 import { newtonRaphson, distanceBetweenLines } from './intersectionPoint'
 // import { videoOverlapAmount } from './draw3js'
 import { resultHasLandmarks } from './mediaPipePose';
-import { HairyLine } from './HairyGeom/HairyLine';
+// import { HairyLine } from './HairyGeom/HairyLine';
 import { off } from 'process';
 
 
@@ -499,7 +499,7 @@ export class LimbIntersect extends DetectIntersect {
     offsets : THREE.Vector3 = new THREE.Vector3(0,0,0); 
     lastOffsetX : number = 0;
     lastOffsetXIndex : number = 0;
-    hairyLine : HairyLine | null; 
+    // hairyLine : HairyLine | null; 
 
     box : Vector3[] = []; 
 
@@ -514,7 +514,7 @@ export class LimbIntersect extends DetectIntersect {
         this.w = w;
         this.h = h;
 
-        this.hairyLine = null; 
+        // this.hairyLine = null; 
     }
 
     translateFromInternalRepresentationToDraw(vec : Vector3) : Vector3
@@ -653,29 +653,29 @@ export class LimbIntersect extends DetectIntersect {
 
     }
 
-    updateHairyLimbs()
-    {
-        let pt1: THREE.Vector3 = new THREE.Vector3(this.keypoints[0].position.x, this.keypoints[0].position.y, 0.95);
-        let pt2: THREE.Vector3 = new THREE.Vector3(this.keypoints[1].position.x, this.keypoints[1].position.y, 0.95);
+    // updateHairyLimbs()
+    // {
+    //     let pt1: THREE.Vector3 = new THREE.Vector3(this.keypoints[0].position.x, this.keypoints[0].position.y, 0.95);
+    //     let pt2: THREE.Vector3 = new THREE.Vector3(this.keypoints[1].position.x, this.keypoints[1].position.y, 0.95);
 
-        if( !this.hairyLine)
-        {
-            this.hairyLine = new HairyLine( pt1, pt2, 50, 5, .2);
-        }
-        else
-        {
-            let vec1 = new Vector3(  pt1.x, pt1.y, 1.1);
-            let vec2 = new Vector3(  pt2.x, pt2.y, 1.3);
+    //     if( !this.hairyLine)
+    //     {
+    //         this.hairyLine = new HairyLine( pt1, pt2, 50, 5, .2);
+    //     }
+    //     else
+    //     {
+    //         let vec1 = new Vector3(  pt1.x, pt1.y, 1.1);
+    //         let vec2 = new Vector3(  pt2.x, pt2.y, 1.3);
 
-            this.hairyLine.update(vec1, vec2); 
-            this.hairyLine?.live();
-        }
-    }
+    //         this.hairyLine.update(vec1, vec2); 
+    //         this.hairyLine?.live();
+    //     }
+    // }
 
-    hairyLineLive()
-    {
-        this.hairyLine?.live();
-    }
+    // hairyLineLive()
+    // {
+    //     this.hairyLine?.live();
+    // }
 
     //modified from : https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
     // Given three colinear points p, q, r, the function checks if 
@@ -1030,12 +1030,12 @@ class BodyPartIntersect extends DetectIntersect {
         this.drawSkeleton.update(this.limbs);
     }
 
-    hairyLineLive()
-    {
-        this.limbs.forEach(
-            (limb) => { limb.hairyLineLive(); }
-        );
-    }
+    // hairyLineLive()
+    // {
+    //     this.limbs.forEach(
+    //         (limb) => { limb.hairyLineLive(); }
+    //     );
+    // }
 
 
     //just so I don't have to propagate changes to inherited classes.
@@ -1054,21 +1054,21 @@ class BodyPartIntersect extends DetectIntersect {
         //     group.add(this.drawIntersections.groupToDraw());
 
         //add all the hairylimbs
-        for( let i=0; i<this.limbs.length; i++ )
-        {
-            if( this.limbs[i].hairyLine !== null )
-            {
-                let enoughConfidence : boolean =  this.limbs[i].getScore() >  this.limbs[i].minConfidence;
-                if( this.limbs[i].touching && enoughConfidence )
-                {
-                    this.limbs[i].hairyLine?.grow(); 
-                }
-                if( enoughConfidence )
-                {
-                    group.add( this.limbs[i].hairyLine as THREE.Group ); 
-                }
-            }
-        }
+        // for( let i=0; i<this.limbs.length; i++ )
+        // {
+        //     if( this.limbs[i].hairyLine !== null )
+        //     {
+        //         let enoughConfidence : boolean =  this.limbs[i].getScore() >  this.limbs[i].minConfidence;
+        //         // if( this.limbs[i].touching && enoughConfidence )
+        //         // {
+        //         //     this.limbs[i].hairyLine?.grow(); 
+        //         // }
+        //         if( enoughConfidence )
+        //         {
+        //             group.add( this.limbs[i].hairyLine as THREE.Group ); 
+        //         }
+        //     }
+        // }
 
         return group; 
     }
@@ -1164,13 +1164,13 @@ class ArmsLegsIntersect extends BodyPartIntersect {
     update(keypoints: any[]): void 
     {
         super.update(keypoints);
-        this.limbs.forEach( (limb)=>
-        { 
-            if(limb.getScore() >  limb.minConfidence)
-            {
-                limb.updateHairyLimbs() ;
-            }
-        });
+        // this.limbs.forEach( (limb)=>
+        // { 
+        //     if(limb.getScore() >  limb.minConfidence)
+        //     {
+        //         limb.updateHairyLimbs() ;
+        //     }
+        // });
     }
 }
 
@@ -1430,12 +1430,12 @@ export class SkeletionIntersection {
         return group; 
     }
 
-    hairyLineLive()
-    {
-        this.parts.forEach(
-            (part)=>{ part.hairyLineLive(); }
-        );
-    }
+    // hairyLineLive()
+    // {
+    //     this.parts.forEach(
+    //         (part)=>{ part.hairyLineLive(); }
+    //     );
+    // }
 
     getBodyPartIntersections(): BodyPartIntersect[] {
         return this.parts;

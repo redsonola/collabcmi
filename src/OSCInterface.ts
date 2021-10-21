@@ -84,7 +84,7 @@ export function sendOSC(
   {
     let t = fixSci( howLongTouch )
     try {
-      axios.post("https://10.8.124.132:3000/send-osc", 
+      axios.post("https://localhost:3000/send-osc", 
       {
         verticalityCorr: fixSci( verticalityCorr ),
         touchVelocity: fixSci( touchVelocity ),
