@@ -47,7 +47,7 @@
   } from "../SynchSonification"
 
   import * as Tone from "tone";
-  // import "../Organism01"; //turn back on for creature
+  import "../Organism01"; //turn back on for creature
   // import { onVirtualTouch, startAnimation } from "../Organism01"; //turn back on for creature, uncomment Line 285, Line 607
 
   import * as THREE from "three";
