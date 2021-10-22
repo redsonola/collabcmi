@@ -1081,16 +1081,16 @@
   <!-- <br/><br/> -->
 </div>
 
-<!-- {#if peerIds.length !== 0 || idToCall !== null}
+ {#if peerIds.length !== 0 || idToCall !== null}
 <div class="myMute" style={`left:${myMutePosition.x}px; top:${myMutePosition.y}px`}>
   <input type="image" on:click={muteSelf} alt="muteButton" src={myMuteButtonText} width="23px" height="23px" />
 </div>
 
 <!-- I just made the myMutePosition.y position top for this one, bc they should be the same anyways. fix for real l8rz -->
-<!-- <div class="theirMute" style={`left:${theirMutePosition.x}px; top:${theirMutePosition.y}px`}> 
+<div class="theirMute" style={`left:${theirMutePosition.x}px; top:${theirMutePosition.y}px`}> 
   <input type="image" on:click={muteThem} alt="theirMuteButton" src={theirMuteButtonText} width="23px" height="23px" />
 </div> 
-{/if} -->
+{/if}
 {#if showDebugPanel}
   <DebugPanel myId={myId}>
   <!--
