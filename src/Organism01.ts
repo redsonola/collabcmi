@@ -41,7 +41,7 @@ renderer.setClearColor(0x000000, 0);
 renderer.autoClear = true;
 
 document.body.appendChild(renderer.domElement);
-const controls = new OrbitControls(camera, renderer.domElement);
+// const controls = new OrbitControls(camera, renderer.domElement);
 document.addEventListener('click', onMouse, false);
 
 //test
@@ -343,7 +343,7 @@ function render() {
 
 var animate = function () {
     requestAnimationFrame(animate);
-    controls.autoRotate = true;
+    // controls.autoRotate = true;
     camera.lookAt(scene.position); //0,0,0
    // camera.position.y = Math.sin(cameraTheta3D.y+=Math.PI/15)*10;
     camera.position.z = Math.cos(cameraTheta3D.z+=Math.PI/180)*2.2;
@@ -450,7 +450,7 @@ var animate = function () {
         finalTethers[i].constrainLen();
     }
 
-    controls.update()
+    // controls.update()
     updateNodes();
     render();
 };
