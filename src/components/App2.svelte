@@ -605,9 +605,11 @@
         friendParticipant = new Participant; 
         participant.addFriendParticipant(friendParticipant); 
         peerIds = [];
-        if( !disconnectedBySelf )
-            chatstatusMessage = "The other participant has disconnected.\n Please use the above controls to restart, if desired.";
+        if( !disconnectedBySelf )//immediately reconnect
+            chatstatusMessage = "The other participant has disconnected.\n Connecting to another space...";
 
+          
+        connectToRandomPartner( document.getElementById('btnChatRoulette') ); 
         disconnectedBySelf = false;
         hasFriend = false; 
     }
@@ -990,7 +992,6 @@
         if (conn.open) conn.close();
       });
     console.log("ended the call");
-    peer.disconnect();  
   }
 
   function mouseClick(event)
