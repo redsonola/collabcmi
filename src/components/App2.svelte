@@ -48,7 +48,7 @@
 
   import * as Tone from "tone";
   import "../Organism01"; //turn back on for creature
-  // import { onVirtualTouch, startAnimation } from "../Organism01"; //turn back on for creature, uncomment Line 285, Line 607
+  import { onVirtualTouch, startAnimation } from "../Organism01"; //turn back on for creature, uncomment Line 285, Line 607
 
   import * as THREE from "three";
   import { DataConnection, MediaConnection } from "peerjs";
@@ -104,8 +104,9 @@
     }
   }
 
-  export let myId: string | undefined =
-    new URL(window.location.href).searchParams.get("myid") || undefined;
+  export let myId: string | undefined = undefined; //so that refresh works, temp fix OCt. 24 CDB
+
+    //new URL(window.location.href).searchParams.get("myid") || undefined; 
   function setMyId(id: string) {
     console.log("setMyId", id);
     myId = id;
@@ -353,7 +354,7 @@
       combinedWindowedScore = windowedVarScore;
       howLongTouch = participant.howLongTouching();
       //howMuchTouch = participant.howMuchTouching();
-      // onVirtualTouch(participant.getTouch()); //TURN ON FOR CREATURE
+      onVirtualTouch(participant.getTouch()); //TURN ON FOR CREATURE
     }
 
     try {
@@ -726,7 +727,7 @@
     posenet.onResults((pose) => {
       if(loading)
       {
-        // startAnimation(); 
+        startAnimation(); 
         loadMusic(mainVolume); 
         turnUpVolume();
         musicLoaded = true; 
@@ -988,7 +989,8 @@
     Object.values(dataConnections).forEach((conn) => {
         if (conn.open) conn.close();
       });
-    console.log("ended the call"); 
+    console.log("ended the call");
+    peer.disconnect();  
   }
 
   function mouseClick(event)

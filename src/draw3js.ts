@@ -62,8 +62,6 @@ export function threeRenderCode({
 
   const scene = new Scene();
 
-  let hairyLineLive = ()=>{};
-
   const circles: THREE.Mesh[] = [];
 
   const circleColors = [
@@ -161,6 +159,8 @@ scene.add(light2);
 
 //end IRA'S LIGHT
 
+// scene.add(new THREE.AxesHelper(1)); //proof that this code is fucked
+
   const allVideosGroup = new Group(); //TODO: kill videoGroups & only use AllVideoGroups -- good times.
   scene.add(allVideosGroup);
 
@@ -243,36 +243,25 @@ scene.add(light2);
       const group = allVideosGroup.children[i];
       group.position.x = ( videoOverlapAmount * i ) + leftMargin;
       group.position.y = 0.4;
-
-      //leaving the overlapped videos for now
-
-      // const clippingPlanes: Plane[] = [];
-      // // clip the right side if it's not the last video:
-      // if (i !== videoGroups.length - 1) {
-      //   const plane = new Plane(new Vector3(-1, 0, 0), videoOverlapAmount * i + videoOverlapAmount);
-      //   clippingPlanes.push(plane);
-      // }
-
-      // // clip the left side if it's not the first video:
-      // if (i !== 0) {
-      //   const plane = new Plane(new Vector3(1, 0, 0), -videoOverlapAmount * i - 1 + videoOverlapAmount);
-      //   clippingPlanes.push(plane);
-      //   // show where it's clipping for debugging:
-      //   // scene.add(new PlaneHelper(plane, 2, 0xff0000));
-      // }
-
-      // group.children
-      //   .filter(x => x.userData.isVideo)
-      //   .forEach((vid) => {
-      //     (vid as Mesh<any, MeshBasicMaterial>).material.clippingPlanes = clippingPlanes;
-      //   });
     }
 
     // setFrustum(-0.5, group.position.y);
-    lookAt(new Box3(
-      new Vector3(0, -0.5, 0),
-      new Vector3(allVideosGroup.children.length, 1, 0),
-    ));
+    // if( allVideosGroup.children.length <= 1 )
+    // {
+      let boundingXBoxSize = 1.3 + ((videoOverlapAmount)*(allVideosGroup.children.length-1)); 
+      let xstart = 0; 
+      if( allVideosGroup.children.length ==1 )
+      {
+        xstart = -0.75;
+        boundingXBoxSize = 1.25;
+      }
+
+      lookAt(new Box3(
+        new Vector3(xstart, -0.5, 0),
+        new Vector3(boundingXBoxSize, 1.1, 0),
+      ));
+    // }
+
   }
 
 
@@ -295,7 +284,6 @@ scene.add(light2);
       updateCircle(delta);
       renderer.render(scene, camera);
 
-      hairyLineLive(); 
       lastUpdate = now;
       // controls.update();
       requestAnimationFrame(animate);

@@ -101,6 +101,11 @@ export function createOrthographicCamera(canvas, _width, _height) {
       boundingBox.getCenter(camera.position)
 
       camera.updateProjectionMatrix();
-    }
+
+    },
   }
+
 }
+
+
+
