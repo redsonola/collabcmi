@@ -654,6 +654,14 @@
       if (dataConnections[conn.peer]) {
         console.warn("Trying to reconnect data for ", conn.peer, dataConnections);
       }
+
+      //hang up if already has call.
+      if( hasFriend )
+      {
+        endCall(); 
+        console.log("ending call of prev. friend");
+      }
+
       dataConnections[conn.peer] = conn;
       console.log("listenToDataConnection", conn, dataConnections);
       friendParticipant.setParticipantID(conn.peer); //for the dyad arrangement set the ID
@@ -713,12 +721,6 @@
     peer.on('connection', listenToDataConnection);
 
     function listenToMediaConnection(call: MediaConnection) {
-
-      //hang up if already has call.
-      if( hasFriend )
-      {
-        endCall(); 
-      }
 
       // theirId = call.peer;
       call.on('stream', function (mediaStream) {
@@ -826,7 +828,7 @@
       if (stopped) return goLoop.STOP_LOOP;
       await sleep();
       switchSpacesIfNoUser(); //if there is not a user, switch spaces
-      pollForConnectionRequest(); //poll for a connection request
+      setTimeout(pollForConnectionRequest, 100 );
       pollLastTimeConnected(); //if not connected for 20 minutes, will reconnect
 
       if (touchMusicalPhrases) { //if this is skin hunger.
