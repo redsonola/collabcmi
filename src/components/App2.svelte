@@ -917,7 +917,7 @@
       //copied from above but should work
       if( theirId && theirId !== "0" )
       {
-        endCall(); //this is different
+        //endCall(); //this is different
 
         const myVideoUnsubscribe = webcamVideo.subscribe(async (video) => 
         {
