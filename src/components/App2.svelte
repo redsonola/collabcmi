@@ -905,56 +905,56 @@
 
     connectToUpdatedConnection = async (e) =>
     {
-      // let theirId = await updateConnection( peer.id );
+      let theirId = await updateConnection( peer.id );
 
-      // if( theirId === "0" )
-      // {
-      //   endCall(); 
-      //   chatstatusMessage = "Currently not connected to a space. Cycle spaces to connect to a space";
-      //   //to do -- put in a timeout function if this works.
-      // }
+      if( theirId === "0" )
+      {
+        endCall(); 
+        chatstatusMessage = "Currently not connected to a space. Cycle spaces to connect to a space";
+        //to do -- put in a timeout function if this works.
+      }
 
-      // //copied from above but should work
-      // if( theirId && theirId !== "0" )
-      // {
-      //   endCall(); //this is different
+      //copied from above but should work
+      if( theirId && theirId !== "0" )
+      {
+        endCall(); //this is different
 
-      //   const myVideoUnsubscribe = webcamVideo.subscribe(async (video) => 
-      //   {
-      //     if(!video){
-      //       console.log("video is undefined")
-      //       return; 
-      //     }
+        const myVideoUnsubscribe = webcamVideo.subscribe(async (video) => 
+        {
+          if(!video){
+            console.log("video is undefined")
+            return; 
+          }
 
-      //     if(!theirId){
-      //       console.log("theirId is now undefined??")
-      //       return; 
-      //     }
+          if(!theirId){
+            console.log("theirId is now undefined??")
+            return; 
+          }
 
-      //     chatstatusMessage = "Connecting to new space...";
+          chatstatusMessage = "Connecting to new space...";
 
-      //     listenToDataConnection(peer.connect(theirId, { label: theirId, serialization: 'json' }));
+          listenToDataConnection(peer.connect(theirId, { label: theirId, serialization: 'json' }));
 
-      //     if (video.stream) 
-      //     {
-      //       if(!theirId)
-      //         return; 
+          if (video.stream) 
+          {
+            if(!theirId)
+              return; 
             
-      //       const call = peer.call(theirId, video.stream);
-      //       listenToMediaConnection(call);
-      //     }
-      //   });
-      // }
-      // else
-      // {
-      //   chatstatusMessage = " ";
-      //   if( theirId === "0" )
-      //   {
-      //     chatstatusMessage = "Currently not connected to a space. Cycle spaces to connect to a space.";
-      //   }
+            const call = peer.call(theirId, video.stream);
+            listenToMediaConnection(call);
+          }
+        });
+      }
+      else
+      {
+        chatstatusMessage = " ";
+        if( theirId === "0" )
+        {
+          chatstatusMessage = "Currently not connected to a space. Cycle spaces to connect to a space.";
+        }
 
-      //   // await loadMusic(mainVolume);
-      // }
+        // await loadMusic(mainVolume);
+      }
 
     };
 
