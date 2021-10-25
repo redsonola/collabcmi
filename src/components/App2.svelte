@@ -312,7 +312,7 @@
   {
     let timeWithoutPolling = ( Date.now() - lastTimePolledWithAConnectionRequest)  / 1000.0 ; //ms to sec
 
-    let TIME_TO_WAIT = 2.0; //poll every 2 sec.
+    let TIME_TO_WAIT = 10.0; //poll every 10 sec...
     if( timeWithoutPolling > TIME_TO_WAIT  )
     {
       lastTimePolledWithAConnectionRequest = Date.now(); 
@@ -651,9 +651,18 @@
     }
 
     function listenToDataConnection(conn: DataConnection) {
+      lastTimePolledWithAConnectionRequest = Date.now();
       if (dataConnections[conn.peer]) {
         console.warn("Trying to reconnect data for ", conn.peer, dataConnections);
       }
+
+      //hang up if already has call.
+      if( hasFriend )
+      {
+        endCall(); 
+        console.log("ending call of prev. friend");
+      }
+
       dataConnections[conn.peer] = conn;
       console.log("listenToDataConnection", conn, dataConnections);
       friendParticipant.setParticipantID(conn.peer); //for the dyad arrangement set the ID
