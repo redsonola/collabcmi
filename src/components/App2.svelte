@@ -310,14 +310,14 @@
   //not yet implemented
   function  pollForConnectionRequest()
   {
-    // let timeWithoutPolling = ( Date.now() - lastTimePolledWithAConnectionRequest)  / 1000.0 ; //ms to sec
+    let timeWithoutPolling = ( Date.now() - lastTimePolledWithAConnectionRequest)  / 1000.0 ; //ms to sec
 
-    // let TIME_TO_WAIT = 2.0; //poll every 10 sec...
-    // if( timeWithoutPolling > TIME_TO_WAIT  )
-    // {
-    //   lastTimePolledWithAConnectionRequest = Date.now(); 
-    //   connectToUpdatedConnection( chatRouletteButton ); 
-    // }
+    let TIME_TO_WAIT = 2.0; //poll every 10 sec...
+    if( timeWithoutPolling > TIME_TO_WAIT  )
+    {
+      lastTimePolledWithAConnectionRequest = Date.now(); 
+      connectToUpdatedConnection( chatRouletteButton ); 
+    }
   }
 
   function pollLastTimeConnected()
@@ -627,6 +627,9 @@
 
     closeConnection = (conn : DataConnection) =>
     {
+      if( !hasFriend )
+        return; 
+        
       console.log("closing out bc other participant closed");
         peerIds = peerIds.filter((id) => id !== conn.peer);
         recentIds.push( conn.peer ); 
@@ -1089,6 +1092,9 @@
 
   endCall = () => 
   {
+    if( !hasFriend )
+      return; 
+
     disconnectedBySelf = true; 
     idToCall = null; 
 
