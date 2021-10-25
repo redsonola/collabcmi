@@ -17,7 +17,9 @@
   import type { PosenetSetup } from "../threejs/mediapipePose";
   import {
     peerServerParams,
-    findChatRoulettePartner
+    findChatRoulettePartner, 
+    updateConnection,
+    disconnectID
   } from "../peerJs";
 
   // import Balls from "./Balls.svelte";
@@ -209,10 +211,14 @@
 
 
   let lastTimeWithPoseResults = -1; 
+  let lastTimePolledWithAConnectionRequest = -1; 
+  let lastTimeConnected = -1; 
+
 
   let isChrome = !!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime);
 
   var connectToRandomPartner = (e) => {}; //function to connect to a random partner
+  var connectToUpdatedConnection = (e)=> {}; 
   var turnUpVolume = () => {}; //turn up the volume when connected to another user
   var sendMuteMessage = (which:number, muted:boolean) => {}; //if muting self, need to send to other person to mute.
   var sendVideoMoveMessage = (which:number, x:number, y:number) => {}; //if muting self, need to send to other person to mute.
@@ -236,6 +242,7 @@
     }, 1);
   }
 
+  //note: in this version max does everything so no music is loaded
   async function loadMusic (mainVolume : MainVolume)
   {
     //this is from my audiovisual project
@@ -292,11 +299,41 @@
     let timeWithoutUser = ( Date.now() - lastTimeWithPoseResults)  / 1000.0 ; //ms to sec
     let timeWithLowConfidence = participant.getZeroConfidenceTime()  / 1000.0 ; //ms to sec
   
-    let TIME_TO_WAIT = 5 * 60.0; //waiting 5min of no user to switch 
+    let TIME_TO_WAIT = 10 * 60.0; //waiting 6min of no user to switch 
     if( timeWithoutUser > TIME_TO_WAIT || timeWithLowConfidence > TIME_TO_WAIT )
     {
       connectToRandomPartner( chatRouletteButton ); 
       resetTestsForParticipantPresence();
+    }
+  }
+
+  //not yet implemented
+  function  pollForConnectionRequest()
+  {
+    let timeWithoutPolling = ( Date.now() - lastTimePolledWithAConnectionRequest)  / 1000.0 ; //ms to sec
+
+    let TIME_TO_WAIT = 2.0; //poll every 2 sec.
+    if( timeWithoutPolling > TIME_TO_WAIT  )
+    {
+      lastTimePolledWithAConnectionRequest = Date.now(); 
+      connectToUpdatedConnection( chatRouletteButton ); 
+    }
+  }
+
+  function pollLastTimeConnected()
+  {
+    if( lastTimeConnected === -1 )
+    {
+      return;
+    }
+
+    let timeWithoutConnection = ( Date.now() - lastTimeConnected)  / 1000.0 ; //ms to sec
+    let TIME_TO_CONNECT_AGAIN =  15 * 60.0; // 
+
+    if( timeWithoutConnection > TIME_TO_CONNECT_AGAIN  )
+    {
+      connectToRandomPartner( chatRouletteButton ); 
+      lastTimeConnected = Date.now(); //try again in 15, not immediately
     }
   }
 
@@ -609,7 +646,6 @@
             chatstatusMessage = "The other participant has disconnected.\n Connecting to another space...";
 
           
-        connectToRandomPartner( document.getElementById('btnChatRoulette') ); 
         disconnectedBySelf = false;
         hasFriend = false; 
     }
@@ -627,6 +663,7 @@
       console.log('setting friend ID:', conn.peer)
 
       conn.on('data', function (message: PeerMessage) {
+        lastTimeConnected = Date.now(); 
         switch (message.type) {
           case "Pose": {
             friendParticipant.setSize(message.size.width, message.size.height);
@@ -676,6 +713,12 @@
     peer.on('connection', listenToDataConnection);
 
     function listenToMediaConnection(call: MediaConnection) {
+
+      //hang up if already has call.
+      if( hasFriend )
+      {
+        endCall(); 
+      }
 
       // theirId = call.peer;
       call.on('stream', function (mediaStream) {
@@ -783,6 +826,8 @@
       if (stopped) return goLoop.STOP_LOOP;
       await sleep();
       switchSpacesIfNoUser(); //if there is not a user, switch spaces
+      pollForConnectionRequest(); //poll for a connection request
+      pollLastTimeConnected(); //if not connected for 20 minutes, will reconnect
 
       if (touchMusicalPhrases) { //if this is skin hunger.
         touchMusicalPhrases.play();
@@ -830,7 +875,7 @@
             return; 
           }
 
-          chatstatusMessage = "Connecting...";
+          chatstatusMessage = "Connecting to a new space. May take a minute...";
 
           listenToDataConnection(peer.connect(theirId, { label: theirId, serialization: 'json' }));
 
@@ -846,11 +891,66 @@
       }
       else
       {
-        chatstatusMessage = "Waiting for a chat partner...";
+        chatstatusMessage = "Waiting for a connection...";
 
         // await loadMusic(mainVolume);
       }
     }
+
+    connectToUpdatedConnection = async (e) =>
+    {
+      let theirId = await updateConnection( peer.id );
+
+      if( theirId === "0" )
+      {
+        endCall(); 
+        chatstatusMessage = "Currently not connected to a space. Cycle spaces to connect to a space";
+        //to do -- put in a timeout function if this works.
+      }
+
+      //copied from above but should work
+      if( theirId && theirId !== "0" )
+      {
+        endCall(); //this is different
+
+        const myVideoUnsubscribe = webcamVideo.subscribe(async (video) => 
+        {
+          if(!video){
+            console.log("video is undefined")
+            return; 
+          }
+
+          if(!theirId){
+            console.log("theirId is now undefined??")
+            return; 
+          }
+
+          chatstatusMessage = "Connecting to new space...";
+
+          listenToDataConnection(peer.connect(theirId, { label: theirId, serialization: 'json' }));
+
+          if (video.stream) 
+          {
+            if(!theirId)
+              return; 
+            
+            const call = peer.call(theirId, video.stream);
+            listenToMediaConnection(call);
+          }
+        });
+      }
+      else
+      {
+        chatstatusMessage = " ";
+        if( theirId === "0" )
+        {
+          chatstatusMessage = "Currently not connected to a space. Cycle spaces to connect to a space.";
+        }
+
+        // await loadMusic(mainVolume);
+      }
+
+    };
 
     sendMuteMessage = (which: number, muted: boolean) =>
     {
@@ -871,6 +971,7 @@
 
     return () => {
       console.log(`Cleaning up app for ${myId}`);
+      disconnectID(peer.id ); 
       stopped = true;
       three.cleanup();
       posenet.cleanup()
@@ -978,7 +1079,7 @@
       Object.values(dataConnections).forEach((conn) => {
         if (conn.open) conn.close();
       });
-      
+      disconnectID(peer.id ); 
       peer.disconnect(); 
       console.log("disconnected from peer");
   }
@@ -1159,11 +1260,11 @@
 
 
 <!-- for the telematic version, just keep it connected if possible -->
-<!-- {#if peerIds.length > 0}
-<div class="disconnectButton">
+ <!-- {#if peerIds.length > 0} -->
+<!-- <div class="disconnectButton">
   <button on:click={endCall} class="disconnectButtonColor">End Video Call</button>
-  </div>>
-{/if} -->
+  </div>> -->
+<!-- {/if}  -->
 
 <br />
 <div class="linksPanel">
