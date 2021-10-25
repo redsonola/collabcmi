@@ -654,14 +654,6 @@
       if (dataConnections[conn.peer]) {
         console.warn("Trying to reconnect data for ", conn.peer, dataConnections);
       }
-
-      //hang up if already has call.
-      if( hasFriend )
-      {
-        endCall(); 
-        console.log("ending call of prev. friend");
-      }
-
       dataConnections[conn.peer] = conn;
       console.log("listenToDataConnection", conn, dataConnections);
       friendParticipant.setParticipantID(conn.peer); //for the dyad arrangement set the ID
