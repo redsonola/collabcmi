@@ -943,6 +943,10 @@
             const call = peer.call(theirId, video.stream);
             listenToMediaConnection(call);
           }
+          else
+          {
+            console.log(" didn't get the video stream ! ");
+          }
         });
       }
       else
