@@ -310,14 +310,14 @@
   //not yet implemented
   function  pollForConnectionRequest()
   {
-    let timeWithoutPolling = ( Date.now() - lastTimePolledWithAConnectionRequest)  / 1000.0 ; //ms to sec
+    // let timeWithoutPolling = ( Date.now() - lastTimePolledWithAConnectionRequest)  / 1000.0 ; //ms to sec
 
-    let TIME_TO_WAIT = 10.0; //poll every 10 sec...
-    if( timeWithoutPolling > TIME_TO_WAIT  )
-    {
-      lastTimePolledWithAConnectionRequest = Date.now(); 
-      connectToUpdatedConnection( chatRouletteButton ); 
-    }
+    // let TIME_TO_WAIT = 2.0; //poll every 10 sec...
+    // if( timeWithoutPolling > TIME_TO_WAIT  )
+    // {
+    //   lastTimePolledWithAConnectionRequest = Date.now(); 
+    //   connectToUpdatedConnection( chatRouletteButton ); 
+    // }
   }
 
   function pollLastTimeConnected()
