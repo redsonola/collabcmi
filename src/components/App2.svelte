@@ -629,7 +629,7 @@
     {
       if( !hasFriend )
         return; 
-        
+
       console.log("closing out bc other participant closed");
         peerIds = peerIds.filter((id) => id !== conn.peer);
         recentIds.push( conn.peer ); 
@@ -784,7 +784,7 @@
         musicLoaded = true; 
         
         //connect to a partner upon load.
-        connectToRandomPartner( document.getElementById('btnChatRoulette') ); 
+        // connectToRandomPartner( document.getElementById('btnChatRoulette') ); 
 
       }
       loading = false;
