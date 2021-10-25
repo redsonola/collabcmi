@@ -905,7 +905,7 @@
 
     connectToUpdatedConnection = async (e) =>
     {
-      let theirId = await updateConnection( peer.id );
+      // let theirId = await updateConnection( peer.id );
 
       // if( theirId === "0" )
       // {
