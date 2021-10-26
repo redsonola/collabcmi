@@ -218,7 +218,7 @@
   let lastTimeConnected = -1; 
 
 
-  let isChrome = !!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime);
+  let isChrome = !!(window as any).chrome && (!!(window as any).chrome.webstore || !!(window as any).chrome.runtime);
 
   var connectToRandomPartner = (e) => {}; //function to connect to a random partner
   var connectToUpdatedConnection = (e)=> {}; 
@@ -239,11 +239,11 @@
     three?.cleanup();
     three = threeRenderCode({ canvas, handleResize });
   }
-  $: if (three && size) {
-    setTimeout(() => {
-      three.dispatch({ type: "SetSize", ...size });
-    }, 1);
-  }
+  // $: if (three && size) {
+  //   setTimeout(() => {
+  //     three.setSize(size);
+  //   }, 1);
+  // }
 
   //note: in this version max does everything so no music is loaded
   async function loadMusic (mainVolume : MainVolume)
@@ -357,14 +357,7 @@
 
     }
     
-    three?.dispatch({
-      type: "UpdatePose",
-      targetVideoId: particiantId,
-      personId: particiantId,
-      pose,
-      skeletonIntersect: thisparticipant.getSkeletonIntersection(),
-      size,
-    });
+    three?.updatePose(particiantId, particiantId, thisparticipant.getSkeletonIntersection(), size);
 
     //set the current sample rate -- to adjust buffer/window sizes
     participant.setPoseSamplesRate(fpsTracker.getFPS());
@@ -644,7 +637,7 @@
     
         // updatePeerData(conn.peer, () => false);
         theirVideoUnsubscribe();
-        three.dispatch({ type: "RemoveVideo", personId: conn.peer });
+        three.removeVideo(conn.peer);
 
         delete dataConnections[conn.peer];
 
@@ -694,7 +687,7 @@
           case "Mute": {
             if( message.which === 0 )
             {
-              myMuteButtonText = message.muted ?unmuteURL : muteUrl;
+              myMuteButtonText = message.muted ? unmuteURL : muteUrl;
             }
             else
             {
@@ -747,7 +740,7 @@
         console.log('CallAnswered', call, mediaStream);
         theirVideoUnsubscribe = theirVideo.subscribe(video => {
           if (video) {
-            three.dispatch({ type: "AddVideo", personId: call.peer, video, recentIds });
+            three.addVideo(video, call.peer, recentIds);
             three.setWhichIsSelf(participant.getParticipantID()); 
           }
         });
@@ -759,7 +752,7 @@
       call.on('close', function () {
         console.log('removing media connection');
         theirVideoUnsubscribe();
-        three.dispatch({ type: "RemoveVideo", personId: call.peer });
+        three.removeVideo(call.peer);
       });
 
       call.on('error', (error) => {
@@ -815,7 +808,7 @@
 
       posenet.updateVideo(video);
 
-      three.dispatch({ type: "AddVideo", personId: peer.id, video, recentIds });
+      three.addVideo(video, peer.id, recentIds);
       three.setWhichIsSelf(participant.getParticipantID()); 
 
 

@@ -1,4 +1,8 @@
 {
     "editor.acceptSuggestionOnEnter": "smart",
-    "editor.tabSize": 2
+    "editor.tabSize": 2,
+    "javascript.format.placeOpenBraceOnNewLineForFunctions": true,
+    "javascript.format.placeOpenBraceOnNewLineForControlBlocks": true,
+    "typescript.format.placeOpenBraceOnNewLineForControlBlocks": true,
+    "typescript.format.placeOpenBraceOnNewLineForFunctions": true
 }

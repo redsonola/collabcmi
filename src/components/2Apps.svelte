@@ -11,25 +11,26 @@
   }
 
   $: {
-    rightIframeUrl =
-      !friendURL || rightIframeRefreshing ? "about:blank" : friendURL;
+    rightIframeUrl = rightIframeRefreshing ? "about: blank" : "/?debug=true";
+    // rightIframeUrl =
+    //   !friendURL || rightIframeRefreshing ? "about:blank" : friendURL;
   }
 
-  $: if (leftIframe?.contentWindow) {
-    leftIframe.contentWindow.addEventListener(
-      "message",
-      (event) => {
-        if (event.origin !== window.location.origin) return;
-        console.log("message listener:", event);
-        if (event.data.name === "call-call-link-changed") {
-          const url = new URL(event.data.url);
-          url.searchParams.set("debug", "true");
-          friendURL = url.href;
-        }
-      },
-      false
-    );
-  }
+  // $: if (leftIframe?.contentWindow) {
+  //   leftIframe.contentWindow.addEventListener(
+  //     "message",
+  //     (event) => {
+  //       if (event.origin !== window.location.origin) return;
+  //       console.log("message listener:", event);
+  //       if (event.data.name === "call-call-link-changed") {
+  //         const url = new URL(event.data.url);
+  //         url.searchParams.set("debug", "true");
+  //         friendURL = url.href;
+  //       }
+  //     },
+  //     false
+  //   );
+  // }
 </script>
 
 <div class="appSide left">
