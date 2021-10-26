@@ -11,6 +11,8 @@ import type { PosenetSetup } from './threejs/mediapipePose';
 import { orderParticipantID } from './participant'
 import type { SkeletionIntersection } from './skeletonIntersection';
 
+const log = console.log.bind('draw3js');
+
 export const videoOverlapAmount = 0.2;
 
 export interface PoseVideo
@@ -48,10 +50,11 @@ export function threeRenderCode({
 
   setTimeout(() =>
   {
-    console.log("camera", camera);
+    log("camera", camera);
   })
 
   const scene = new Scene();
+  (window as any).scene = scene;
 
   const circles: THREE.Mesh[] = [];
 
@@ -166,6 +169,7 @@ export function threeRenderCode({
   // video groups have a video and a drawn skeleton
   // const videoGroups: Group[] = [];
   const findGroup = (id) => allVideosGroup.children.find(g => g.userData.personId === id) as Group;
+  const listGroupIds = () => allVideosGroup.children.map(g => g.userData.personId) as (string | undefined)[];
 
   let videoWidth3js = 0;
   let videoHeight3js = 0;
@@ -183,17 +187,18 @@ export function threeRenderCode({
   //TODO this only works for dyads. Find another solution.
   const addVideo = (video: CameraVideo, personId: string, recentIds: string[]) =>
   {
+    log("addVideo", personId, "existing groups ids:", listGroupIds());
     let group: Group | undefined = findGroup(personId);
     let isRecentID = recentIds.indexOf(personId) !== -1;
     if (isRecentID)
     {
-      console.log("addVideo but was a recent id: ", { personId });
+      log("addVideo but was a recent id: ", { personId });
       return;
     }
 
     if (group)
     {
-      console.log("addVideo replacing group", { personId, recentIds, group });
+      log("addVideo replacing group", { personId, recentIds, group });
       // replace video if it exists
       group.children
         .filter(obj => obj.userData.isVideo)
@@ -209,13 +214,13 @@ export function threeRenderCode({
           if( i!=whichIndexIsSelf)
           {
             allVideosGroup.children.splice(i, 1); 
-            console.log("got rid of an extra video"); 
+            log("got rid of an extra video"); 
           }
         }
       }
 
       // add the video if it's not there
-      console.log("addVideo creating group", { personId, recentIds, allVideosGroup });
+      log("addVideo creating group", { personId, recentIds, allVideosGroup });
 
       group = new Group();
       allVideosGroup.add(group);
@@ -271,9 +276,9 @@ export function threeRenderCode({
     }
     else if( allVideosGroup.children.length > 2 )
     {
-        console.log("added 3 videos");
-        console.log("personid: "+personId);
-        console.log({recentIds}); 
+        log("added 3 videos");
+        log("personid: "+personId);
+        log({recentIds}); 
 
     }
 
@@ -474,6 +479,7 @@ export function threeRenderCode({
     addVideo,
     removeVideo(personId: string)
     {
+      log("removeVideo", personId, "current groups ids:", listGroupIds());
       allVideosGroup.remove(findGroup(personId));
       console.warn("TODO: cleanup threejs video objects");
     },
@@ -535,8 +541,8 @@ export function threeRenderCode({
 
 
       //convert from threejs coordinates to computer screen/browser coordinates.
-      // console.log(personId + " vid.position ");
-      // console.log( videoGroup.position );
+      // log(personId + " vid.position ");
+      // log( videoGroup.position );
 
       // var projector = new Projector();
       // projector.projectVector( pos.setFromMatrixPosition( videoGroup.matrixWorld ), camera );
@@ -575,7 +581,7 @@ export function threeRenderCode({
     },
     cleanup()
     {
-      console.warn('Cleaning up three stuff');
+      log('Cleaning up three stuff');
       running = false;
       videos.forEach((videoObj) =>
       {
