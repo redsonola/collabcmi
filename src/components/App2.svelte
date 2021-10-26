@@ -354,7 +354,7 @@
     let yposOfTouch: number = 0;
     let combinedWindowedScore : number = 0;
 
-    if( peer.dataPeerIds.length !== 0 && hasFriend ){
+    if( peer.dataPeerIds.ids.length !== 0 && hasFriend ){
 
       if (participant.areTouching()) {
         skeletonTouching = 1;
@@ -498,12 +498,12 @@
         xCorrTouching = participant.getTouchingXCorr();
       }
 
-      if( peer.dataPeerIds.length !== 0 ){
+      if( peer.dataPeerIds.ids.length !== 0 ){
         combinedWindowedScore = ( combinedWindowedScore + friendParticipant.getMaxBodyPartDx() ) / 2;
       }
 
       //I will fix this. this needs to be refactored out. will def. do this at some point.
-      if(tubaSonfier && touchMusicalPhrases && peer.dataPeerIds.length > 0){
+      if(tubaSonfier && touchMusicalPhrases && peer.dataPeerIds.ids.length > 0){
 
         //update music 1st
         if( musicLoaded ) 
@@ -559,6 +559,7 @@
 
 
   const peer = new PeerConnections();
+  const dataPeerIdsStore = peer.dataPeerIds.idsStore;
   // for debugging -- you can access `peer` as a global object in the chrome debugger
   (window as any).peer = peer;
 
@@ -624,7 +625,7 @@
         return; 
         
       console.log("closing out bc other participant closed");
-      peer.removeDataPeerId(conn.peer);
+      peer.dataPeerIds.removePeerId(conn.peer);
       recentIds.push( conn.peer ); 
   
       // updatePeerData(conn.peer, () => false);
@@ -636,7 +637,7 @@
       //get rid of current friend
       friendParticipant = new Participant; 
       participant.addFriendParticipant(friendParticipant); 
-      peer.resetDataPeerIds();
+      peer.dataPeerIds.resetPeerIds();
       if( !disconnectedBySelf )//immediately reconnect
           chatstatusMessage = "The other participant has disconnected.\n Connecting to another space...";
 
@@ -665,7 +666,7 @@
       console.log("listenToDataConnection", conn, dataConnections);
       friendParticipant.setParticipantID(conn.peer); //for the dyad arrangement set the ID
       hasFriend = true; 
-      peer.addDataPeerId(conn.peer);
+      peer.dataPeerIds.addPeerId(conn.peer);
 
       console.log('setting friend ID:', conn.peer)
 
@@ -723,7 +724,7 @@
 
     function listenToMediaConnection(call: MediaConnection) {
       receivingCallInfo = true; 
-      peer.addMediaPeerId(call.peer);
+      peer.mediaPeerIds.addPeerId(call.peer);
       let answeringCallMiddle = false;
             // theirId = call.peer;
       call.on('stream', function (mediaStream) {
@@ -780,7 +781,7 @@
 
       call.on('close', function () {
         console.log('removing media connection');
-        peer.removeMediaPeerId(call.peer);
+        peer.mediaPeerIds.removePeerId(call.peer);
         theirVideoUnsubscribe();
         three.removeVideo(call.peer);
       });
@@ -803,7 +804,7 @@
       answeringAPeerConnection = true; 
 
       receivingCallInfo = true;
-      peer.addMediaPeerId(call.peer);
+      peer.mediaPeerIds.addPeerId(call.peer);
       listenToMediaConnection(call);
       receivingCallInfo = true;
       // setPeerConnection(call.peer, "media", "received");
@@ -1137,7 +1138,7 @@
     //test.. may have to force call the three animate function
   handleResize = () => 
   {
-    if( three && peer.myId && friendParticipant.getParticipantID() && (peer.dataPeerIds.length !== 0 || idToCall !== null) )
+    if( three && peer.myId && friendParticipant.getParticipantID() && (peer.dataPeerIds.ids.length !== 0 || idToCall !== null) )
     {
       myMutePosition = three.getMuteButtonPosition(peer.myId);
       theirMutePosition = three.getMuteButtonPosition(friendParticipant.getParticipantID());
@@ -1246,7 +1247,7 @@
   <!-- <br/><br/> -->
 </div>
 
-{#if peer.dataPeerIds.length !== 0 || idToCall !== null}
+{#if $dataPeerIdsStore.length !== 0 || idToCall !== null}
 <div class="myMute" style={`left:${myMutePosition.x}px; top:${myMutePosition.y}px`}>
   <input type="image" on:click={muteSelf} alt="muteButton" src={myMuteButtonText} width="23px" height="23px" />
 </div>
