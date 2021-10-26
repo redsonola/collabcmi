@@ -195,17 +195,22 @@
 
   let isChrome = !!(window as any).chrome && (!!(window as any).chrome.webstore || !!(window as any).chrome.runtime);
 
+  let connectToRandomPartnerButtonEnabled = true;
   var connectToRandomPartner = (e) => {}; //function to connect to a random partner
   var connectToUpdatedConnection = (e)=> {}; 
   var turnUpVolume = () => {}; //turn up the volume when connected to another user
   var sendMuteMessage = (which:number, muted:boolean) => {}; //if muting self, need to send to other person to mute.
   var sendVideoMoveMessage = (which:number, x:number, y:number) => {}; //if muting self, need to send to other person to mute.
 
+
   var endCall : ()=>void ;
 
   endCall = () =>  { console.log("nothing in endCall(). doing nothing") ;};
 
   var chatRouletteButton; 
+  var connectingAndCycle = false; 
+  var updatingConnection  = false; 
+
 
   const BEGINNING_VOLUME = 0.66;
   // var selfMute;
@@ -285,8 +290,9 @@
   {
     let timeWithoutPolling = ( Date.now() - lastTimePolledWithAConnectionRequest)  / 1000.0 ; //ms to sec
 
-    let TIME_TO_WAIT = 5.0; //poll every 10 sec...
-    if( timeWithoutPolling > TIME_TO_WAIT  )
+    let TIME_TO_WAIT = 2.0; //poll every 10 sec...
+
+    if( timeWithoutPolling > TIME_TO_WAIT && !updatingConnection && !connectingAndCycle )
     {
       lastTimePolledWithAConnectionRequest = Date.now(); 
       connectToUpdatedConnection( chatRouletteButton ); 
@@ -851,6 +857,8 @@
 
     chatRouletteButton = document.getElementById('btnChatRoulette');
     connectToRandomPartner = async (e) => {
+      connectingAndCycle = true; 
+
 
       endCall(); 
       console.log( "connecting to random partner" );
@@ -895,10 +903,13 @@
 
         // await loadMusic(mainVolume);
       }
+      connectingAndCycle = false; 
     }
 
     connectToUpdatedConnection = async (e) =>
     {
+      updatingConnection = true; 
+
       let theirId = await updateConnection( peer.id );
 
       if( theirId === "0" )
@@ -951,7 +962,7 @@
 
         // await loadMusic(mainVolume);
       }
-
+      updatingConnection = false; 
     };
 
     sendMuteMessage = (which: number, muted: boolean) =>
@@ -1240,7 +1251,14 @@
       window.postMessage({ name: "call-call-link-changed", ...e.detail });
     }} /> -->
     <!-- <br/><br/><div class="callText">or<br/></div> -->
-    <button type="button" class="chatRouletteButton" id="btnChatRoulette" on:click={connectToRandomPartner}>Connect to a new remote space!</button>
+    <button type="button" class="chatRouletteButton" id="btnChatRoulette" on:click={() => {
+      connectToRandomPartnerButtonEnabled = false;
+      setTimeout(() => {
+        connectToRandomPartnerButtonEnabled = true;
+      }, 1000 * 10);
+      connectToRandomPartner(chatRouletteButton);
+    }}
+      disabled={!connectToRandomPartnerButtonEnabled}>Connect to a new remote space!</button>
     <br /><br />
     <div class="callText"><label id="chatStatus">{chatstatusMessage}</label></div>
   <!-- {:else if !myId}

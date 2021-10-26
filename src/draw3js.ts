@@ -201,6 +201,19 @@ export function threeRenderCode({
 
     } else
     {
+      //only 2 videos -- hack hack I'm tired
+      if( allVideosGroup.children.length >=2 )
+      {
+        for( let i=0; i<allVideosGroup.children.length; i++ )
+        {
+          if( i!=whichIndexIsSelf)
+          {
+            allVideosGroup.children.splice(i, 1); 
+            console.log("got rid of an extra video"); 
+          }
+        }
+      }
+
       // add the video if it's not there
       console.log("addVideo creating group", { personId, recentIds, allVideosGroup });
 
