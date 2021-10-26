@@ -45,7 +45,7 @@ export function findChatRoulettePartner(myId: string): Promise<string | null>
 
     .catch(function (error) {
       // handle error
-      console.log(error);
+      // console.log(error);
       return null;
     });
 }
@@ -53,7 +53,7 @@ export function findChatRoulettePartner(myId: string): Promise<string | null>
 //just gonna have to ignore this framework... -- this is called to find a chat partner
 export function updateConnection(myId: string): Promise<string | null>
 {
-  console.log("updating connection.....")
+  // console.log("updating connection.....")
 
   return axios({
     method: 'get',
@@ -70,7 +70,7 @@ export function updateConnection(myId: string): Promise<string | null>
 
     .catch(function (error) {
       // handle error
-      console.log(error);
+      // console.log(error);
       return null;
     });
 }
@@ -94,7 +94,7 @@ export function disconnectID(myId: string): Promise<string | null>
 
     .catch(function (error) {
       // handle error
-      console.log(error);
+      // console.log(error);
       return null;
     });
 }

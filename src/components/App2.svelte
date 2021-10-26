@@ -893,6 +893,10 @@
             const call = peer.call(theirId, video.stream);
             listenToMediaConnection(call);
           }
+          else
+          {
+            console.log(" didn't get the video stream in connectToUpdatedConnection! ");
+          }
         });
       }
       else
@@ -945,7 +949,7 @@
           }
           else
           {
-            console.log(" didn't get the video stream ! ");
+            console.log(" didn't get the video stream in connectToUpdatedConnection! ");
           }
         });
       }
