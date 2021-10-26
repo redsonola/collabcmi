@@ -99,11 +99,9 @@
   let movingWebCamWindow : {which:number, startX:number, startY:number, isMoving: boolean } = 
       { which:-1, startX:0, startY:0, isMoving: false } ;
   
-  $: {
-    if ($theirVideo !== null) {
-      console.log('their video', $theirVideo);
-      theirVideoElement = $theirVideo.videoElement; 
-    }
+  $: if ($theirVideo !== null) {
+    console.log('their video', $theirVideo);
+    theirVideoElement = $theirVideo.videoElement; 
   }
 
   export let myId: string | undefined = undefined; //so that refresh works, temp fix OCt. 24 CDB
@@ -112,9 +110,6 @@
   function setMyId(id: string) {
     console.log("setMyId", id);
     myId = id;
-    const newUrl = new URL(window.location.href);
-    newUrl.searchParams.set("myid", id);
-    history.replaceState(null, document.title, newUrl.toString());
     participant.setParticipantID(myId);
     // pushState(new URL(window.location.href).searchParams.set('myid', ))
   }
@@ -124,23 +119,6 @@
   // if a call id is provided in the URL string, call it.
   // or, for the storybook app, you can just say this app is making the call or not.
   export let idToCall: string | null = querystringCallId || null;
-  export let size: { width: number; height: number };
-
-  onMount(() => {
-    function onWindowResize() {
-      const width = canvas.parentElement.clientWidth;
-      const height = canvas.parentElement.clientHeight;
-      size = { width, height };
-    }
-    onWindowResize();
-
-    window.addEventListener('resize', onWindowResize, false);
-
-    // onMount can return a cleanup function
-    return () => {
-      window.removeEventListener('resize', onWindowResize);
-    }
-  });
 
   let loading = true;
   let progressNumber = 0;
@@ -236,19 +214,12 @@
     three?.cleanup();
     three = threeRenderCode({ canvas, handleResize });
   }
-  // $: if (three && size) {
-  //   setTimeout(() => {
-  //     three.setSize(size);
-  //   }, 1);
-  // }
 
   //note: in this version max does everything so no music is loaded
   async function loadMusic (mainVolume : MainVolume)
   {
     //this is from my audiovisual project
-
-
-        //this is the new code
+    //this is the new code
     
     if( whichPiece === WhichPiece.SKIN_HUNGER)
     {
@@ -372,7 +343,7 @@
     let yposOfTouch: number = 0;
     let combinedWindowedScore : number = 0;
 
-    if( peerIds.length !== 0 && hasFriend ){
+    if( dataPeerIds.length !== 0 && hasFriend ){
 
       if (participant.areTouching()) {
         skeletonTouching = 1;
@@ -516,12 +487,12 @@
         xCorrTouching = participant.getTouchingXCorr();
       }
 
-      if( peerIds.length !== 0 ){
+      if( dataPeerIds.length !== 0 ){
         combinedWindowedScore = ( combinedWindowedScore + friendParticipant.getMaxBodyPartDx() ) / 2;
       }
 
       //I will fix this. this needs to be refactored out. will def. do this at some point.
-      if(tubaSonfier && touchMusicalPhrases && peerIds.length > 0){
+      if(tubaSonfier && touchMusicalPhrases && dataPeerIds.length > 0){
 
         //update music 1st
         if( musicLoaded ) 
@@ -575,13 +546,15 @@
 
   let dataConnections: Record<string, DataConnection> = {};
 
-  let peerIds: string[] = [];
+  let dataPeerIds: string[] = [];
 
   $: {
-    console.log('peerIds changed:', peerIds);
+    console.log('dataPeerIds changed:', dataPeerIds);
   }
 
   const peer = new Peer(myId, peerServerParams);
+  // for debugging
+  (window as any).peer = peer;
 
   async function init() {
     if( !isChrome )
@@ -628,26 +601,26 @@
         return; 
         
       console.log("closing out bc other participant closed");
-        peerIds = peerIds.filter((id) => id !== conn.peer);
-        recentIds.push( conn.peer ); 
+      dataPeerIds = dataPeerIds.filter((id) => id !== conn.peer);
+      recentIds.push( conn.peer ); 
 
-    
-        // updatePeerData(conn.peer, () => false);
-        theirVideoUnsubscribe();
-        three.removeVideo(conn.peer);
+  
+      // updatePeerData(conn.peer, () => false);
+      theirVideoUnsubscribe();
+      three.removeVideo(conn.peer);
 
-        delete dataConnections[conn.peer];
+      delete dataConnections[conn.peer];
 
-        //get rid of current friend
-        friendParticipant = new Participant; 
-        participant.addFriendParticipant(friendParticipant); 
-        peerIds = [];
-        if( !disconnectedBySelf )//immediately reconnect
-            chatstatusMessage = "The other participant has disconnected.\n Connecting to another space...";
+      //get rid of current friend
+      friendParticipant = new Participant; 
+      participant.addFriendParticipant(friendParticipant); 
+      dataPeerIds = [];
+      if( !disconnectedBySelf )//immediately reconnect
+          chatstatusMessage = "The other participant has disconnected.\n Connecting to another space...";
 
-          
-        disconnectedBySelf = false;
-        hasFriend = false; 
+        
+      disconnectedBySelf = false;
+      hasFriend = false; 
     }
 
     function listenToDataConnection(conn: DataConnection) {
@@ -667,7 +640,7 @@
       console.log("listenToDataConnection", conn, dataConnections);
       friendParticipant.setParticipantID(conn.peer); //for the dyad arrangement set the ID
       hasFriend = true; 
-      peerIds = [...peerIds, conn.peer]; //so that other things work -- plugging the hole in the dam. -CDB
+      dataPeerIds = [...dataPeerIds, conn.peer]; //so that other things work -- plugging the hole in the dam. -CDB
 
       console.log('setting friend ID:', conn.peer)
 
@@ -1073,7 +1046,7 @@
     //test.. may have to force call the three animate function
   handleResize = () => 
   {
-    if( three && myId && friendParticipant.getParticipantID() && (peerIds.length !== 0 || idToCall !== null) )
+    if( three && myId && friendParticipant.getParticipantID() && (dataPeerIds.length !== 0 || idToCall !== null) )
     {
       myMutePosition = three.getMuteButtonPosition(myId);
       theirMutePosition = three.getMuteButtonPosition(friendParticipant.getParticipantID());
@@ -1196,7 +1169,7 @@
   <!-- <br/><br/> -->
 </div>
 
- {#if peerIds.length !== 0 || idToCall !== null}
+ {#if dataPeerIds.length !== 0 || idToCall !== null}
 <div class="myMute" style={`left:${myMutePosition.x}px; top:${myMutePosition.y}px`}>
   <input type="image" on:click={muteSelf} alt="muteButton" src={myMuteButtonText} width="23px" height="23px" />
 </div>
@@ -1255,7 +1228,7 @@
 />
 
 <div class="callPanel">
-  <!-- {#if peerIds.length === 0 && idToCall === null} -->
+  <!-- {#if dataPeerIds.length === 0 && idToCall === null} -->
     <!-- <Call myId={myId} {turnUpVolume} on:call-link-changed={(e) => {
       window.postMessage({ name: "call-call-link-changed", ...e.detail });
     }} /> -->
@@ -1271,7 +1244,7 @@
 
 
 <!-- for the telematic version, just keep it connected if possible -->
- <!-- {#if peerIds.length > 0} -->
+ <!-- {#if dataPeerIds.length > 0} -->
 <!-- <div class="disconnectButton">
   <button on:click={endCall} class="disconnectButtonColor">End Video Call</button>
   </div>> -->

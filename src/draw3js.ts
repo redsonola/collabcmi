@@ -187,12 +187,13 @@ export function threeRenderCode({
     let isRecentID = recentIds.indexOf(personId) !== -1;
     if (isRecentID)
     {
-      console.log("was a recent id: " + personId);
+      console.log("addVideo but was a recent id: ", { personId });
       return;
     }
 
     if (group)
     {
+      console.log("addVideo replacing group", { personId, recentIds, group });
       // replace video if it exists
       group.children
         .filter(obj => obj.userData.isVideo)
@@ -201,9 +202,7 @@ export function threeRenderCode({
     } else
     {
       // add the video if it's not there
-
-      console.log("group below: added new video:" + personId);
-      console.log(allVideosGroup)
+      console.log("addVideo creating group", { personId, recentIds, allVideosGroup });
 
       group = new Group();
       allVideosGroup.add(group);
@@ -263,7 +262,6 @@ export function threeRenderCode({
       new Vector3(boundingXBoxSize, 1.1, 0),
     ));
     // }
-
   }
 
 
@@ -315,7 +313,7 @@ export function threeRenderCode({
     // hairyLineLive = skeletonIntersect.hairyLineLive.bind(skeletonIntersect);
 
     // do the drawing
-    const isInArray = (element) => element.isPerson(personId);
+    // const isInArray = (element) => element.isPerson(personId);
     // let jointIndex = participantJoints.findIndex( isInArray );        
 
     // if( jointIndex !== -1 )
