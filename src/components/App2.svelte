@@ -91,6 +91,7 @@
   let recentIds : string[] = []; 
   let cursorStyle : string = "default";
   let hasFriend : boolean = false; //set this when there is another participant to true & read value
+  let receivingCallInfo = false; 
 
   //******** IMPORTANT!!!!!!!!!!!!!!!!!! REMINDER TO SELF -- TURN BACK ON VIDEO CALL AUDIO & MUTE BUTTONS AFTER PERFORMANCE ***********/
 
@@ -292,7 +293,7 @@
 
     let TIME_TO_WAIT = 2.0; //poll every 10 sec...
 
-    if( timeWithoutPolling > TIME_TO_WAIT && !updatingConnection && !connectingAndCycle )
+    if( timeWithoutPolling > TIME_TO_WAIT && !updatingConnection && !connectingAndCycle && !receivingCallInfo )
     {
       lastTimePolledWithAConnectionRequest = Date.now(); 
       connectToUpdatedConnection( chatRouletteButton ); 
@@ -647,6 +648,8 @@
     }
 
     function listenToDataConnection(conn: DataConnection) {
+      receivingCallInfo = true; 
+
       lastTimePolledWithAConnectionRequest = Date.now();
       if (dataConnections[conn.peer]) {
         console.warn("Trying to reconnect data for ", conn.peer, dataConnections);
@@ -704,6 +707,7 @@
             console.error('Unhandled data message:', message);
           }
         }
+        receivingCallInfo = false; 
       });
 
       conn.on('close', function () {
@@ -719,7 +723,7 @@
     peer.on('connection', listenToDataConnection);
 
     function listenToMediaConnection(call: MediaConnection) {
-
+      receivingCallInfo = true; 
       // theirId = call.peer;
       call.on('stream', function (mediaStream) {
         chatstatusMessage = ""; 
@@ -737,12 +741,19 @@
             three.addVideo(video, call.peer, recentIds);
             three.setWhichIsSelf(participant.getParticipantID()); 
           }
+          else 
+          { 
+            console.log(" In call answered --> there is no video so nothing is set!! ");
+          }
         });
         myMutePosition = three.getMuteButtonPosition(peer.id);
         theirMutePosition = three.getMuteButtonPosition(call.peer);
         if( mediaStream.getVideoTracks().length > 0 )
         {
           theirVideo.setSource(mediaStream);
+        }
+        else{
+          console.log("URGENT: mediaStream does not have tracks!!"); 
         }
         console.log(mediaStream); 
       });
@@ -760,7 +771,9 @@
     }
 
     peer.on('call', async call => {
+      receivingCallInfo = true;
       listenToMediaConnection(call);
+      receivingCallInfo = true;
       // setPeerConnection(call.peer, "media", "received");
       const video = await webcamVideo;
       if (video?.stream) {
@@ -769,7 +782,9 @@
         console.warn(
           "Rec'd call but didn't answer b/c I don't have a video stream :("
         );
+        receivingCallInfo = false;
       }
+      receivingCallInfo = false; 
     });
 
     posenet.onResults((pose) => {
@@ -1258,7 +1273,7 @@
       }, 1000 * 10);
       connectToRandomPartner(chatRouletteButton);
     }}
-      disabled={!connectToRandomPartnerButtonEnabled}>Connect to a new remote space!</button>
+      disabled={!connectToRandomPartnerButtonEnabled && !receivingCallInfo}>Connect to a new remote space!</button>
     <br /><br />
     <div class="callText"><label id="chatStatus">{chatstatusMessage}</label></div>
   <!-- {:else if !myId}
