@@ -183,12 +183,18 @@ export function threeRenderCode({
   let whichIndexIsSelf: number = 0;
   let myId: string = "";
 
-  let currentVideos = {};
+  let currentVideos: Record<string, CameraVideo> = {};
   (window as any).currentVideos = currentVideos;
   (window as any).appendLatestVideos = () =>
   {
     // draw the current videos on the screen
-    Object.values(currentVideos).map(v => (v as any).videoElement).forEach(v => document.body.append(v))
+    Object.entries(currentVideos)
+      .forEach(([id, vid]) =>
+      {
+        vid.videoElement.setAttribute("data-peer-id", id);
+        vid.videoElement.setAttribute("alt", id);
+        document.body.append(vid.videoElement);
+      });
   }
   log('currentVideos', currentVideos);
 

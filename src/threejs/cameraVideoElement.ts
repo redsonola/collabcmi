@@ -1,6 +1,9 @@
 import { writable } from 'svelte/store';
 import type { Readable } from 'svelte/store';
 import { waitUntil } from "./promiseHelpers";
+import { getLogger } from '../logger';
+
+const logger = getLogger('cameraVideoElement');
 
 function startCamera(videoElement: HTMLVideoElement): Promise<MediaStream> {
   if (navigator.mediaDevices.getUserMedia) {
@@ -49,10 +52,24 @@ export async function makeVideoElement(source?: string | MediaStream): Promise<C
   const videoElement = document.createElement('video');
   videoElement.autoplay = true;
 
-  if (!source || source === 'webcam') {
-    console.log('making webcam video element');
+  if (!source) {
+    logger.log('making empty video element');
+    videoElement.muted = true; 
+    return {
+      videoElement,
+      stream: undefined,
+      stop() {
+        logger.log("Stopping empty video el");
+        // stream.getVideoTracks()[0].stop();
+      },
+      getSize() {
+        return { width: 0, height: 0 };
+      }
+    };
+  } else if (source === 'webcam') {
+    logger.log('making webcam video element');
     const stream = await startCamera(videoElement);
-    console.log('got webcam stream', ...stream.getVideoTracks().map(t => t.getSettings()));
+    logger.log('got webcam stream', ...stream.getVideoTracks().map(t => t.getSettings()));
     await Promise.all([
       waitUntil4(videoElement),
       waitUntilHasSize(stream)
@@ -62,7 +79,8 @@ export async function makeVideoElement(source?: string | MediaStream): Promise<C
       videoElement,
       stream,
       stop() {
-        stream.getVideoTracks()[0].stop();
+        logger.warn("Won't stop webcam");
+        // stream.getVideoTracks()[0].stop();
       },
       getSize() {
         const { width = 0, height = 0 } = stream.getVideoTracks()[0].getSettings();
@@ -70,18 +88,19 @@ export async function makeVideoElement(source?: string | MediaStream): Promise<C
       }
     };
   } else if (typeof source === 'string') {
-    console.log(`making video element for ${source}`);
+    logger.log(`making video element for ${source}`);
     videoElement.loop = true;
     const videoSrcElement = document.createElement('source');
     videoSrcElement.src = source;
     videoSrcElement.type = "video/mp4";
     videoElement.append(videoSrcElement)
 
-    console.log("can play mp4:", videoElement.canPlayType("video/mp4"));
+    logger.log("can play mp4:", videoElement.canPlayType("video/mp4"));
     await waitUntil(() => videoElement.readyState === 4);
     return {
       videoElement,
       stop() {
+        logger.log("Stopping video file", source);
         videoElement.pause();
       },
       getSize() {
@@ -90,17 +109,18 @@ export async function makeVideoElement(source?: string | MediaStream): Promise<C
       }
     };
   } else if (source) {
-    console.log('making stream video element', source, ...source.getVideoTracks().map(t => t.getSettings()));
+    logger.log('making stream video element', source, ...source.getVideoTracks().map(t => t.getSettings()));
     await Promise.all([
       waitUntilLive(source),
       waitUntilHasSize(source)
     ]);
-    console.log('has size', source, ...source.getVideoTracks().map(t => t.getSettings()));
+    logger.log('has size', source, ...source.getVideoTracks().map(t => t.getSettings()));
     videoElement.srcObject = source;
     return {
       videoElement,
       stream: source,
       stop() {
+        logger.log("Stopping stream", source);
         source.getVideoTracks()[0].stop();
       },
       getSize() {
