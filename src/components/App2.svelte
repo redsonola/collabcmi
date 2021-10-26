@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import type { RouterState } from "yrv";
-  import Peer from 'peerjs';
   // import Call from "./Call.svelte";
   import DebugPanel from "./DebugPanel.svelte";
   import PrintPose from "./PrintPose.svelte";
@@ -15,7 +14,6 @@
   import { goLoop, sleep, timeout, waitFor } from "../threejs/promiseHelpers";
   import type { PosenetSetup } from "../threejs/mediapipePose";
   import {
-    peerServerParams,
     findChatRoulettePartner, 
     updateConnection,
     disconnectID
@@ -56,6 +54,8 @@
   import { Vector3 } from "three";
   import * as OSCInterface from "../OSCInterface"
   import * as PoseIndex from "../poseConstants.js"
+  import { PeerConnections } from '../peer';
+  import { softAssert } from "../assert";
 
   export let router: RouterState;
   export let showDebugPanel = router.query.debug === "true";
@@ -105,15 +105,12 @@
     theirVideoElement = $theirVideo.videoElement; 
   }
 
-  export let myId: string | undefined = undefined; //so that refresh works, temp fix OCt. 24 CDB
-
     //new URL(window.location.href).searchParams.get("myid") || undefined; 
   function setMyId(id: string) {
-    console.log("setMyId", id);
-    myId = id;
-    participant.setParticipantID(myId);
+    participant.setParticipantID(id);
     // pushState(new URL(window.location.href).searchParams.set('myid', ))
   }
+
   const querystringCallId = new URL(window.location.href).searchParams.get(
     "callid"
   );
@@ -322,6 +319,8 @@
   /***************** main update function *****************/
 
   function keypointsUpdated(particiantId: string, pose: Pose, size: Size) {
+    softAssert(particiantId?.length > 0, `updating keypoints for ${particiantId}`);
+    softAssert(size?.width > 0 && size?.height > 0, `updating keypoints for ${particiantId}, ${JSON.stringify(size)}`);
     let thisparticipant: Participant;
 
     if (participant.isParticipant(particiantId)) {
@@ -352,7 +351,7 @@
     let yposOfTouch: number = 0;
     let combinedWindowedScore : number = 0;
 
-    if( dataPeerIds.length !== 0 && hasFriend ){
+    if( peer.dataPeerIds.length !== 0 && hasFriend ){
 
       if (participant.areTouching()) {
         skeletonTouching = 1;
@@ -496,12 +495,12 @@
         xCorrTouching = participant.getTouchingXCorr();
       }
 
-      if( dataPeerIds.length !== 0 ){
+      if( peer.dataPeerIds.length !== 0 ){
         combinedWindowedScore = ( combinedWindowedScore + friendParticipant.getMaxBodyPartDx() ) / 2;
       }
 
       //I will fix this. this needs to be refactored out. will def. do this at some point.
-      if(tubaSonfier && touchMusicalPhrases && dataPeerIds.length > 0){
+      if(tubaSonfier && touchMusicalPhrases && peer.dataPeerIds.length > 0){
 
         //update music 1st
         if( musicLoaded ) 
@@ -555,14 +554,9 @@
 
   let dataConnections: Record<string, DataConnection> = {};
 
-  let dataPeerIds: string[] = [];
 
-  $: {
-    console.log('dataPeerIds changed:', dataPeerIds);
-  }
-
-  const peer = new Peer(myId, peerServerParams);
-  // for debugging
+  const peer = new PeerConnections();
+  // for debugging -- you can access `peer` as a global object in the chrome debugger
   (window as any).peer = peer;
 
   async function init() {
@@ -582,8 +576,8 @@
     let stopped = false;
     const posenet: PosenetSetup<any> = initPosenet();
 
-    peer.on('open', setMyId);
-    await waitFor(() => myId || null);
+    peer.peer.on('open', setMyId);
+    await waitFor(() => peer.myId || null);
 
     for(let i=0; i<XCORR_BODY_PARTS; i++)     
     {
@@ -625,9 +619,8 @@
         return; 
         
       console.log("closing out bc other participant closed");
-      dataPeerIds = dataPeerIds.filter((id) => id !== conn.peer);
+      peer.removeDataPeerId(conn.peer);
       recentIds.push( conn.peer ); 
-
   
       // updatePeerData(conn.peer, () => false);
       theirVideoUnsubscribe();
@@ -638,7 +631,7 @@
       //get rid of current friend
       friendParticipant = new Participant; 
       participant.addFriendParticipant(friendParticipant); 
-      dataPeerIds = [];
+      peer.resetDataPeerIds();
       if( !disconnectedBySelf )//immediately reconnect
           chatstatusMessage = "The other participant has disconnected.\n Connecting to another space...";
 
@@ -666,7 +659,7 @@
       console.log("listenToDataConnection", conn, dataConnections);
       friendParticipant.setParticipantID(conn.peer); //for the dyad arrangement set the ID
       hasFriend = true; 
-      dataPeerIds = [...dataPeerIds, conn.peer]; //so that other things work -- plugging the hole in the dam. -CDB
+      peer.addDataPeerId(conn.peer);
 
       console.log('setting friend ID:', conn.peer)
 
@@ -715,15 +708,17 @@
       });
 
       conn.on('error', (error) => {
-        console.error({ myId: peer.id, theirId: conn.peer, error });
+        console.error({ myId: peer.peer.id, theirId: conn.peer, error });
         throw error;
       })
     }
 
-    peer.on('connection', listenToDataConnection);
+    peer.peer.on('connection', listenToDataConnection);
 
     function listenToMediaConnection(call: MediaConnection) {
       receivingCallInfo = true; 
+      peer.addMediaPeerId(call.peer);
+
       // theirId = call.peer;
       call.on('stream', function (mediaStream) {
         chatstatusMessage = ""; 
@@ -746,7 +741,7 @@
             console.log(" In call answered --> there is no video so nothing is set!! ");
           }
         });
-        myMutePosition = three.getMuteButtonPosition(peer.id);
+        myMutePosition = three.getMuteButtonPosition(peer.peer.id);
         theirMutePosition = three.getMuteButtonPosition(call.peer);
         if( mediaStream.getVideoTracks().length > 0 )
         {
@@ -760,18 +755,20 @@
 
       call.on('close', function () {
         console.log('removing media connection');
+        peer.removeMediaPeerId(call.peer);
         theirVideoUnsubscribe();
         three.removeVideo(call.peer);
       });
 
       call.on('error', (error) => {
-        console.error({ myId: peer.id, theirId: call.peer, error });
+        console.error({ myId: peer.peer.id, theirId: call.peer, error });
         throw error;
       })
     }
 
-    peer.on('call', async call => {
+    peer.peer.on('call', async call => {
       receivingCallInfo = true;
+      peer.addMediaPeerId(call.peer);
       listenToMediaConnection(call);
       receivingCallInfo = true;
       // setPeerConnection(call.peer, "media", "received");
@@ -807,7 +804,7 @@
       const size = posenet.getSize();
       participant.setSize(size.width, size.height);
       participant.addKeypoint(pose.keypoints, hasFriend,three.getOffsetVidPosition(false), true);
-      keypointsUpdated(peer.id, pose, size);
+      keypointsUpdated(peer.peer.id, pose, size);
 
       // send to peers w/ data connections
       Object.values(dataConnections).forEach((conn) => {
@@ -820,17 +817,17 @@
 
       posenet.updateVideo(video);
 
-      three.addVideo(video, peer.id, recentIds);
+      three.addVideo(video, peer.peer.id, recentIds);
       three.setWhichIsSelf(participant.getParticipantID()); 
 
       if (idToCall) {
         const theirId = idToCall;
-        listenToDataConnection(peer.connect(theirId, { label: theirId, serialization: 'json' }));
+        listenToDataConnection(peer.peer.connect(theirId, { label: theirId, serialization: 'json' }));
 
         glowClass = "glowEffect";
 
         if (video.stream) {
-          const call = peer.call(theirId, video.stream);
+          const call = peer.peer.call(theirId, video.stream);
           listenToMediaConnection(call);
         } else {
           console.log("Had idToCall but no webcam video stream", video);
@@ -877,7 +874,7 @@
 
       endCall(); 
       console.log( "connecting to random partner" );
-      let theirId = await findChatRoulettePartner( peer.id );
+      let theirId = await findChatRoulettePartner( peer.peer.id );
 
       if( theirId && theirId !== "0" )
       {
@@ -896,14 +893,14 @@
 
           chatstatusMessage = "Connecting to a new space. May take a minute...";
 
-          listenToDataConnection(peer.connect(theirId, { label: theirId, serialization: 'json' }));
+          listenToDataConnection(peer.peer.connect(theirId, { label: theirId, serialization: 'json' }));
 
           if (video.stream) 
           {
             if(!theirId)
               return; 
             
-            const call = peer.call(theirId, video.stream);
+            const call = peer.peer.call(theirId, video.stream);
             listenToMediaConnection(call);
           }
           else
@@ -925,7 +922,7 @@
     {
       updatingConnection = true; 
 
-      let theirId = await updateConnection( peer.id );
+      let theirId = await updateConnection( peer.peer.id );
 
       if( theirId === "0" )
       {
@@ -952,14 +949,14 @@
 
         chatstatusMessage = "Connecting to new space...";
 
-        listenToDataConnection(peer.connect(theirId, { label: theirId, serialization: 'json' }));
+        listenToDataConnection(peer.peer.connect(theirId, { label: theirId, serialization: 'json' }));
 
         if (video.stream) 
         {
           if(!theirId)
             return; 
           
-          const call = peer.call(theirId, video.stream);
+          const call = peer.peer.call(theirId, video.stream);
           listenToMediaConnection(call);
         }
         else
@@ -998,13 +995,13 @@
 
 
     return () => {
-      console.log(`Cleaning up app for ${myId}`);
-      disconnectID(peer.id ); 
+      console.log(`Cleaning up app for ${peer.myId}`);
+      disconnectID(peer.peer.id ); 
       stopped = true;
       three.cleanup();
       posenet.cleanup()
       callVideoUnsubscribe();
-      peer.disconnect();
+      peer.peer.disconnect();
     };
   }
 
@@ -1093,9 +1090,9 @@
     //test.. may have to force call the three animate function
   handleResize = () => 
   {
-    if( three && myId && friendParticipant.getParticipantID() && (dataPeerIds.length !== 0 || idToCall !== null) )
+    if( three && peer.myId && friendParticipant.getParticipantID() && (peer.dataPeerIds.length !== 0 || idToCall !== null) )
     {
-      myMutePosition = three.getMuteButtonPosition(myId);
+      myMutePosition = three.getMuteButtonPosition(peer.myId);
       theirMutePosition = three.getMuteButtonPosition(friendParticipant.getParticipantID());
     }
   }
@@ -1106,8 +1103,8 @@
       Object.values(dataConnections).forEach((conn) => {
         if (conn.open) conn.close();
       });
-      disconnectID(peer.id ); 
-      peer.disconnect(); 
+      disconnectID(peer.peer.id ); 
+      peer.peer.disconnect(); 
       console.log("disconnected from peer");
   }
 
@@ -1202,7 +1199,7 @@
   <!-- <br/><br/> -->
 </div>
 
- {#if dataPeerIds.length !== 0 || idToCall !== null}
+{#if peer.dataPeerIds.length !== 0 || idToCall !== null}
 <div class="myMute" style={`left:${myMutePosition.x}px; top:${myMutePosition.y}px`}>
   <input type="image" on:click={muteSelf} alt="muteButton" src={myMuteButtonText} width="23px" height="23px" />
 </div>
@@ -1213,7 +1210,7 @@
 </div> 
 {/if}
 {#if showDebugPanel}
-  <DebugPanel myId={myId}>
+  <DebugPanel myId={peer.myId}>
   <!--
       anything passed in here will be in the Passed in tab
       you can move it to the DebugPanel.svelte file if it will
