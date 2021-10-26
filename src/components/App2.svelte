@@ -203,6 +203,8 @@
 
   var endCall : ()=>void ;
 
+  endCall = () =>  { console.log("nothing in endCall(). doing nothing") ;};
+
   var chatRouletteButton; 
 
   const BEGINNING_VOLUME = 0.66;
@@ -283,7 +285,7 @@
   {
     let timeWithoutPolling = ( Date.now() - lastTimePolledWithAConnectionRequest)  / 1000.0 ; //ms to sec
 
-    let TIME_TO_WAIT = 2.0; //poll every 10 sec...
+    let TIME_TO_WAIT = 5.0; //poll every 10 sec...
     if( timeWithoutPolling > TIME_TO_WAIT  )
     {
       lastTimePolledWithAConnectionRequest = Date.now(); 
@@ -592,6 +594,21 @@
       volSliderReading = BEGINNING_VOLUME; //ohhh this should be refactored.
     };
 
+    endCall = () => 
+      {
+        if( !hasFriend )
+          return; 
+
+        disconnectedBySelf = true; 
+        idToCall = null; 
+
+        Object.values(dataConnections).forEach((conn) => {
+          if (conn.open) conn.close();
+        });
+        console.log("ended the call");
+      }
+
+
     let callVideoUnsubscribe = () => {};
     // let theirVideoUnsubscribe = () => {};
 
@@ -643,6 +660,7 @@
       dataPeerIds = [...dataPeerIds, conn.peer]; //so that other things work -- plugging the hole in the dam. -CDB
 
       console.log('setting friend ID:', conn.peer)
+
 
       conn.on('data', function (message: PeerMessage) {
         lastTimeConnected = Date.now(); 
@@ -716,7 +734,10 @@
         });
         myMutePosition = three.getMuteButtonPosition(peer.id);
         theirMutePosition = three.getMuteButtonPosition(call.peer);
-        theirVideo.setSource(mediaStream);
+        if( mediaStream.getVideoTracks().length > 0 )
+        {
+          theirVideo.setSource(mediaStream);
+        }
         console.log(mediaStream); 
       });
 
@@ -1062,20 +1083,6 @@
       disconnectID(peer.id ); 
       peer.disconnect(); 
       console.log("disconnected from peer");
-  }
-
-  endCall = () => 
-  {
-    if( !hasFriend )
-      return; 
-
-    disconnectedBySelf = true; 
-    idToCall = null; 
-
-    Object.values(dataConnections).forEach((conn) => {
-        if (conn.open) conn.close();
-      });
-    console.log("ended the call");
   }
 
   function mouseClick(event)

@@ -256,6 +256,13 @@ export function threeRenderCode({
       xstart = -0.75;
       boundingXBoxSize = 1.25;
     }
+    else if( allVideosGroup.children.length > 2 )
+    {
+        console.log("added 3 videos");
+        console.log("personid: "+personId);
+        console.log({recentIds}); 
+
+    }
 
     lookAt(new Box3(
       new Vector3(xstart, -0.5, 0),
