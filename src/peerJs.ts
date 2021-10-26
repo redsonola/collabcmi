@@ -40,7 +40,9 @@ export function findChatRoulettePartner(myId: string): Promise<string | null>
     .then(function (response) {
       const theirID = response.data;
       console.log("Got their id! :" + theirID);
-      return theirID as string;
+      if( theirID !== "-1" )
+        return theirID as string;
+      else return null; 
     })
 
     .catch(function (error) {
@@ -65,7 +67,9 @@ export function updateConnection(myId: string): Promise<string | null>
     .then(function (response) {
       const theirID = response.data;
       console.log("Got their id! :" + theirID);
-      return theirID as string;
+      if( theirID !== "-1" )
+        return theirID as string;
+      else return null;
     })
 
     .catch(function (error) {
