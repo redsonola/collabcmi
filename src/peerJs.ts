@@ -1,5 +1,6 @@
 import type { PeerJSOption } from 'peerjs';
 import axios from 'axios'; //TODO: https://github.com/axios/axios
+import { string } from 'mathjs';
 
 // const REACT_APP_PEER_SERVER_HOST = "spacebtw-peerserver.herokuapp.com";
 // const REACT_APP_PEER_SERVER_PORT = "443";
@@ -39,10 +40,13 @@ export function findChatRoulettePartner(myId: string): Promise<string | null>
 
     .then(function (response) {
       const theirID = response.data;
+      let id : string = ""+theirID; 
       console.log("Got their id! :" + theirID);
-      if( theirID !== "-1" )
-        return theirID as string;
-      else return null; 
+      if( id !== "-1" )
+      {
+        return ""+theirID;
+      }
+      else return null;
     })
 
     .catch(function (error) {
@@ -66,9 +70,12 @@ export function updateConnection(myId: string): Promise<string | null>
 
     .then(function (response) {
       const theirID = response.data;
-      console.log("Got their id! :" + theirID);
-      if( theirID !== "-1" )
-        return theirID as string;
+      let id : string = ""+theirID; 
+      if( id !== "-1" )
+      {
+        console.log("Got their id! :" + theirID);
+        return ""+theirID;
+      }
       else return null;
     })
 
@@ -92,8 +99,14 @@ export function disconnectID(myId: string): Promise<string | null>
 
     .then(function (response) {
       const theirID = response.data;
+      let id : string = theirID as string; 
       console.log("Got their id! :" + theirID);
-      return theirID as string;
+
+      if( id !== "-1" )
+      {
+        return theirID as string;
+      }
+      else return null;
     })
 
     .catch(function (error) {
