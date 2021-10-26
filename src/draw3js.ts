@@ -183,15 +183,20 @@ export function threeRenderCode({
   let whichIndexIsSelf: number = 0;
   let myId: string = "";
 
-  let latestVideos = {};
-  (window as any).latestVideos = latestVideos;
-  log('latestVideos', latestVideos);
+  let currentVideos = {};
+  (window as any).currentVideos = currentVideos;
+  (window as any).appendLatestVideos = () =>
+  {
+    // draw the current videos on the screen
+    Object.values(currentVideos).map(v => (v as any).videoElement).forEach(v => document.body.append(v))
+  }
+  log('currentVideos', currentVideos);
 
   const videos: Mesh<PlaneBufferGeometry, MeshPhongMaterial>[] = [];
   //TODO this only works for dyads. Find another solution.
   const addVideo = (video: CameraVideo, personId: string, recentIds: string[]) =>
   {
-    latestVideos[personId] = video;
+    currentVideos[personId] = video;
     log("addVideo", personId, "existing groups ids:", listGroupIds());
     let group: Group | undefined = findGroup(personId);
     let isRecentID = recentIds.indexOf(personId) !== -1;
@@ -484,7 +489,7 @@ export function threeRenderCode({
     addVideo,
     removeVideo(personId: string)
     {
-      delete latestVideos[personId];
+      delete currentVideos[personId];
       log("removeVideo", personId, "current groups ids:", listGroupIds());
       allVideosGroup.remove(findGroup(personId));
       console.warn("TODO: cleanup threejs video objects");
@@ -589,7 +594,7 @@ export function threeRenderCode({
     {
       log('Cleaning up three stuff');
       running = false;
-      latestVideos = {};
+      currentVideos = {};
       videos.forEach((videoObj) =>
       {
         videoObj.geometry.dispose();
