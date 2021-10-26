@@ -744,6 +744,7 @@
         myMutePosition = three.getMuteButtonPosition(peer.id);
         theirMutePosition = three.getMuteButtonPosition(call.peer);
         theirVideo.setSource(mediaStream);
+        console.log(mediaStream); 
       });
 
       call.on('close', function () {
