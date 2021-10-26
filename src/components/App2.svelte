@@ -873,7 +873,7 @@
       console.log( "connecting to random partner" );
       let theirId = await findChatRoulettePartner( peer.id );
 
-      if( theirId )
+      if( theirId && theirId !== "0" )
       {
 
         const myVideoUnsubscribe = webcamVideo.subscribe(async (video) => 
