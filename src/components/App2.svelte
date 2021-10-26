@@ -11,7 +11,7 @@
   import { initPosenet } from "../threejs/mediapipePose";
   // import { initPosenet } from "../threejs/posenetMock";
 
-  import { videoSubscription } from "../threejs/cameraVideoElement";
+  import { videoSubscription, makeVideoElement } from "../threejs/cameraVideoElement";
   import { goLoop, sleep, timeout, waitFor } from "../threejs/promiseHelpers";
   import type { PosenetSetup } from "../threejs/mediapipePose";
   import {
@@ -60,14 +60,11 @@
   export let router: RouterState;
   export let showDebugPanel = router.query.debug === "true";
 
-  const webcamVideo = videoSubscription("webcam");
+  const webcamVideo = makeVideoElement("webcam");
+  console.log('webcamVideo', webcamVideo);
   const theirVideo = videoSubscription();
   let theirVideoUnsubscribe;
   // const videoSources = ["webcam", "/spacebtwTest.mp4", "/synchTestVideo.mp4"];
-
-  $: if ($webcamVideo !== null) {
-    console.log('webcamVideo', $webcamVideo);
-  }
 
   enum WhichPiece {
     SKIN_HUNGER = 0, 
@@ -761,18 +758,17 @@
       })
     }
 
-    peer.on('call', call => {
+    peer.on('call', async call => {
       listenToMediaConnection(call);
       // setPeerConnection(call.peer, "media", "received");
-      callVideoUnsubscribe = webcamVideo.subscribe(async (video) => {
-        if (video?.stream) {
-          call.answer(video.stream);
-        } else if (video) {
-          console.warn(
-            "Rec'd call but didn't answer b/c I don't have a video stream :("
-          );
-        }
-      });
+      const video = await webcamVideo;
+      if (video?.stream) {
+        call.answer(video.stream);
+      } else if (video) {
+        console.warn(
+          "Rec'd call but didn't answer b/c I don't have a video stream :("
+        );
+      }
     });
 
     posenet.onResults((pose) => {
@@ -803,15 +799,13 @@
       });
     });
 
-    const myVideoUnsubscribe = webcamVideo.subscribe(async (video) => {
-      if (!video) return;
+    webcamVideo.then(async (video) => {
+      if (!video) return console.error("Didn't have webcam video in init", video);
 
       posenet.updateVideo(video);
 
       three.addVideo(video, peer.id, recentIds);
       three.setWhichIsSelf(participant.getParticipantID()); 
-
-
 
       if (idToCall) {
         const theirId = idToCall;
@@ -822,8 +816,9 @@
         if (video.stream) {
           const call = peer.call(theirId, video.stream);
           listenToMediaConnection(call);
+        } else {
+          console.log("Had idToCall but no webcam video stream", video);
         }
-
         // setTimeout( function(){ loadMusic(mainVolume); }, 100 );
       }
     });
@@ -869,7 +864,7 @@
       if( theirId && theirId !== "0" )
       {
 
-        const myVideoUnsubscribe = webcamVideo.subscribe(async (video) => 
+        webcamVideo.then(async (video) => 
         {
           if(!video){
             console.log("video is undefined")
@@ -923,35 +918,33 @@
       {
         //endCall(); //this is different
 
-        const myVideoUnsubscribe = webcamVideo.subscribe(async (video) => 
+        const video = await webcamVideo;
+        if(!video){
+          console.log("video is undefined")
+          return; 
+        }
+
+        if(!theirId){
+          console.log("theirId is now undefined??")
+          return; 
+        }
+
+        chatstatusMessage = "Connecting to new space...";
+
+        listenToDataConnection(peer.connect(theirId, { label: theirId, serialization: 'json' }));
+
+        if (video.stream) 
         {
-          if(!video){
-            console.log("video is undefined")
+          if(!theirId)
             return; 
-          }
-
-          if(!theirId){
-            console.log("theirId is now undefined??")
-            return; 
-          }
-
-          chatstatusMessage = "Connecting to new space...";
-
-          listenToDataConnection(peer.connect(theirId, { label: theirId, serialization: 'json' }));
-
-          if (video.stream) 
-          {
-            if(!theirId)
-              return; 
-            
-            const call = peer.call(theirId, video.stream);
-            listenToMediaConnection(call);
-          }
-          else
-          {
-            console.log(" didn't get the video stream in connectToUpdatedConnection! ");
-          }
-        });
+          
+          const call = peer.call(theirId, video.stream);
+          listenToMediaConnection(call);
+        }
+        else
+        {
+          console.log(" didn't get the video stream in connectToUpdatedConnection! ");
+        }
       }
       else
       {
@@ -990,7 +983,6 @@
       three.cleanup();
       posenet.cleanup()
       callVideoUnsubscribe();
-      myVideoUnsubscribe();
       peer.disconnect();
     };
   }
