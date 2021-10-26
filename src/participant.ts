@@ -17,7 +17,6 @@ import { recordBodyPartsJerkRaw, recordKeypoints } from './persistedFlags';
 import { appStartTimestamp } from './appStartTimestamp';
 import { EventEmitter } from "eventemitter3"; //note Brent added this -- it emits events that's all I know.
 import { VerticalityAngle, VerticalityCorrelation  } from './Verticality'; 
-import { getProgramUniformLocation } from '@tensorflow/tfjs-backend-webgl/dist/webgl_util';
 
 
 // import { Buffer } from "buffer";

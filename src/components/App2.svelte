@@ -2,12 +2,11 @@
   import { onMount } from "svelte";
   import type { RouterState } from "yrv";
   import Peer from 'peerjs';
-  import Call from "./Call.svelte";
+  // import Call from "./Call.svelte";
   import DebugPanel from "./DebugPanel.svelte";
   import PrintPose from "./PrintPose.svelte";
   import Loading from "./Loading.svelte";
   // import { interceptFileRequest } from "../hackXhrInterceptor";
-  import '@tensorflow/tfjs-backend-webgl';
   // import { initPosenet } from "../threejs/posenetcopy";
   import { initPosenet } from "../threejs/mediapipePose";
   // import { initPosenet } from "../threejs/posenetMock";
@@ -65,6 +64,10 @@
   const theirVideo = videoSubscription();
   let theirVideoUnsubscribe;
   // const videoSources = ["webcam", "/spacebtwTest.mp4", "/synchTestVideo.mp4"];
+
+  $: if ($webcamVideo !== null) {
+    console.log('webcamVideo', $webcamVideo);
+  }
 
   enum WhichPiece {
     SKIN_HUNGER = 0, 
@@ -584,6 +587,10 @@
 
   let peerIds: string[] = [];
 
+  $: {
+    console.log('peerIds changed:', peerIds);
+  }
+
   const peer = new Peer(myId, peerServerParams);
 
   async function init() {
@@ -670,7 +677,7 @@
       console.log("listenToDataConnection", conn, dataConnections);
       friendParticipant.setParticipantID(conn.peer); //for the dyad arrangement set the ID
       hasFriend = true; 
-      peerIds.push(conn.peer); //so that other things work -- plugging the hole in the dam. -CDB
+      peerIds = [...peerIds, conn.peer]; //so that other things work -- plugging the hole in the dam. -CDB
 
       console.log('setting friend ID:', conn.peer)
 
