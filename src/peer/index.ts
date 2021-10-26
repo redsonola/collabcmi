@@ -2,7 +2,7 @@ import Peer from 'peerjs';
 import { peerServerParams } from "../peerJs";
 import { writable, Writable } from 'svelte/store';
 
-const log = console.log.bind('PeerConnections');
+const log = console.log.bind(console, 'PeerConnections');
 
 export class PeerConnections
 {

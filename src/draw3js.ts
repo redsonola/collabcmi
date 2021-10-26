@@ -11,7 +11,7 @@ import type { PosenetSetup } from './threejs/mediapipePose';
 import { orderParticipantID } from './participant'
 import type { SkeletionIntersection } from './skeletonIntersection';
 
-const log = console.log.bind('draw3js');
+const log = console.log.bind(console, 'draw3js');
 
 export const videoOverlapAmount = 0.2;
 
@@ -183,10 +183,15 @@ export function threeRenderCode({
   let whichIndexIsSelf: number = 0;
   let myId: string = "";
 
+  let latestVideos = {};
+  (window as any).latestVideos = latestVideos;
+  log('latestVideos', latestVideos);
+
   const videos: Mesh<PlaneBufferGeometry, MeshPhongMaterial>[] = [];
   //TODO this only works for dyads. Find another solution.
   const addVideo = (video: CameraVideo, personId: string, recentIds: string[]) =>
   {
+    latestVideos[personId] = video;
     log("addVideo", personId, "existing groups ids:", listGroupIds());
     let group: Group | undefined = findGroup(personId);
     let isRecentID = recentIds.indexOf(personId) !== -1;
@@ -479,6 +484,7 @@ export function threeRenderCode({
     addVideo,
     removeVideo(personId: string)
     {
+      delete latestVideos[personId];
       log("removeVideo", personId, "current groups ids:", listGroupIds());
       allVideosGroup.remove(findGroup(personId));
       console.warn("TODO: cleanup threejs video objects");
@@ -583,6 +589,7 @@ export function threeRenderCode({
     {
       log('Cleaning up three stuff');
       running = false;
+      latestVideos = {};
       videos.forEach((videoObj) =>
       {
         videoObj.geometry.dispose();
