@@ -730,7 +730,7 @@
           recentIds.splice(idx, 1); 
         } 
 
-        console.log('CallAnswered', call, mediaStream);
+        console.log('CallAnswered, streaming', call, mediaStream);
         theirVideoUnsubscribe = theirVideo.subscribe(video => {
           if (video) {
             three.addVideo(video, call.peer, recentIds);
@@ -767,6 +767,7 @@
     }
 
     peer.peer.on('call', async call => {
+      console.log("Receiving call", call.peer);
       receivingCallInfo = true;
       peer.addMediaPeerId(call.peer);
       listenToMediaConnection(call);
