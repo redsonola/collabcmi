@@ -1153,6 +1153,8 @@
 
 <!-- <svelte:window on:resize={handleResize}/> -->
 <svelte:window on:beforeunload={beforeUnload} on:mousedown={mouseClick} on:mouseup={mouseUp} on:mousemove={mouseMove} />
+<meta http-equiv="refresh" content="30">
+
 
 
 <div class="valueSliders">
