@@ -1,5 +1,5 @@
 import Peer from 'peerjs';
-import { peerServerParams } from "../peerJs";
+import { peerServerParams, getIceServers } from "../peerJs";
 import { writable, Writable } from 'svelte/store';
 
 const log = console.log.bind(console, 'PeerConnections');
@@ -54,15 +54,41 @@ export class PeerIds
 
 export class PeerConnections
 {
-  peer: Peer;
+  peer: Peer | undefined;
   myId: string | undefined;
   dataPeerIds = new PeerIds('data');
   mediaPeerIds = new PeerIds('media');
 
-  constructor()
+  private started: Promise<any> | false = false;
+
+  /**
+   * Starts the peer connection, and returns this instance cast
+   * as a PeerConnectionsConnected -- which is the same thing
+   * but PeerConnectionsConnected#peer can't be undefined
+   */
+  async start(): Promise<PeerConnectionsConnected>
   {
-    this.peer = new Peer(this.myId, peerServerParams);
-    this.peer.on('open', id => this.setMyId(id));
+    if (!this.started)
+    {
+      this.started = new Promise(async (resolve) =>
+      {
+        const iceServers = await getIceServers();
+
+        this.peer = new Peer(this.myId, {
+          ...peerServerParams,
+          config: {
+            ...peerServerParams.config,
+            iceServers
+          }
+        });
+
+        this.peer.on('open', id => this.setMyId(id));
+
+        resolve(this as PeerConnectionsConnected)
+      });
+    }
+
+    return this.started;
   }
 
   setMyId(id: string)
@@ -70,4 +96,8 @@ export class PeerConnections
     log("setMyId", id);
     this.myId = id;
   }
+}
+
+export class PeerConnectionsConnected extends PeerConnections {
+  peer: Peer;
 }

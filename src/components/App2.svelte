@@ -92,8 +92,6 @@
   let cursorStyle : string = "default";
   let hasFriend : boolean = false; //set this when there is another participant to true & read value
   let receivingCallInfo = false; 
-  let answeringAPeerConnection = false; 
-
 
   //******** IMPORTANT!!!!!!!!!!!!!!!!!! REMINDER TO SELF -- TURN BACK ON VIDEO CALL AUDIO & MUTE BUTTONS AFTER PERFORMANCE ***********/
 
@@ -210,7 +208,6 @@
   var chatRouletteButton; 
   var connectingAndCycle = false; 
   var updatingConnection  = false; 
-  var answeringCall = false; 
 
 
   const BEGINNING_VOLUME = 0.66;
@@ -293,7 +290,7 @@
 
     let TIME_TO_WAIT = 2.0; //poll every 10 sec...
 
-    if( timeWithoutPolling > TIME_TO_WAIT && !updatingConnection && !connectingAndCycle && !receivingCallInfo && !answeringAPeerConnection )
+    if( timeWithoutPolling > TIME_TO_WAIT && !updatingConnection && !connectingAndCycle && !receivingCallInfo )
     {
       lastTimePolledWithAConnectionRequest = Date.now(); 
       connectToUpdatedConnection( chatRouletteButton ); 
@@ -354,7 +351,7 @@
     let yposOfTouch: number = 0;
     let combinedWindowedScore : number = 0;
 
-    if( peer.dataPeerIds.ids.length !== 0 && hasFriend ){
+    if( peerConnections.dataPeerIds.ids.length !== 0 && hasFriend ){
 
       if (participant.areTouching()) {
         skeletonTouching = 1;
@@ -498,12 +495,12 @@
         xCorrTouching = participant.getTouchingXCorr();
       }
 
-      if( peer.dataPeerIds.ids.length !== 0 ){
+      if( peerConnections.dataPeerIds.ids.length !== 0 ){
         combinedWindowedScore = ( combinedWindowedScore + friendParticipant.getMaxBodyPartDx() ) / 2;
       }
 
       //I will fix this. this needs to be refactored out. will def. do this at some point.
-      if(tubaSonfier && touchMusicalPhrases && peer.dataPeerIds.ids.length > 0){
+      if(tubaSonfier && touchMusicalPhrases && peerConnections.dataPeerIds.ids.length > 0){
 
         //update music 1st
         if( musicLoaded ) 
@@ -558,16 +555,18 @@
   let dataConnections: Record<string, DataConnection> = {};
 
 
-  const peer = new PeerConnections();
-  const dataPeerIdsStore = peer.dataPeerIds.idsStore;
+  const peerConnections = new PeerConnections();
+  const dataPeerIdsStore = peerConnections.dataPeerIds.idsStore;
   // for debugging -- you can access `peer` as a global object in the chrome debugger
-  (window as any).peer = peer;
 
   async function init() {
     if( !isChrome )
     {
       alert("We detected that you were on a suboptimal browser for Skin Hunger. In order to fully experience our installation, we suggest using Chrome as your web browser. All features may not be fully functional or you might suffer performance problems.");
     }
+
+    const peer = await peerConnections.start();
+    (window as any).peer = peer;
 
     //only if sending to max -- note the file recording server should be started
     if( whichPiece === WhichPiece.TUG_OF_WAR )
@@ -610,7 +609,6 @@
         Object.values(dataConnections).forEach((conn) => {
           if (conn.open) conn.close();
         });
-
         console.log("ended the call");
       }
 
@@ -620,7 +618,6 @@
 
     closeConnection = (conn : DataConnection) =>
     {
-      receivingCallInfo = true; 
       if( !hasFriend )
         return; 
         
@@ -644,7 +641,6 @@
         
       disconnectedBySelf = false;
       hasFriend = false; 
-      receivingCallInfo = false; 
     }
 
     function listenToDataConnection(conn: DataConnection) {
@@ -725,17 +721,10 @@
     function listenToMediaConnection(call: MediaConnection) {
       receivingCallInfo = true; 
       peer.mediaPeerIds.addPeerId(call.peer);
-      let answeringCallMiddle = false;
-            // theirId = call.peer;
-      call.on('stream', function (mediaStream) {
 
-        if(answeringCall)
-        {
-          answeringCallMiddle = true; 
-          console.log("already answering a call! need to finish first!"); 
-        }
-        answeringCall = true; 
-        chatstatusMessage = "Answering Call...."; 
+      // theirId = call.peer;
+      call.on('stream', function (mediaStream) {
+        chatstatusMessage = ""; 
 
         //if the current call.peer is in recentIds then it is current not RECENT.
         let idx = recentIds.indexOf( call.peer );
@@ -745,7 +734,6 @@
         } 
 
         console.log('CallAnswered, streaming', call, mediaStream);
-
         theirVideoUnsubscribe = theirVideo.subscribe(video => {
           if (video) {
             three.addVideo(video, call.peer, recentIds);
@@ -766,17 +754,6 @@
           console.log("URGENT: mediaStream does not have tracks!!"); 
         }
         console.log(mediaStream); 
-
-        // if( answeringCallMiddle && dataConnections.length > 1 )
-        // {
-        //   dataConnections[0].close(); 
-        //   dataConnections.splice(0, 1); 
-        // }
-
-        // answeringCall = false; 
-        // chatstatusMessage = ""; 
-
-
       });
 
       call.on('close', function () {
@@ -794,15 +771,6 @@
 
     peer.peer.on('call', async call => {
       console.log("Receiving call", call.peer);
-
-      let answeredAPreviousConnection = false; 
-      if(answeringAPeerConnection)
-      {
-        answeredAPreviousConnection = true;
-        console.log("Already answering a peer connection ");
-      }
-      answeringAPeerConnection = true; 
-
       receivingCallInfo = true;
       peer.mediaPeerIds.addPeerId(call.peer);
       listenToMediaConnection(call);
@@ -818,11 +786,6 @@
         receivingCallInfo = false;
       }
       receivingCallInfo = false; 
-      answeringAPeerConnection = false; 
-      if(answeredAPreviousConnection)
-      {
-
-      }
     });
 
     posenet.onResults((pose) => {
@@ -910,13 +873,6 @@
 
     chatRouletteButton = document.getElementById('btnChatRoulette');
     connectToRandomPartner = async (e) => {
-      if( answeringAPeerConnection || receivingCallInfo ||  answeringCall )
-      {
-        console.log("In the middle of answering calls, cannot cycle.");
-        chatstatusMessage = "In the middle of answering calls, cannot cycle.";
-        return; 
-      }
-
       connectingAndCycle = true; 
 
 
@@ -1138,9 +1094,9 @@
     //test.. may have to force call the three animate function
   handleResize = () => 
   {
-    if( three && peer.myId && friendParticipant.getParticipantID() && (peer.dataPeerIds.ids.length !== 0 || idToCall !== null) )
+    if( three && peerConnections.myId && friendParticipant.getParticipantID() && (peerConnections.dataPeerIds.ids.length !== 0 || idToCall !== null) )
     {
-      myMutePosition = three.getMuteButtonPosition(peer.myId);
+      myMutePosition = three.getMuteButtonPosition(peerConnections.myId);
       theirMutePosition = three.getMuteButtonPosition(friendParticipant.getParticipantID());
     }
   }
@@ -1151,8 +1107,10 @@
       Object.values(dataConnections).forEach((conn) => {
         if (conn.open) conn.close();
       });
-      disconnectID(peer.peer.id ); 
-      peer.peer.disconnect(); 
+      if (peerConnections.peer){
+        disconnectID(peerConnections.peer.id ); 
+        peerConnections.peer.disconnect(); 
+      }
       console.log("disconnected from peer");
   }
 
@@ -1258,7 +1216,7 @@
 </div> 
 {/if}
 {#if showDebugPanel}
-  <DebugPanel myId={peer.myId}>
+  <DebugPanel myId={peerConnections.myId}>
   <!--
       anything passed in here will be in the Passed in tab
       you can move it to the DebugPanel.svelte file if it will
