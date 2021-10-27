@@ -37,7 +37,6 @@
     "sat": "^0.9.0",
     "seedrandom": "^2.4.3",
     "snowpack": "^3.8.8",
-    "socket.io-client": "^4.3.2",
     "svelte": "^3.43.1",
     "svelte-check": "^2.2.7",
     "svelte-preprocess": "^4.9.8",
