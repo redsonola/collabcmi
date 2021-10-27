@@ -1,7 +1,6 @@
 import Peer from 'peerjs';
-import { peerServerParams } from "../peerJs";
+import { peerServerParams, getIceServers } from "../peerJs";
 import { writable, Writable } from 'svelte/store';
-import { getIceServers } from '../socketio';
 
 const log = console.log.bind(console, 'PeerConnections');
 

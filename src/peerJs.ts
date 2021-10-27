@@ -12,8 +12,8 @@ const REACT_APP_PEER_SERVER_HOST = "skinhunger-telematic-install.herokuapp.com";
 const REACT_APP_PEER_SERVER_PORT = "443";
 const REACT_APP_PEER_SERVER_PATH = "/signaling";
 
-// const REACT_APP_CYCLING_SERVER = "https://skinhunger-telematic-install.herokuapp.com";
-const REACT_APP_CYCLING_SERVER = "https://localhost:9000";
+const REACT_APP_CYCLING_SERVER = "https://skinhunger-telematic-install.herokuapp.com";
+// const REACT_APP_CYCLING_SERVER = "http://localhost:9000";
 
 // const REACT_APP_PEER_SERVER_HOST = "https://192.168.1.4";
 // const REACT_APP_PEER_SERVER_PORT = "9000";
@@ -125,4 +125,20 @@ export function disconnectID(myId: string): Promise<string | null>
       // logger.log(error);
       return null;
     });
+}
+
+export function getIceServers(): Promise<RTCIceServer[]>
+{
+  logger.log("getIceServers");
+
+  return axios({
+    method: 'get',
+    url: `${REACT_APP_CYCLING_SERVER}/ice-servers`,
+    responseType: 'json',
+    proxy: false,
+  }).then(res =>
+  {
+    logger.log('getIceServers res', res, res.data);
+    return res.data as RTCIceServer[];
+  });
 }
