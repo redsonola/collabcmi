@@ -1,6 +1,5 @@
 import type { PeerJSOption } from 'peerjs';
 import axios from 'axios'; //TODO: https://github.com/axios/axios
-import { string } from 'mathjs';
 
 // const REACT_APP_PEER_SERVER_HOST = "spacebtw-peerserver.herokuapp.com";
 // const REACT_APP_PEER_SERVER_PORT = "443";

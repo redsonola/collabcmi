@@ -92,8 +92,6 @@
   let cursorStyle : string = "default";
   let hasFriend : boolean = false; //set this when there is another participant to true & read value
   let receivingCallInfo = false; 
-  let answeringAPeerConnection = false; 
-
 
   //******** IMPORTANT!!!!!!!!!!!!!!!!!! REMINDER TO SELF -- TURN BACK ON VIDEO CALL AUDIO & MUTE BUTTONS AFTER PERFORMANCE ***********/
 
@@ -210,7 +208,6 @@
   var chatRouletteButton; 
   var connectingAndCycle = false; 
   var updatingConnection  = false; 
-  var answeringCall = false; 
 
 
   const BEGINNING_VOLUME = 0.66;
@@ -293,7 +290,7 @@
 
     let TIME_TO_WAIT = 2.0; //poll every 10 sec...
 
-    if( timeWithoutPolling > TIME_TO_WAIT && !updatingConnection && !connectingAndCycle && !receivingCallInfo && !answeringAPeerConnection )
+    if( timeWithoutPolling > TIME_TO_WAIT && !updatingConnection && !connectingAndCycle && !receivingCallInfo )
     {
       lastTimePolledWithAConnectionRequest = Date.now(); 
       connectToUpdatedConnection( chatRouletteButton ); 
@@ -610,7 +607,6 @@
         Object.values(dataConnections).forEach((conn) => {
           if (conn.open) conn.close();
         });
-
         console.log("ended the call");
       }
 
@@ -620,7 +616,6 @@
 
     closeConnection = (conn : DataConnection) =>
     {
-      receivingCallInfo = true; 
       if( !hasFriend )
         return; 
         
@@ -644,7 +639,6 @@
         
       disconnectedBySelf = false;
       hasFriend = false; 
-      receivingCallInfo = false; 
     }
 
     function listenToDataConnection(conn: DataConnection) {
@@ -725,17 +719,10 @@
     function listenToMediaConnection(call: MediaConnection) {
       receivingCallInfo = true; 
       peer.mediaPeerIds.addPeerId(call.peer);
-      let answeringCallMiddle = false;
-            // theirId = call.peer;
-      call.on('stream', function (mediaStream) {
 
-        if(answeringCall)
-        {
-          answeringCallMiddle = true; 
-          console.log("already answering a call! need to finish first!"); 
-        }
-        answeringCall = true; 
-        chatstatusMessage = "Answering Call...."; 
+      // theirId = call.peer;
+      call.on('stream', function (mediaStream) {
+        chatstatusMessage = ""; 
 
         //if the current call.peer is in recentIds then it is current not RECENT.
         let idx = recentIds.indexOf( call.peer );
@@ -745,7 +732,6 @@
         } 
 
         console.log('CallAnswered, streaming', call, mediaStream);
-
         theirVideoUnsubscribe = theirVideo.subscribe(video => {
           if (video) {
             three.addVideo(video, call.peer, recentIds);
@@ -766,17 +752,6 @@
           console.log("URGENT: mediaStream does not have tracks!!"); 
         }
         console.log(mediaStream); 
-
-        // if( answeringCallMiddle && dataConnections.length > 1 )
-        // {
-        //   dataConnections[0].close(); 
-        //   dataConnections.splice(0, 1); 
-        // }
-
-        // answeringCall = false; 
-        // chatstatusMessage = ""; 
-
-
       });
 
       call.on('close', function () {
@@ -794,15 +769,6 @@
 
     peer.peer.on('call', async call => {
       console.log("Receiving call", call.peer);
-
-      let answeredAPreviousConnection = false; 
-      if(answeringAPeerConnection)
-      {
-        answeredAPreviousConnection = true;
-        console.log("Already answering a peer connection ");
-      }
-      answeringAPeerConnection = true; 
-
       receivingCallInfo = true;
       peer.mediaPeerIds.addPeerId(call.peer);
       listenToMediaConnection(call);
@@ -818,11 +784,6 @@
         receivingCallInfo = false;
       }
       receivingCallInfo = false; 
-      answeringAPeerConnection = false; 
-      if(answeredAPreviousConnection)
-      {
-
-      }
     });
 
     posenet.onResults((pose) => {
@@ -910,13 +871,6 @@
 
     chatRouletteButton = document.getElementById('btnChatRoulette');
     connectToRandomPartner = async (e) => {
-      if( answeringAPeerConnection || receivingCallInfo ||  answeringCall )
-      {
-        console.log("In the middle of answering calls, cannot cycle.");
-        chatstatusMessage = "In the middle of answering calls, cannot cycle.";
-        return; 
-      }
-
       connectingAndCycle = true; 
 
 
