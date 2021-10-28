@@ -1301,9 +1301,15 @@
 <!-- {/if}  -->
 
 <br />
-<div class="linksPanel">
-  <a href="/about" target="_blank">About Skin Hunger</a> | <a href="/instructions" target="_blank">Instructions</a>
+  <div class="instructionPanel">
+    Welcome to Skin Hunger! You are connected to another space and hopefully another person in a web video-chat! <br/>
+    The system will find your skeleton & when your skeleton touches another and you move, you can make sound and evolve a virtual organism! 
+    <br/>
 </div>
+
+  <div class="linksPanel">
+    <a href="/about" target="_blank">About Skin Hunger</a> | <a href="/instructions" target="_blank">Instructions</a>
+  </div>
 
 {#if loading}
   <Loading {progress} />
@@ -1344,6 +1350,15 @@
     color: #928888;
   }
 
+  .instructionPanel {
+    position: absolute;
+    bottom: 80px; 
+    left:0px;
+    width:100%; 
+    text-align: center;
+    z-index: 2; 
+    color: rgb(120, 167, 167);
+  }
   a:link, a:visited {
   color: #928888;
   padding: 15px 25px;
