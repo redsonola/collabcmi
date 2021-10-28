@@ -215,7 +215,6 @@
   var connectingAndCycle = false; 
   var updatingConnection  = false; 
 
-
   const BEGINNING_VOLUME = 0.66;
   // var selfMute;
   // var friendMute;  
@@ -1212,16 +1211,16 @@
   <!-- <br/><br/> -->
 </div>
 
-{#if $dataPeerIdsStore.length !== 0 || idToCall !== null}
+<!-- {#if $dataPeerIdsStore.length !== 0 || idToCall !== null}
 <div class="myMute" style={`left:${myMutePosition.x}px; top:${myMutePosition.y}px`}>
   <input type="image" on:click={muteSelf} alt="muteButton" src={myMuteButtonText} width="23px" height="23px" />
 </div>
 
 <!-- I just made the myMutePosition.y position top for this one, bc they should be the same anyways. fix for real l8rz -->
-<div class="theirMute" style={`left:${theirMutePosition.x}px; top:${theirMutePosition.y}px`}> 
+<!-- <div class="theirMute" style={`left:${theirMutePosition.x}px; top:${theirMutePosition.y}px`}> 
   <input type="image" id="theirMuteButton" bind:this={theirMuteButton} on:click={muteThem} alt="theirMuteButton" src={theirMuteButtonText} width="23px" height="23px" />
-</div> 
-{/if}
+</div>  -->
+<!-- {/if}  -->
 {#if showDebugPanel}
   <DebugPanel myId={peerConnections.myId}>
   <!--
@@ -1303,9 +1302,10 @@
 <br />
   <div class="instructionPanel">
     Welcome to Skin Hunger! You are connected to another space and hopefully another person in a web video-chat! <br/>
-    The system will find your skeleton & when your skeleton touches another and you move, you can make sound and evolve a virtual organism! 
-    <br/>
-</div>
+    The system will find your skeleton & when your skeleton touches another and you move, you can make sound and evolve a virtual organism! <br/>
+  </div>
+    <!-- <div class="instructionPanelSmaller">Notes: Call audio has been disabled for this application, so can only contact via movement! & system only finds one skeleton per space. <br/></div> -->
+   
 
   <div class="linksPanel">
     <a href="/about" target="_blank">About Skin Hunger</a> | <a href="/instructions" target="_blank">Instructions</a>
@@ -1357,8 +1357,21 @@
     width:100%; 
     text-align: center;
     z-index: 2; 
-    color: rgb(120, 167, 167);
+    color:rgb(120, 167, 167);
   }
+/* 
+  .instructionPanelSmaller {
+    position: absolute;
+    bottom: 50px;
+    left:0px;
+    width:100%; 
+    text-align: center;
+    z-index: 2; 
+    color: rgb(120, 167, 167);
+    font-size: small;
+  } */
+
+
   a:link, a:visited {
   color: #928888;
   padding: 15px 25px;
