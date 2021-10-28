@@ -1303,8 +1303,10 @@
   <div class="instructionPanel">
     Welcome to Skin Hunger! You are connected to another space and hopefully another person in a web video-chat! <br/>
     The system will find your skeleton & when your skeleton touches another and you move, you can make sound and evolve a virtual organism! <br/>
+  <br/>
+    <span class="smallerFont">Notes: Call audio has been disabled for this application, so can only contact via movement! & system only finds one skeleton per space. </span><br/>
   </div>
-    <!-- <div class="instructionPanelSmaller">Notes: Call audio has been disabled for this application, so can only contact via movement! & system only finds one skeleton per space. <br/></div> -->
+
    
 
   <div class="linksPanel">
@@ -1350,6 +1352,10 @@
     color: #928888;
   }
 
+  .smallerFont{
+    font-size: small;
+  }
+
   .instructionPanel {
     position: absolute;
     bottom: 80px; 
@@ -1359,17 +1365,6 @@
     z-index: 2; 
     color:rgb(120, 167, 167);
   }
-/* 
-  .instructionPanelSmaller {
-    position: absolute;
-    bottom: 50px;
-    left:0px;
-    width:100%; 
-    text-align: center;
-    z-index: 2; 
-    color: rgb(120, 167, 167);
-    font-size: small;
-  } */
 
 
   a:link, a:visited {
