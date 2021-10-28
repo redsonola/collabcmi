@@ -108,7 +108,7 @@
   $: if ($theirVideo !== null) {
     console.log('their video', $theirVideo);
     theirVideoElement = $theirVideo.videoElement; 
-    theirVideoElement.muted = true; 
+    // theirVideoElement.muted = true; 
   }
 
     //new URL(window.location.href).searchParams.get("myid") || undefined; 
