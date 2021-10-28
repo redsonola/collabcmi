@@ -92,6 +92,11 @@
   let cursorStyle : string = "default";
   let hasFriend : boolean = false; //set this when there is another participant to true & read value
   let receivingCallInfo = false; 
+  let theirMuteButton: HTMLInputElement;
+
+  $: if (theirMuteButton) {
+    console.log('theirMuteButton', muteThem(theirMuteButton));
+  }
 
   //******** IMPORTANT!!!!!!!!!!!!!!!!!! REMINDER TO SELF -- TURN BACK ON VIDEO CALL AUDIO & MUTE BUTTONS AFTER PERFORMANCE ***********/
 
@@ -103,6 +108,7 @@
   $: if ($theirVideo !== null) {
     console.log('their video', $theirVideo);
     theirVideoElement = $theirVideo.videoElement; 
+    theirVideoElement.muted = true; 
   }
 
     //new URL(window.location.href).searchParams.get("myid") || undefined; 
@@ -569,9 +575,9 @@
     (window as any).peer = peer;
 
     //only if sending to max -- note the file recording server should be started
-    if( whichPiece === WhichPiece.TUG_OF_WAR )
+    if( whichPiece === WhichPiece.TUG_OF_WAR ){
        OSCInterface.initOSC();
-
+    }
 
     mainVolume = new MainVolume((val) => {
       volumeMeterReading = val;
@@ -1060,37 +1066,6 @@
     }
   }
 
-  export function muteThem(e)
-  {
-
-    let button = e;
-    if( button )
-    {
-        if( theirMuteButtonText === muteUrl )
-        {
-          theirMuteButtonText = unmuteURL;
-          if( theirVideoElement )
-          {
-            theirVideoElement.muted = true ;
-            console.log("muted someone else")
-          }
-          console.log(theirVideoElement); 
-        }
-        else
-        {
-          theirMuteButtonText = muteUrl;
-          if( theirVideoElement )
-          {
-            theirVideoElement.muted = false; 
-            console.log("turned off mute")
-
-          }
-        }
-        sendMuteMessage(0, theirVideoElement.muted); 
-
-    }
-  }
-
     //test.. may have to force call the three animate function
   handleResize = () => 
   {
@@ -1113,6 +1088,38 @@
       }
       console.log("disconnected from peer");
   }
+
+    export function muteThem(e)
+    {
+
+      let button = e;
+      console.log(" in the mute function "); 
+      if( button )
+      {
+          if( theirMuteButtonText === muteUrl )
+          {
+            theirMuteButtonText = unmuteURL;
+            if( theirVideoElement )
+            {
+              theirVideoElement.muted = true ;
+              console.log("muted someone else")
+            }
+            console.log(theirVideoElement); 
+          }
+          else
+          {
+            theirMuteButtonText = muteUrl;
+            if( theirVideoElement )
+            {
+              theirVideoElement.muted = false; 
+              console.log("turned off mute")
+
+            }
+          }
+          sendMuteMessage(0, theirVideoElement.muted); 
+
+      }
+    }
 
   function mouseClick(event)
   {
@@ -1212,7 +1219,7 @@
 
 <!-- I just made the myMutePosition.y position top for this one, bc they should be the same anyways. fix for real l8rz -->
 <div class="theirMute" style={`left:${theirMutePosition.x}px; top:${theirMutePosition.y}px`}> 
-  <input type="image" on:click={muteThem} alt="theirMuteButton" src={theirMuteButtonText} width="23px" height="23px" />
+  <input type="image" id="theirMuteButton" bind:this={theirMuteButton} on:click={muteThem} alt="theirMuteButton" src={theirMuteButtonText} width="23px" height="23px" />
 </div> 
 {/if}
 {#if showDebugPanel}
