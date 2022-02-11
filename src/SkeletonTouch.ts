@@ -1,6 +1,7 @@
 import * as PoseIndex from './poseConstants.js';
 import type {WhereTouch} from './skeletonIntersection'
 import { distance2d } from './averagedKeypoints'
+import * as Scale from './scale'
 
 //represents one touch between 2 skeletons
 export class SkeletonTouch
@@ -155,6 +156,14 @@ export class SkeletonTouch
         if( this.touching )
             return (performance.now() - this.startedTouching ) / 1000.0; //just return seconds for now 
         else return 0; 
+    }
+
+    howLongScaled()
+    {
+        let touchLength : number = this.howLong(); 
+        let LONGEST_TOUCH : number = 20; //seconds
+        touchLength = Math.min(touchLength, LONGEST_TOUCH); //cut off all touch lengths @ 90
+        return Scale.linear_scale(touchLength, 0, LONGEST_TOUCH, 0, 1);
     }
 
     whereTouching() : any[]

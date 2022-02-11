@@ -153,6 +153,16 @@ app.post("/api/write-recording", async (req, res) => {
       osc?.send( new OSC.Message( "synchScore", parseFloat(req.body.synchScore)), { port: 8998 } ); 
     }
 
+    if(req.body.howLongTouchScaled !== "-1")
+    {
+      osc?.send( new OSC.Message( "howLongTouchScaled", parseFloat(req.body.howLongTouchScaled)), { port: 8998 } ); 
+    }
+    
+    if(req.body.maxTouchingDx !== "-1")
+    {
+      osc?.send( new OSC.Message( "maxTouchingDx", parseFloat(req.body.maxTouchingDx)), { port: 8998 } ); 
+    }
+
     res.end("ok");
 
   });

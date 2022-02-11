@@ -369,6 +369,36 @@ export class Participant extends EventEmitter {
         }
     }
 
+    //Feb '22 -- get the max dx.
+    getMaxTouchingDx() : number
+    {
+        if( !this.touch.touching )
+        {
+            return 0; 
+        }
+        else
+        {
+            let maxDx : number = 0; 
+
+            //TODO -- traverse these keypoints, find the max dx and send to Max 8
+            let pts : number[] = this.intersection.getTouchingKeypoints(); 
+            for( let i=0; i<pts.length; i++ )
+            {
+                let dist = Math.sqrt(this.avgKeyPoints.getTopDx(pts[i])*this.avgKeyPoints.getTopDx(pts[i]) + this.avgKeyPoints.getTopDy(pts[i])*this.avgKeyPoints.getTopDy(pts[i]) );
+                maxDx = Math.max(dist, maxDx)  ; 
+            }
+
+            pts = this.friendParticipant.intersection.getTouchingKeypoints(); 
+            for( let i=0; i<pts.length; i++ )
+            {
+                let dist = Math.sqrt(this.avgKeyPoints.getTopDx(pts[i])*this.avgKeyPoints.getTopDx(pts[i]) + this.avgKeyPoints.getTopDy(pts[i])*this.avgKeyPoints.getTopDy(pts[i]) );
+                maxDx = Math.max(dist, maxDx)  ;             
+            }
+            return maxDx;
+        }
+
+    }
+
     //per second -- vary the window size with the samplerate
     //TODO: need to measure samplerate again & change all values accordingly. Also fix some hardcoded shit in the AveragingKeypoints whatever class
     setPoseSamplesRate(sps: number = 32): void {
@@ -934,6 +964,10 @@ export class Participant extends EventEmitter {
 
     howLongTouching(): number {
         return this.touch.howLong();
+    }
+
+    howLongTouchingScaled(): number {
+        return this.touch.howLongScaled();
     }
 
     howMuchTouching(): number {

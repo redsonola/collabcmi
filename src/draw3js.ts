@@ -277,7 +277,7 @@ export function threeRenderCode({
     {
       const group = allVideosGroup.children[i];
       group.position.x = (videoOverlapAmount * i) + leftMargin;
-      group.position.y = 0.4;
+      group.position.y = 0.3;
     }
 
     // setFrustum(-0.5, group.position.y);

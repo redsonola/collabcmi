@@ -183,8 +183,8 @@ export class AverageFilteredKeyPoints
     
             this.score.push(new AveragingFilter(avgSz, avgOutBufferSize));
 
-            this.xDx.push(new Derivative(avgSz, this.dxOutBufferSize));
-            this.yDx.push(new Derivative(avgSz, this.dxOutBufferSize));
+            this.xDx.push(new Derivative(1, this.dxOutBufferSize));
+            this.yDx.push(new Derivative(1, this.dxOutBufferSize));
 
             this.dxOfxAvg.push(new Derivative(avgSz, this.dxOutBufferSize));
             this.dyOfyAvg.push(new Derivative(avgSz, this.dxOutBufferSize));
@@ -264,8 +264,8 @@ export class AverageFilteredKeyPoints
             this.xAvg[i].setWindowSize(sz, buffer2Size);
             this.yAvg[i].setWindowSize(sz, buffer2Size);
 
-            this.xDx[i].setWindowSize(sz, this.dxOutBufferSize); 
-            this.yDx[i].setWindowSize(sz, this.dxOutBufferSize);
+            this.xDx[i].setWindowSize(1, this.dxOutBufferSize); 
+            this.yDx[i].setWindowSize(1, this.dxOutBufferSize);
             
             this.dxOfxAvg[i].setWindowSize(sz, this.dxOutBufferSize); 
             this.dyOfyAvg[i].setWindowSize(sz, this.dxOutBufferSize); 
@@ -467,7 +467,7 @@ export class AverageFilteredKeyPoints
                     this.xDxMax[i] = Math.max(this.xDxMax[i], this.dxAvg[i].top());
                     this.yDxMax[i] = Math.max(this.yDxMax[i], this.dyAvg[i].top());
 
-                    //this.distance[i].update( dist ); //ok, this is distance but just the magnititude btw positions. Its still pretty good.
+                    // this.distance[i].update( dist ); //ok, this is distance but just the magnititude btw positions. Its still pretty good.
                     this.windowedVarianceX[i].update( math.variance( this.dxAvg[i].getOutputContents() ) ); 
                     this.windowedVarianceY[i].update( math.variance( this.dxAvg[i].getOutputContents() ) ); 
 

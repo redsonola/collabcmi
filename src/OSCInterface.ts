@@ -68,7 +68,9 @@ export function sendOSC(
   friend_noseX:number,
   friend_noseY:number,
   combinedDxDy:number,
-  synchScore:number
+  synchScore:number,
+  howLongTouchScaled : number, 
+  maxTouchingDx : number
 )
 {
   // if( arg < 0.0001 )
@@ -99,6 +101,8 @@ export function sendOSC(
         friend_noseY: fixSci( friend_noseY ),
         combinedDxDy: fixSci( combinedDxDy ),
         synchScore: fixSci( synchScore ),
+        howLongTouchScaled: fixSci( howLongTouchScaled ), 
+        maxTouchingDx: fixSci( maxTouchingDx )
       })
         .then(function (response) {
 

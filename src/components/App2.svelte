@@ -392,6 +392,8 @@
       let friend_noseYOSC:number = -1; 
       let combinedDxDyOSC:number = -1; 
       let synchScoreOSC:number = -1; 
+      let howLongTouchScaledOSC:number = -1; 
+      let maxTouchingDx:number = -1; 
 
       let iAmSecond = orderParticipantID(particiantId, friendParticipant.participantID) === -1;
       if( Date.now() - lastSent >= 100  )
@@ -427,6 +429,7 @@
           self_noseXOSC =  participant.avgKeyPoints.getTopX(PoseIndex.nose); 
           self_noseYOSC = participant.avgKeyPoints.getTopY(PoseIndex.nose); 
 
+          maxTouchingDx = 0; //default if it doesn't have a friend
           if( hasFriend )
           {
             friend_noseXOSC = friendParticipant.avgKeyPoints.getTopX(PoseIndex.nose); 
@@ -435,7 +438,9 @@
             combinedWindowedScore += friendParticipant.getMaxBodyPartDx(minConfidence); 
             combinedWindowedScore /= 2; 
             combinedDxDyOSC = combinedWindowedScore; 
-            synchScoreOSC =  synchScore; 
+            synchScoreOSC =  synchScore;
+            howLongTouchScaledOSC = participant.howLongTouchingScaled();
+            maxTouchingDx = participant.getMaxTouchingDx();
           }
           OSCInterface.sendOSC(verticalityCorrOSC,
               touchVelocityOSC, 
@@ -449,7 +454,9 @@
               friend_noseXOSC,
               friend_noseYOSC,
               combinedDxDyOSC,
-              synchScoreOSC );
+              synchScoreOSC, 
+              howLongTouchScaledOSC,
+              maxTouchingDx );
 
       // }
   }
@@ -1299,13 +1306,13 @@
   </div>> -->
 <!-- {/if}  -->
 
-<br />
+<!-- <br />
   <div class="instructionPanel">
     Welcome to Skin Hunger! You are connected to another space and hopefully another person in a web video-chat! <br/>
     The system will find your skeleton & when your skeleton touches another and you move, you can make sound and evolve a virtual organism! <br/>
   <br/>
     <span class="smallerFont">Notes: Call audio has been disabled for this application, so can only contact via movement! & system only finds one skeleton per space. </span><br/>
-  </div>
+  </div> -->
 
    
 

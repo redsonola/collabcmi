@@ -66,7 +66,7 @@ export function findChatRoulettePartner(myId: string): Promise<string | null>
 //just gonna have to ignore this framework... -- this is called to find a chat partner
 export function updateConnection(myId: string): Promise<string | null>
 {
-  // logger.log("updating connection.....")
+  logger.log("updating connection....." + myId)
 
   return axios({
     method: 'get',

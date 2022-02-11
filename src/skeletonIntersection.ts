@@ -77,6 +77,8 @@ export class WhereTouch {
     intersectingPoints : Vector3[] = []; //these are to be drawn -- this is the history
     curPoints : Vector3[] = []; //all current intersecting points in current frame
 
+    intersectHistory : Vector3[] = []; // Jan. 2022 -- just a debug thing
+
     myIndex : number []= []; 
     theirIndex : number[] = [];
     alreadyFound : boolean = false; 
@@ -139,6 +141,12 @@ export class WhereTouch {
         this.theirIndex = wt.theirIndex; 
         this.curPoints = this.curPoints; 
         this.alreadyFound = wt.alreadyFound || this.alreadyFound;
+        // this.intersectHistory.push(...wt.intersectHistory);
+        
+        // while(this.intersectHistory.length > 50)
+        // {
+        //     this.intersectHistory.splice(0, 1);
+        // }
     }
 
     setCurrentIntersectPoint()
@@ -159,9 +167,9 @@ export class WhereTouch {
     ifDistIsLessReplace( wT: WhereTouch, myIndex:number[]=[], theirIndex: number[]=[] ): void {
 
         //inherit the history...... 
-        //this.keepHistory( wT );
+        //this.keepHistory( wT );f
 
-        if (this.dist > wT.dist) 
+        if (this.dist > wT.dist || wT.dist === 0) 
         {
             //not keeping track.
             // this.curPoints.push( ...wT.curPoints ); 
@@ -175,6 +183,9 @@ export class WhereTouch {
                 this.intersectPoint.z = 0.95;
             }
             this.isTouching = true;
+
+            // this.intersectHistory.push( ...wT.intersectHistory ); 
+
 
 
 
@@ -225,7 +236,7 @@ export class DrawIntersections {
 
     update( whereTouch : WhereTouch )
     {
-        this.whereTouch = whereTouch; 
+        this.whereTouch.copyFrom(whereTouch); 
     }
 
     setReferenceLimb(limb : LimbIntersect )
@@ -238,7 +249,9 @@ export class DrawIntersections {
         const group = new THREE.Group();
         let intersectingLines : THREE.Vector3[] = []; //not drawing the stick figure
 
-        let intersecting = this.whereTouch.intersectingPoints;  ; 
+        let intersecting = this.whereTouch.intersectHistory;  
+        // if(this.whereTouch.isTouching)
+        //     console.log(this.whereTouch); 
         if( intersecting.length > 1 && this.limb)
         {
             for( let i=0; i<intersecting.length-1; i++ )
@@ -927,6 +940,12 @@ export class LimbIntersect extends DetectIntersect {
                 let intersectionPoint : Vector3 = this.findIntersectionPoint( limb ); 
                 whereIntersect.intersectPoint.x = intersectionPoint.x;
                 whereIntersect.intersectPoint.y = intersectionPoint.y;
+
+                //ok just trying to manage this
+                // whereIntersect.intersectHistory.push( new Vector3(whereIntersect.intersectPoint.x , whereIntersect.intersectPoint.y, 0.95 ) );
+                // if( whereIntersect.intersectHistory.length > 30 )
+                // whereIntersect.intersectHistory.splice(0, 1); 
+
                 whereIntersect.alreadyFound = true; 
             }
         }
@@ -993,6 +1012,7 @@ class BodyPartIntersect extends DetectIntersect {
     resetTouch() : void
     {
         this.limbs.forEach( (limb )=>{limb.resetTouch(); } ); 
+        this.drawIntersections.whereTouch.isTouching = false;
     }
 
     setFlipSelf(flip: boolean) {
@@ -1050,8 +1070,18 @@ class BodyPartIntersect extends DetectIntersect {
         let group : THREE.Group = new THREE.Group; 
 
         group.add(this.drawSkeleton.groupToDraw());
+
         // if( !this.isFriend ) //don't draw yr. own intersections for now
+        // {
+        //     if( this.drawIntersections.whereTouch.isTouching )
+        //     {
+        //         console.log("says its touching now, in draw");
+        //     } 
+            
         //     group.add(this.drawIntersections.groupToDraw());
+
+
+        // }
 
         //add all the hairylimbs
         // for( let i=0; i<this.limbs.length; i++ )
@@ -1098,8 +1128,10 @@ class BodyPartIntersect extends DetectIntersect {
     {
         // whereTouch.updateIntersectPoint(  whereTouch.intersectPoint.x, whereTouch.intersectPoint.y, whereTouch.isTouching ); 
         this.whereTouch.copyFrom(whereTouch); 
-        this.whereTouch.setCurrentIntersectPoint();
-        this.drawIntersections.update(this.whereTouch);  
+        if( whereTouch.isTouching )
+        {
+            this.drawIntersections.update(whereTouch); 
+        } 
     }
 
     intersects(bodypart: BodyPartIntersect, w: number, h: number, whereTouch : WhereTouch): WhereTouch {
@@ -1117,7 +1149,7 @@ class BodyPartIntersect extends DetectIntersect {
                 this.limbs[i].touching = this.limbs[i].touching || whereTouch.isTouching; 
                 otherLimbs[j].touching = otherLimbs[j].touching || whereTouch.isTouching; 
             }
-        }
+        }        
         this.updateWhereTouch( whereTouch )
         return whereTouch;
     }
@@ -1425,7 +1457,7 @@ export class SkeletionIntersection {
             }
         );
         //turning off drawing the intersections for now.
-        //group.add( this.drawIntersections.groupToDraw() );
+        group.add( this.drawIntersections.groupToDraw() );
 
         return group; 
     }
@@ -1490,6 +1522,32 @@ export class SkeletionIntersection {
         // } else console.log( "Not touching!!");
         // console.log( this.whereTouch.intersectPoint.x + "," + this.whereTouch.intersectPoint.x );
         return touch;
+    }
+
+    getTouchingKeypoints() : any[]
+    {
+        let pts : number[] = [] ; 
+        for(let i=0; i<this.parts.length; i++)
+        {
+            let limbs = this.parts[i].getLimbs();
+            for(let j=0; j<limbs.length; j++)
+            {
+                if(limbs[j].touching)
+                {
+                    let indicies = [limbs[j].index1, limbs[j].index2]; 
+                    for( let k=0; k<indicies.length; k++ )
+                    {
+                        let index : number = pts.indexOf( indicies[k] );
+                        if( index === -1)
+                        {
+                            pts.push( indicies[k] );
+                        }
+                    }
+                }
+            }
+
+        }
+        return pts; 
     }
 
 }
