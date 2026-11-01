@@ -4,11 +4,23 @@ import * as Scale from './scale.ts';
 import { SoundMessage, InstrumentID, SamplerWithID, getAmplitude, AmplitudeSoundMessage } from './xcorrSonify'
 
 //controls all the volumes. ALL sound needs to be connected to this before going to destination.
+
+// Master gain range in dB that the volume slider (0..1) maps onto.
+// The summed instruments already peak well above 0 dBFS before this gain,
+// so the ceiling must stay at or below 0 dB or the output hard-clips
+// (audible as scratchy/crackling distortion). Tune MASTER_MAX_DB to taste.
+const MASTER_MIN_DB = -60;
+const MASTER_MAX_DB = 10;
+// Brickwall-ish safety limiter just before the speakers.
+const LIMITER_THRESHOLD_DB = -1;
+
 export class MainVolume
 {
     constructor(setVolMeter)
     {
-        this.mainVolume = new Tone.Volume(-150).toDestination(); //set a master global volume control.
+        this.mainVolume = new Tone.Volume(-150); //set a master global volume control.
+        this.limiter = new Tone.Limiter(LIMITER_THRESHOLD_DB);
+        this.mainVolume.chain(this.limiter, Tone.Destination);
         this.mainVolume.volume.mute = true; 
 
         this.meter = new Tone.Meter();
@@ -41,7 +53,7 @@ export class MainVolume
         else
         {
             this.mainVolume.volume.mute = false; 
-            let volume = Scale.linear_scale(vol, 0, 1, -60, 40);
+            let volume = Scale.linear_scale(vol, 0, 1, MASTER_MIN_DB, MASTER_MAX_DB);
             this.mainVolume.volume.value = volume; 
         }
     }
