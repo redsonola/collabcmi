@@ -53,8 +53,8 @@ app.post("/api/write-recording", async (req, res) => {
 });
 
 
-const cert = fs.readFileSync('./snowpack.crt');
-const key = fs.readFileSync('./snowpack.key');
+const cert = fs.readFileSync('./localhost.pem');
+const key = fs.readFileSync('./localhost-key.pem');
 
 https.createServer({ cert, key }, app)
 	.listen(3000, (...args) => {

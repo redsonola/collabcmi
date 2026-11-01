@@ -45,7 +45,7 @@
   import "../Organism01"; //turn back on for creature
   import { onVirtualTouch, startAnimation } from "../Organism01"; //turn back on for creature, uncomment Line 285
   import * as THREE from "three";
-  import { DataConnection, MediaConnection } from "peerjs";
+  import type { DataConnection, MediaConnection } from "peerjs";
 import { Vector3 } from "three";
 
 
@@ -168,8 +168,6 @@ import { Vector3 } from "three";
   let tubaSonfier: SonifierWithTuba;
   let touchMusicalPhrases: TouchPhrasesEachBar;
 
-
-  let isChrome = !!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime);
 
   var connectToRandomPartner = (e) => {}; //function to connect to a random partner
   var turnUpVolume = () => {}; //turn up the volume when connected to another user
@@ -375,14 +373,9 @@ import { Vector3 } from "three";
 
   let peerIds: string[] = [];
 
-  const peer = new Peer(myId, peerServerParams);
+  const peer = myId ? new Peer(myId, peerServerParams) : new Peer(peerServerParams);
 
   async function init() {
-    if( !isChrome )
-    {
-      alert("We detected that you were on a suboptimal browser for Skin Hunger. In order to fully experience our installation, we suggest using Chrome as your web browser. All features may not be fully functional or you might suffer performance problems.");
-    }
-
     let stopped = false;
     const posenet: PosenetSetup<any> = initPosenet();
 
@@ -867,7 +860,7 @@ import { Vector3 } from "three";
 
 <div class="valueSliders">
   <label for="mainVolume">Music Volume:</label>
-  <div class={glowClass} width="75%">
+  <div class={glowClass}>
   <input
     type="range"
     min="0"

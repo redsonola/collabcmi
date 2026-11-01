@@ -246,8 +246,8 @@ export class AverageFilteredKeyPoints
                     // this.distanceForWindowedVar[i].update( dist ); //ok, this is distance but just the magnititude btw positions. Its still pretty good.
                     
                     
-                    this.windowedVarianceDistanceX[i].update( math.variance( this.xShortDx[i].getOutputContents() ) ); 
-                    this.windowedVarianceDistanceY[i].update( math.variance( this.xShortDx[i].getOutputContents() ) ); 
+                    this.windowedVarianceDistanceX[i].update( Number(math.variance( this.xShortDx[i].getOutputContents() )) ); 
+                    this.windowedVarianceDistanceY[i].update( Number(math.variance( this.xShortDx[i].getOutputContents() )) ); 
 
                     //distance for touch
                     let dist2 = this.getDist(this.xDx[i].top(), this.yDx[i].top());

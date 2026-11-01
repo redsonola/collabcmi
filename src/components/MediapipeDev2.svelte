@@ -4,7 +4,7 @@
    * but it delays running the JS, and uses the local @mediapipe/pose package.
    */
 
-  import "@mediapipe/pose/pose";
+  // @mediapipe/pose is loaded as a classic <script> in index.html
 
   setTimeout(() => {
     // Our input frames will come from here.

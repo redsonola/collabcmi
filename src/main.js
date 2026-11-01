@@ -13,7 +13,7 @@ import * as posenet from '@tensorflow-models/posenet';
 import * as Tone from "tone";
 import * as soundDesign from './soundDesignSpaceBtwSketch1.js';
 
-import Peer from 'peerjs/dist/peerjs.js';
+import Peer from 'peerjs';
 
 import * as SpaceBtwMessage from "./SpaceBtwMessage.js";
 import { Participant } from "./participant.ts"

@@ -1,33 +1,34 @@
 {
-	"extends": "@tsconfig/svelte/tsconfig.json",
-	"compilerOptions": {
-		"resolveJsonModule": true,
-		"lib": ["DOM", "ES2017", "ESNext", "WebWorker"],
-		"types": ["svelte", "node"],
-		"strictFunctionTypes": false,
-		"strictNullChecks": true,
-		"importsNotUsedAsValues": "preserve"
-	},
-	"include": ["src/**/*", "src/node_modules/**/*"],
-	"exclude": ["node_modules/*", "__sapper__/*", "static/*"],
-	"target": "esnext",
-
-	"downlevelIteration": true,
-	"lib": [
-		"node",
-		"dom",
-		"dom.iterable",
-		"ESNext"
-	],
-	"allowJs": true,
-	"skipLibCheck": true,
-	"esModuleInterop": true,
-	"allowSyntheticDefaultImports": true,
-	"forceConsistentCasingInFileNames": false,
-	"module": "esnext",
-	"isolatedModules": true,
-	"noEmit": true,
-	"jsx": "react",
-	"noImplicitAny": false,
-	"checkJs": false,
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["DOM", "DOM.Iterable", "ESNext", "WebWorker"],
+    "types": ["svelte", "node", "vite/client"],
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "checkJs": false,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": false,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": false,
+    "downlevelIteration": true,
+    "noEmit": true,
+    "strict": false,
+    "strictNullChecks": true,
+    "strictFunctionTypes": false,
+    "noImplicitAny": false,
+    "useDefineForClassFields": false
+  },
+  "include": ["src/**/*", "vite.config.ts"],
+  "exclude": [
+    "node_modules",
+    "build",
+    "src/App.tsx",
+    "src/react-app-env.d.ts",
+    "src/stories/**",
+    "src/dsp.js/**"
+  ]
 }

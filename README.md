@@ -1,91 +1,107 @@
-# collabcmi
+# collabcmi / Skin Hunger
 
-> ✨ Bootstrapped with Create Snowpack App (CSA).
+Networked, pose-tracking audiovisual installation. Two participants connect over
+WebRTC (PeerJS), their poses are tracked in the browser with MediaPipe Pose, and
+synchrony between them drives three.js visuals and Tone.js music.
 
-## Available Scripts
+Updated October 2026: the build moved from Snowpack (unmaintained) to
+[Vite](https://vite.dev), Svelte 3 to Svelte 5, TypeScript 4 to 5.
 
-### npm start
+## Requirements
 
-Runs the app in the development mode.
-Open https://localhost:8080 to view it in the browser.
-If this is your first time running it, you'll need to run `npm run mkcert` to create
-& install the local ssl certificates.
+- Node.js 20.19+ (tested with Node 25). https://nodejs.org or `nvm install --lts`
+- A browser with webcam access. Camera access works on `http://localhost`
+  without HTTPS. HTTPS (see mkcert below) is only needed when opening the dev
+  server from another device on your network.
 
-The page will reload if you make edits.
-You will also see any lint errors in the console.
+## Available scripts
 
-### npm run build
+### `npm install`
 
-Builds a static copy of your site to the `build/` folder.
-Your app is ready to be deployed!
+Installs dependencies.
 
-### npm run test-build
+### `npm start` (or `npm run dev`)
 
-Reinstalls the dependencies and builds the same way that the production pipeline does. 
-Runs a static server using the same snowpack certs that are used in dev.
+Runs the app in development mode at http://localhost:8080 with hot reloading.
+If `localhost.pem` / `localhost-key.pem` exist in the project root the server
+uses HTTPS instead (https://localhost:8080).
 
-**For the best production performance:** Add a build bundler plugin like [@snowpack/plugin-webpack](https://github.com/snowpackjs/snowpack/tree/main/plugins/plugin-webpack) or [snowpack-plugin-rollup-bundle](https://github.com/ParamagicDev/snowpack-plugin-rollup-bundle) to your `snowpack.config.json` config file.
+### `npm run build`
 
-### Q: What about Eject?
+Builds a static copy of the site into `build/`. This is what `scripts/deploy.sh`
+uploads.
 
-No eject needed! Snowpack guarantees zero lock-in, and CSA strives for the same.
+### `npm run preview`
 
-## Dependencies
+Serves the contents of `build/` locally on port 8080, the same way the production
+server would. `npm run test-build` does a clean install, build and preview.
 
-### NodeJS
+### `npm run check`
 
-NPM version 6.* or 7.1.2 or greater (or less than 7 -- [Husky](https://www.npmjs.com/package/husky) doesn't work with npm 7.0.0 to 7.1.1)
+Runs `svelte-check` (TypeScript type checking for `.ts` and `.svelte` files).
+There are a handful of long-standing type complaints that do not affect running
+the app.
 
-### Using nvm as a package manager. 
+### `npm run mkcert` (optional, for HTTPS)
 
-If on Windows, use (& follow instructions here): https://github.com/coreybutler/nvm-windows
-Update: apparently better to just use from nodejs website:https://nodejs.org/en/
-Apparently: https://chocolatey.org is the Windows version of homebrew.
+Needs [mkcert](https://github.com/FiloSottile/mkcert) (`brew install mkcert` on
+macOS). Creates and trusts `localhost.pem` / `localhost-key.pem`, which both the
+Vite dev server and the helper servers below pick up automatically.
 
-First Install nvm (node version manager)
+### `npm run peer-server` / `npm run file-recording-server`
 
-https://github.com/nvm-sh/nvm#install--update-script
+Optional local helper servers (a local PeerJS signaling server and a server that
+saves pose recordings). Both need the mkcert certificates above. By default the
+app uses the hosted signaling server configured in `src/peerJs.ts`.
 
-nvm install 15.1.0 //only on OS X. It should come with windows install.
+### `npm run deploy`
 
-### Install mkcert
-eg. on OS X -- brew install mkcert
-If you have homebrew, which I recommend. 
-
-For windows, instructions here:
-https://github.com/FiloSottile/mkcert
-
-Then, on the command-line:
-
-npm install
-
-npm run mkcert
-
-Then, to run/build:
-
-npm run start
-
+Builds and syncs `build/` to S3 / CloudFront. Needs AWS credentials.
 
 ## Code
 
-Main js file is: '/components/App2.svelte'. 
-goLoop(async ()) -- is the main update function, calling the keypointsUpdated() function. In keypointsUpdated, motion analysis measures get updated & inside also the three?.dispatch(etc. etc.) is calling the threejs drawing code.
+Main component is `src/components/App.svelte` (router) and
+`src/components/App2.svelte` (the installation itself).
+`goLoop(async ())` is the main update function, calling `keypointsUpdated()`.
+In `keypointsUpdated`, motion analysis measures get updated and `three?.dispatch(...)`
+calls the three.js drawing code.
 
-drawthreejs.ts has drawing code & also in the folder /threejs has more drawing code (eg. for skeleton & video)
+- `src/draw3js.ts` and `src/threejs/` hold the drawing code (skeleton, video).
+- `src/participant.ts` holds the synchrony measures and data for each participant.
+  Only the calling participant has the synch info.
+- `src/mediaPipePose.ts` wraps MediaPipe Pose. `pose.js` is loaded as a classic
+  `<script>` in `index.html` (it defines `window.Pose`), and the package's
+  wasm/model files are served at `/mediapipe/pose/` by `vite.config.ts`. By
+  default the model files are fetched from the jsdelivr CDN; switch the
+  `locateFile` in `src/mediaPipePose.ts` to use the local copy instead.
+- `src/main.js` is an old, deprecated entry point. Only `findRadiusOfKeypoint`
+  is still used from it.
 
-participant.ts: holds all the synchroncity measures and data for each participant. Only the calling participant (participant) has the synch info. 
+### Sound levels
 
-Note: Currently, it still has all the code for my audiovisual instrument so it will play a bit of music when it is opened if you move enough.
+The master gain is set in `MainVolume` (`src/midiConversion.js`). The volume
+slider (0 to 0.75) maps onto `MASTER_MIN_DB`..`MASTER_MAX_DB` (currently -60 dB
+to +10 dB), and a `Tone.Limiter` at `LIMITER_THRESHOLD_DB` (-1 dBFS) sits just
+before the output. The summed instruments peak around +9 dBFS *before* the
+master gain, so the old ceiling of +40 dB (+6 dB at the default slider
+position) hard-clipped the output and sounded scratchy. Raise `MASTER_MAX_DB`
+for a louder default; the limiter prevents clipping but will start to pump if
+pushed far above 0 dB.
 
-Note: There is an old main.js file but that is depreciated. & no longer used.
+### Dependency notes
 
-if you run
-
-./scripts/deploy.sh
-
-It will deploy to spacebetween.courtney-brown.net. You'll need an aws key to deploy, so just let me when you're ready to do that. 
-
-Probably we should (well, we will) get a separate web space / aws acct, tho, for this project, since I am using that for my audiovisual instrument. But -- if you wanted to test something actually on the internet instead of localhost/network.
-
-
-
+- `three` is pinned to 0.120.1. The creature code in `src/PByte3/` and
+  `src/Organism01.ts` uses `THREE.Geometry` and the `*BufferGeometry` classes,
+  which were removed in later three.js releases. Upgrading three requires
+  porting that code to `BufferGeometry`.
+- The audio stack is pinned to the exact versions the piece was composed
+  against: `tone` 14.7.77, `@tonejs/midi` 2.0.27, and (via `overrides` in
+  `package.json`) `standardized-audio-context` 25.2.7, `automation-events` 4.0.2
+  and `midi-file` 1.1.2. Tone 14.9.17 and the newer MIDI parser were tested and
+  parse the MIDI files identically, but the pins keep playback behavior
+  identical to the 2021 build. Remove the pins and overrides to try newer
+  versions.
+- `yrv` (router) declares a Svelte 3 peer dependency but works with Svelte 5;
+  `package.json` has an `overrides` entry for it.
+- `@tensorflow-models/posenet` / `@tensorflow/tfjs` are only used for their
+  types and the optional PoseNet fallback in `src/threejs/posenetcopy.ts`.

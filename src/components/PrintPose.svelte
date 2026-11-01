@@ -52,9 +52,11 @@
   <table>
     {#if pose}
       <thead>
-        <th class="score-bar-row" colspan="3">
-          <div class="score-bar" style={`width: ${pose.score * 100}%`}>&nbsp;{round(pose.score)}</div>
-        </th>
+        <tr>
+          <th class="score-bar-row" colspan="3">
+            <div class="score-bar" style={`width: ${pose.score * 100}%`}>&nbsp;{round(pose.score)}</div>
+          </th>
+        </tr>
       </thead>
     {/if}
     <tbody>

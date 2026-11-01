@@ -1,9 +1,9 @@
 /**
  * @mediapipe/pose doesn't have types. It just loads shiz into the
- * global window object.
+ * global window object. pose.js is loaded as a classic <script> in
+ * index.html (served from /mediapipe/pose/ by vite.config.ts).
  * google's example: https://codepen.io/mediapipe/pen/RwGWYJw
  */
-import "@mediapipe/pose/pose";
 import { Vector3 } from "three";
 
 export class LandmarkVector3 extends Vector3 {
@@ -110,7 +110,7 @@ export type PoseLandmark =
 
 const defaultGetPoseParams: PoseParams = {
   locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.3.1621277220/${file}`,
-  // locateFile: (file) => `/@mediapipe/pose/${file}`,
+  // locateFile: (file) => `/mediapipe/pose/${file}`,
 }
 
 export const getPose = (p?: Partial<PoseParams>) => {
