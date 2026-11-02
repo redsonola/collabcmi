@@ -53,15 +53,23 @@ import { Vector3 } from "three";
   export let showDebugPanel = router.query.debug === "true";
 
   const webcamVideo = videoSubscription("webcam");
-  const theirVideo = videoSubscription();
+  const theirVideo = videoSubscription(null); //their stream is set when they call; don't open a second webcam
   let theirVideoUnsubscribe;
   // const videoSources = ["webcam", "/spacebtwTest.mp4", "/synchTestVideo.mp4"];
 
   let theirVideoElement;
   let muteUrl = "./icons/noun_mic_283245_grey.png"; 
   let unmuteURL = "./icons/noun_Mute_2692102_grey.png";
-  let myMuteButtonText = muteUrl;
   let theirMuteButtonText = muteUrl; 
+
+  //my microphone: a mute toggle. a muted mic sends silence to the other participant.
+  let micMuted = false;
+  $: myMuteButtonText = micMuted ? unmuteURL : muteUrl;
+  $: applyLocalMicMute(micMuted);
+  let localWebcamStream : MediaStream | undefined; //my own camera+mic stream, so the mic track can be turned off
+
+  //whether the other participant has muted their own mic -- stored so it can be applied once their video element exists
+  let theirIncomingMuted = false;
   let myMutePosition : THREE.Vector3 = new THREE.Vector3(); 
   let theirMutePosition : THREE.Vector3 = new THREE.Vector3(); 
   let handleResize : ()=>void = ()=>{}; //init as empty
@@ -85,6 +93,7 @@ import { Vector3 } from "three";
     if ($theirVideo !== null) {
       console.log('their video', $theirVideo);
       theirVideoElement = $theirVideo.videoElement; 
+      theirVideoElement.muted = theirIncomingMuted;
     }
   }
 
@@ -454,7 +463,7 @@ import { Vector3 } from "three";
       console.log("listenToDataConnection", conn, dataConnections);
       friendParticipant.setParticipantID(conn.peer); //for the dyad arrangement set the ID
       hasFriend = true; 
-      peerIds.push(conn.peer); //so that other things work -- plugging the hole in the dam. -CDB
+      peerIds = [...peerIds, conn.peer]; //so that other things work -- plugging the hole in the dam. -CDB (reassigned, not pushed, so Svelte 5 notices the change)
 
       console.log('setting friend ID:', conn.peer)
 
@@ -469,10 +478,11 @@ import { Vector3 } from "three";
           case "Mute": {
             if( message.which === 0 )
             {
-              myMuteButtonText = message.muted ?unmuteURL : muteUrl;
+              //the other participant muted me on their side; my own mic setting is unchanged
             }
             else
             {
+              theirIncomingMuted = message.muted;
               if( theirVideoElement )
                 {
                   theirVideoElement.muted = message.muted ;
@@ -492,6 +502,10 @@ import { Vector3 } from "three";
           }
         }
       });
+
+      //let the new connection know how my mic is set
+      if (conn.open) sendMicState();
+      else conn.on('open', sendMicState);
 
       conn.on('close', function () {
         closeConnection(conn); 
@@ -523,6 +537,9 @@ import { Vector3 } from "three";
           if (video) {
             three.dispatch({ type: "AddVideo", personId: call.peer, video, recentIds });
             three.setWhichIsSelf(participant.getParticipantID()); 
+            //their video now exists, so place both mute buttons under their videos
+            myMutePosition = three.getMuteButtonPosition(peer.id);
+            theirMutePosition = three.getMuteButtonPosition(call.peer);
           }
         });
         myMutePosition = three.getMuteButtonPosition(peer.id);
@@ -580,6 +597,9 @@ import { Vector3 } from "three";
 
     const myVideoUnsubscribe = webcamVideo.subscribe(async (video) => {
       if (!video) return;
+
+      localWebcamStream = video.stream;
+      applyLocalMicMute(micMuted);
 
       posenet.updateVideo(video);
 
@@ -725,55 +745,35 @@ import { Vector3 } from "three";
       }
   }
 
-  //TODO: Implement -- need to just send a message via peerjs to "muteThem"
+  //actually switch my microphone track on or off, so a muted mic sends silence
+  function applyLocalMicMute(muted : boolean)
+  {
+    if( !localWebcamStream ) return;
+    localWebcamStream.getAudioTracks().forEach((track) => { track.enabled = !muted; });
+  }
+
+  //tell the other participant whether my mic is muted (so their icon matches)
+  function sendMicState()
+  {
+    sendMuteMessage(1, micMuted);
+  }
+
+  //the mic button
   export function muteSelf(e)
   {
-    let button = e;
-    if( button )
-    {
-        if( myMuteButtonText === muteUrl )
-        {
-          myMuteButtonText = unmuteURL;
-          sendMuteMessage(1, true); 
-        }
-        else
-        {
-          myMuteButtonText = muteUrl;
-          sendMuteMessage(1, false); 
-
-        }
-    }
+    micMuted = !micMuted;
+    sendMicState();
   }
 
   export function muteThem(e)
   {
-
-    let button = e;
-    if( button )
+    const mute = theirMuteButtonText === muteUrl;
+    theirMuteButtonText = mute ? unmuteURL : muteUrl;
+    if( theirVideoElement )
     {
-        if( theirMuteButtonText === muteUrl )
-        {
-          theirMuteButtonText = unmuteURL;
-          if( theirVideoElement )
-          {
-            theirVideoElement.muted = true ;
-            console.log("muted someone else")
-          }
-          console.log(theirVideoElement); 
-        }
-        else
-        {
-          theirMuteButtonText = muteUrl;
-          if( theirVideoElement )
-          {
-            theirVideoElement.muted = false; 
-            console.log("turned off mute")
-
-          }
-        }
-        sendMuteMessage(0, theirVideoElement.muted); 
-
+      theirVideoElement.muted = mute;
     }
+    sendMuteMessage(0, mute);
   }
 
     //test.. may have to force call the three animate function
@@ -894,16 +894,24 @@ import { Vector3 } from "three";
 
   <!-- <text>{volumeMeterReading}</text> -->
   <!-- <br/><br/> -->
+
 </div>
 
 {#if peerIds.length !== 0 || idToCall !== null}
 <div class="myMute" style={`left:${myMutePosition.x}px; top:${myMutePosition.y}px`}>
-  <input type="image" on:click={muteSelf} alt="muteButton" src={myMuteButtonText} width="23px" height="23px" />
+  <button type="button" class="muteButton" class:isMuted={micMuted} on:click={muteSelf}
+    aria-label={micMuted ? "Unmute microphone" : "Mute microphone"} title={micMuted ? "Unmute microphone" : "Mute microphone"}>
+    <img src={myMuteButtonText} alt="" />
+  </button>
 </div>
 
 <!-- I just made the myMutePosition.y position top for this one, bc they should be the same anyways. fix for real l8rz -->
 <div class="theirMute" style={`left:${theirMutePosition.x}px; top:${theirMutePosition.y}px`}> 
-  <input type="image" on:click={muteThem} alt="theirMuteButton" src={theirMuteButtonText} width="23px" height="23px" />
+  <button type="button" class="muteButton" class:isMuted={theirMuteButtonText === unmuteURL} on:click={muteThem}
+    aria-label={theirMuteButtonText === unmuteURL ? "Unmute the other participant" : "Mute the other participant"}
+    title={theirMuteButtonText === unmuteURL ? "Unmute the other participant" : "Mute the other participant"}>
+    <img src={theirMuteButtonText} alt="" />
+  </button>
 </div>
 {/if}
 {#if showDebugPanel}
@@ -964,7 +972,7 @@ import { Vector3 } from "three";
 {#if peerIds.length > 0}
 <div class="disconnectButton">
   <button on:click={endCall} class="disconnectButtonColor">End Video Call</button>
-  </div>>
+  </div>
 {/if}
 
 <br />
@@ -1085,6 +1093,37 @@ a:hover {
     left: 0px; /* before 60 */
     top: 8px;
     background-color: gray;
+  }
+
+  /* zoom-style round control under each video, same dark purple as the End Video Call button */
+  .muteButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background-color: rgb(55, 35, 59);
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s, background-color 0.2s;
+  }
+
+  .muteButton:hover {
+    opacity: 1;
+    background-color: rgb(78, 50, 84);
+  }
+
+  .muteButton.isMuted {
+    background-color: #57035f;
+  }
+
+  .muteButton img {
+    width: 28px;
+    height: 28px;
+    pointer-events: none;
   }
 
   :global(canvas) {

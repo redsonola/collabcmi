@@ -39,6 +39,14 @@ export interface ThreeRenderer {
 
 export type MakeThreeRenderer = (props: ThreeRenderProps) => ThreeRenderer;
 
+//strips of the window used by HTML controls (music panel and call panel on top;
+//mute buttons and About/Instructions links on the bottom). The videos are fitted between them.
+const CONTROLS_RESERVE_TOP_PX = 130;
+const CONTROLS_RESERVE_BOTTOM_PX = 125; // mute button row (46) above the links row (~75)
+const CONTROLS_SIDE_MARGIN_PX = 56; //room for the mute buttons beside the outer video corners
+const MUTE_BUTTON_GAP_PX = 6;
+const MUTE_BUTTON_SIZE_PX = 40; //keep in sync with .muteButton in App2.svelte
+
 const textureLoader = new THREE.TextureLoader();
 const map0 = textureLoader.load('/circle.jpg');
 
@@ -52,7 +60,8 @@ export function threeRenderCode({
     camera,
     renderer,
     updateSize,
-    lookAt
+    lookAt,
+    fitContent
   } = createOrthographicCamera(canvas, window.innerWidth, window.innerHeight);
 
   setTimeout(() => {
@@ -248,10 +257,17 @@ export function threeRenderCode({
       //   });
     }
 
-    lookAt(new Box3(
-      new Vector3(0, -0.5, 0),
-      new Vector3(allVideosGroup.children.length, 1, 0),
-    ));
+    //make the videos as big as the window allows, between the strips used by HTML controls
+    const videoCount = allVideosGroup.children.length;
+    const firstGroupX = allVideosGroup.children[0].position.x;
+    const lastGroupX = allVideosGroup.children[videoCount - 1].position.x;
+    fitContent(
+      new Vector3( (firstGroupX + lastGroupX) / 2, 0.3, 0 ),
+      (lastGroupX - firstGroupX) + videoWidth3js, //left edge of the first video to right edge of the last
+      videoHeight3js,
+      { top: CONTROLS_RESERVE_TOP_PX, bottom: CONTROLS_RESERVE_BOTTOM_PX },
+      CONTROLS_SIDE_MARGIN_PX
+    );
   }
 
 
@@ -532,11 +548,17 @@ export function threeRenderCode({
       pos.y = - (pos.y * heightHalf) + heightHalf;
       pos.z = 0;
 
-      //after this need to add/subtract 23 pixels for one of them.
+      //after this subtract the button width for the right-hand video.
       if(xsign > 0)
       {
-        pos.x -= 23; //subtracts 23 px so in line. this is the width of the icon. need to put in constant later.
+        pos.x -= MUTE_BUTTON_SIZE_PX; //so the button lines up with the right edge of the video
       }
+
+      //sits just under the video, and never leaves the visible window
+      //(when the videos fill the window width there is no margin beside them)
+      pos.y += MUTE_BUTTON_GAP_PX;
+      const margin = 8;
+      pos.x = Math.min( Math.max(pos.x, margin), window.innerWidth - MUTE_BUTTON_SIZE_PX - margin );
 
       return pos; 
     },

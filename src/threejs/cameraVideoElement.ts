@@ -50,6 +50,7 @@ export async function makeVideoElement(source?: string | MediaStream): Promise<C
   videoElement.autoplay = true;
 
   if (!source || source === 'webcam') {
+    videoElement.muted = true; // local camera: the mic is only for sending, never played back here
     console.log('making webcam video element');
     const stream = await startCamera(videoElement);
     console.log('got webcam stream', ...stream.getVideoTracks().map(t => t.getSettings()));
@@ -115,14 +116,19 @@ export interface WritableVideoStore {
   setSource: (source?: string | MediaStream) => void;
 }
 
-export function videoSubscription(source?: string | MediaStream): Readable<CameraVideo | null> & WritableVideoStore {
+// source: 'webcam' or undefined opens the local webcam; a url or MediaStream plays that;
+// null means start empty and wait for setSource (used for the remote participant's stream,
+// so no second local webcam/mic is opened).
+export function videoSubscription(source?: string | MediaStream | null): Readable<CameraVideo | null> & WritableVideoStore {
   let lastVideo: Promise<CameraVideo | undefined> | undefined;
-  let lastSource = source;
+  let lastSource: string | MediaStream | null | undefined = source;
 
   const store = writable<CameraVideo | null>(null, (set) => {
     // when going from 0 to 1 subscribers, create the video:
-    lastVideo = makeVideoElement(source)
-    lastVideo.then(val => set(val || null));
+    if (source !== null) {
+      lastVideo = makeVideoElement(source);
+      lastVideo.then(val => set(val || null));
+    }
 
     return () => {
       // when going from 1 to 0 subscribers, stop it:

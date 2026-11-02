@@ -88,6 +88,28 @@ position) hard-clipped the output and sounded scratchy. Raise `MASTER_MAX_DB`
 for a louder default; the limiter prevents clipping but will start to pump if
 pushed far above 0 dB.
 
+### Microphone controls
+
+Once a call is connected, each video gets a round Zoom-style button under its
+corner (`.muteButton` in `App2.svelte`; the slashed icon means muted). Yours
+mutes your microphone by disabling the local audio track, so the other
+participant receives silence, and it sends the `Mute` data-channel message so
+their icon updates. The other button mutes the remote participant's playback
+on your side only. Your own microphone is never played back locally: the local
+webcam element is muted, and the remote participant's store
+(`videoSubscription(null)`) no longer opens a second webcam. The button size is
+duplicated in `draw3js.ts` (`MUTE_BUTTON_SIZE_PX`) for positioning.
+
+### Layout
+
+The videos are scaled up as far as the window allows while staying between two
+reserved strips, so they never sit under the HTML controls:
+`CONTROLS_RESERVE_TOP_PX` (music panel, call panel), `CONTROLS_RESERVE_BOTTOM_PX`
+(mute buttons above the links) and `CONTROLS_SIDE_MARGIN_PX` in `src/draw3js.ts`
+(see `fitContent` in `createOrthographicCamera.ts`). If you add taller controls
+at the top or bottom, raise those numbers. The fit is recomputed when a video is
+added, not on window resize.
+
 ### Dependency notes
 
 - `three` is pinned to 0.120.1. The creature code in `src/PByte3/` and
