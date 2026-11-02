@@ -62,21 +62,24 @@ export function createOrthographicCamera(canvas, _width, _height) {
      */
     /**
      * Make the content (centered at `center`, contentWidth x contentHeight in world units)
-     * as large as possible while staying inside the window, minus `reserve.top` / `reserve.bottom`
-     * pixels (strips used by HTML controls) and `sideMargin` pixels on the left and right.
-     * One world unit is height * zoom / 750 pixels (the frustum is 750 tall at zoom 1, see updateSize).
+     * as large as possible while staying inside the CURRENT window, minus the `reserve`
+     * pixels on each side (strips used by HTML controls) and `sideMargin` pixels left and right.
+     * One world unit is H * zoom / 750 pixels (the frustum is 750 tall at zoom 1, see updateSize).
      */
     fitContent(center: Vector3, contentWidth: number, contentHeight: number,
-               reserve = { top: 0, bottom: 0 }, sideMargin = 0) {
-      const usableHeight = Math.max(height - reserve.top - reserve.bottom, height * 0.3);
-      const usableWidth = Math.max(width - 2 * sideMargin, width * 0.3);
+               reserve = { top: 0, bottom: 0, left: 0, right: 0 }, sideMargin = 0) {
+      const W = window.innerWidth;
+      const H = window.innerHeight;
+      const usableHeight = Math.max(H - reserve.top - reserve.bottom, H * 0.3);
+      const usableWidth = Math.max(W - reserve.left - reserve.right - 2 * sideMargin, W * 0.3);
       const pixelsPerWorldUnit = Math.min(usableHeight / contentHeight, usableWidth / contentWidth);
-      camera.zoom = pixelsPerWorldUnit * 750 / height;
+      camera.zoom = pixelsPerWorldUnit * 750 / H;
 
       camera.position.copy(center);
       camera.position.z = 150;
-      // move the drawing down by half the difference between the reserved strips
+      // moving the camera up moves the drawing down; moving it left moves the drawing right
       camera.position.y += ((reserve.top - reserve.bottom) / 2) / pixelsPerWorldUnit;
+      camera.position.x -= ((reserve.left - reserve.right) / 2) / pixelsPerWorldUnit;
 
       camera.updateProjectionMatrix();
     },

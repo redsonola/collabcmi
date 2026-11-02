@@ -34,16 +34,39 @@ export interface ThreeRenderer {
   moveVideoCam : (which:number, x2:number, y2:number) => void;
   moveVideoCamFromThreeJSCoords : (which:number, x2:number, y2:number) => void;
   getOffsetVidPosition : (isFriend : boolean) => Vector3
+  setLayout : (settings : LayoutSettings) => void; //desktop / phone portrait / phone landscape
 
+}
+
+export type LayoutMode = 'desktop' | 'portrait' | 'landscape';
+
+export interface LayoutSettings {
+  mode: LayoutMode;
+  connected: boolean; //in a call (or joining one), as opposed to waiting alone
+  bottomBarPx: number; //portrait: measured height of the bottom control bar / sheet
 }
 
 export type MakeThreeRenderer = (props: ThreeRenderProps) => ThreeRenderer;
 
-//strips of the window used by HTML controls (music panel and call panel on top;
-//mute buttons and About/Instructions links on the bottom). The videos are fitted between them.
-const CONTROLS_RESERVE_TOP_PX = 130;
-const CONTROLS_RESERVE_BOTTOM_PX = 125; // mute button row (46) above the links row (~75)
-const CONTROLS_SIDE_MARGIN_PX = 56; //room for the mute buttons beside the outer video corners
+//strips of the window used by HTML controls. The videos are fitted between them.
+const DESKTOP_RESERVE = { top: 130, bottom: 125, left: 0, right: 0 }; //music + call panels on top; mute buttons above links below
+const DESKTOP_SIDE_MARGIN_PX = 56; //room for the mute buttons beside the outer video corners
+
+//portrait phone: the second video is shifted diagonally (world units; a video is 1 wide, 0.75 tall)
+const PORTRAIT_DX = 0.18;
+const PORTRAIT_DY = 0.51;
+
+function reserveFor(layout: LayoutSettings) {
+  switch (layout.mode) {
+    case 'portrait':
+      return { reserve: { top: 12, bottom: layout.bottomBarPx + 12, left: 0, right: 0 }, sideMargin: 6 };
+    case 'landscape':
+      //left rail: mute buttons, right rail: end call, or the invite panel while waiting alone
+      return { reserve: { top: 54, bottom: 34, left: 92, right: layout.connected ? 92 : 330 }, sideMargin: 0 };
+    default:
+      return { reserve: DESKTOP_RESERVE, sideMargin: DESKTOP_SIDE_MARGIN_PX };
+  }
+}
 const MUTE_BUTTON_GAP_PX = 6;
 const MUTE_BUTTON_SIZE_PX = 40; //keep in sync with .muteButton in App2.svelte
 
@@ -60,7 +83,6 @@ export function threeRenderCode({
     camera,
     renderer,
     updateSize,
-    lookAt,
     fitContent
   } = createOrthographicCamera(canvas, window.innerWidth, window.innerHeight);
 
@@ -159,6 +181,7 @@ export function threeRenderCode({
 
   let videoWidth3js = 0; 
   let videoHeight3js = 0; 
+  let currentLayout: LayoutSettings = { mode: 'desktop', connected: false, bottomBarPx: 0 };
 
   let lastSize : {w:number, h:number} = {w:0,h:0};
 
@@ -222,54 +245,55 @@ export function threeRenderCode({
       videoHeight3js = sz.y;
     }
     
-    let leftMargin : number = 0.67; 
-    if( allVideosGroup.children.length <= 1 )
-    {
-      leftMargin = 0.5; 
-    }
-
-    for (let i = 0; i < allVideosGroup.children.length; i++) {
-      const group = allVideosGroup.children[i];
-      group.position.x = ( videoOverlapAmount * i ) + leftMargin;
-      group.position.y = 0.3;
-
-      //leaving the overlapped videos for now
-
-      // const clippingPlanes: Plane[] = [];
-      // // clip the right side if it's not the last video:
-      // if (i !== videoGroups.length - 1) {
-      //   const plane = new Plane(new Vector3(-1, 0, 0), videoOverlapAmount * i + videoOverlapAmount);
-      //   clippingPlanes.push(plane);
-      // }
-
-      // // clip the left side if it's not the first video:
-      // if (i !== 0) {
-      //   const plane = new Plane(new Vector3(1, 0, 0), -videoOverlapAmount * i - 1 + videoOverlapAmount);
-      //   clippingPlanes.push(plane);
-      //   // show where it's clipping for debugging:
-      //   // scene.add(new PlaneHelper(plane, 2, 0xff0000));
-      // }
-
-      // group.children
-      //   .filter(x => x.userData.isVideo)
-      //   .forEach((vid) => {
-      //     (vid as Mesh<any, MeshBasicMaterial>).material.clippingPlanes = clippingPlanes;
-      //   });
-    }
-
-    //make the videos as big as the window allows, between the strips used by HTML controls
-    const videoCount = allVideosGroup.children.length;
-    const firstGroupX = allVideosGroup.children[0].position.x;
-    const lastGroupX = allVideosGroup.children[videoCount - 1].position.x;
-    fitContent(
-      new Vector3( (firstGroupX + lastGroupX) / 2, 0.3, 0 ),
-      (lastGroupX - firstGroupX) + videoWidth3js, //left edge of the first video to right edge of the last
-      videoHeight3js,
-      { top: CONTROLS_RESERVE_TOP_PX, bottom: CONTROLS_RESERVE_BOTTOM_PX },
-      CONTROLS_SIDE_MARGIN_PX
-    );
+    layoutVideos();
   }
 
+
+  //places every video for the current layout mode and fits them to the window
+  function layoutVideos() {
+    const count = allVideosGroup.children.length;
+    if (count === 0) return;
+
+    const vw = videoWidth3js || 1;
+    const vh = videoHeight3js || 0.75;
+    const leftMargin = count <= 1 ? 0.5 : 0.67;
+    const diagonal = currentLayout.mode === 'portrait';
+
+    for (let i = 0; i < count; i++) {
+      const group = allVideosGroup.children[i];
+      if (diagonal) {
+        //me lower and to the right, the other participant up and to the left
+        const slot = count === 2 ? (i === whichIndexIsSelf ? 1 : 0) : i;
+        group.position.x = leftMargin + PORTRAIT_DX * slot;
+        group.position.y = 0.3 - PORTRAIT_DY * slot;
+      } else {
+        group.position.x = ( videoOverlapAmount * i ) + leftMargin;
+        group.position.y = 0.3;
+      }
+    }
+
+    //anything dragged is back at its starting place
+    offsetSelfVideo.set(0, 0, 0);
+    offsetFriendVideo.set(0, 0, 0);
+
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    allVideosGroup.children.forEach((g) => {
+      minX = Math.min(minX, g.position.x - vw / 2);
+      maxX = Math.max(maxX, g.position.x + vw / 2);
+      minY = Math.min(minY, g.position.y - vh / 2);
+      maxY = Math.max(maxY, g.position.y + vh / 2);
+    });
+
+    const { reserve, sideMargin } = reserveFor(currentLayout);
+    fitContent(
+      new Vector3((minX + maxX) / 2, (minY + maxY) / 2, 0),
+      maxX - minX,
+      maxY - minY,
+      reserve,
+      sideMargin
+    );
+    handleResize();
+  }
 
   let lastUpdate = performance.now();
   function animate() {
@@ -483,7 +507,15 @@ export function threeRenderCode({
       myId = personId; 
       const videoGroup = findGroup(personId);
       if (!videoGroup) return;
-      whichIndexIsSelf = allVideosGroup.children.indexOf(videoGroup); 
+      const newIndex = allVideosGroup.children.indexOf(videoGroup);
+      const changed = newIndex !== whichIndexIsSelf;
+      whichIndexIsSelf = newIndex;
+      if (changed && currentLayout.mode === 'portrait') layoutVideos();
+    },
+    setLayout(settings : LayoutSettings) : void
+    {
+      currentLayout = { ...settings };
+      layoutVideos();
     },
     getOffsetVidPosition( isFriend : boolean ) : THREE.Vector3
     {

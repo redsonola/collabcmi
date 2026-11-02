@@ -22,7 +22,7 @@
 
   // import Balls from "./Balls.svelte";
   import { threeRenderCode } from "../draw3js";
-  import type { ThreeRenderer } from "../draw3js";
+  import type { ThreeRenderer, LayoutMode } from "../draw3js";
   import type { Size, PeerMessage, PoseMessage } from "./PoseMessages";
   import { Participant } from "../participant";
   import { findRadiusOfKeypoint } from "../main";
@@ -83,6 +83,23 @@ import { Vector3 } from "three";
   let recentIds : string[] = []; 
   let cursorStyle : string = "default";
   let hasFriend : boolean = false; //set this when there is another participant to true & read value
+
+  //desktop, or a phone held upright (portrait) or sideways (landscape).
+  //add ?layout=portrait, ?layout=landscape or ?layout=desktop to the url to try one on a computer.
+  const layoutOverride = new URL(window.location.href).searchParams.get("layout");
+  function detectLayoutMode() : LayoutMode
+  {
+    if( layoutOverride === "portrait" || layoutOverride === "landscape" || layoutOverride === "desktop" )
+      return layoutOverride;
+    const touchScreen = window.matchMedia?.("(pointer: coarse)").matches;
+    const smallScreen = Math.min(window.innerWidth, window.innerHeight) <= 600;
+    if( !(touchScreen && smallScreen) ) return "desktop";
+    return window.innerHeight > window.innerWidth ? "portrait" : "landscape";
+  }
+  let layoutMode : LayoutMode = detectLayoutMode();
+  let pBottomHeight = 0; //portrait: height of the bottom control bar, so the videos stay above it
+  $: connected = peerIds.length !== 0 || idToCall !== null;
+  function onViewportChange() { layoutMode = detectLayoutMode(); }
 
 
   //is the webcam moving, if so, where?
@@ -193,6 +210,9 @@ import { Vector3 } from "three";
   $: if (canvas) {
     three?.cleanup();
     three = threeRenderCode({ canvas, handleResize });
+  }
+  $: if (three) {
+    three.setLayout({ mode: layoutMode, connected, bottomBarPx: pBottomHeight });
   }
   $: if (three && size) {
     setTimeout(() => {
@@ -494,7 +514,10 @@ import { Vector3 } from "three";
           case "MoveVideo":
           {
             //need to send in screen resolution invariant terms
-            three.moveVideoCamFromThreeJSCoords( message.which, message.x, message.y );
+            //phones arrange the videos their own way, so only the desktop layout follows the other person's drags
+            if( layoutMode === "desktop" )
+              three.moveVideoCamFromThreeJSCoords( message.which, message.x, message.y );
+            break;
           }
 
           default: {
@@ -808,8 +831,17 @@ import { Vector3 } from "three";
     console.log("ended the call"); 
   }
 
-  function mouseClick(event)
+  //dragging a video works with a mouse or a finger (pointer events cover both).
+  //pressing a button, slider or link never starts a drag.
+  function isOnControl(event : PointerEvent) : boolean
   {
+    const target = event.target as HTMLElement | null;
+    return !!target?.closest?.("button, input, a, label, .noDrag");
+  }
+
+  function pointerDown(event : PointerEvent)
+  {
+    if( !three || !event.isPrimary || isOnControl(event) ) return;
     let vidIndex = three.onMouseClick(event.clientX, event.clientY);
     if(vidIndex > -1)
     {
@@ -821,43 +853,56 @@ import { Vector3 } from "three";
     }
   }
 
-  function mouseUp(event)
+  function pointerUp(event : PointerEvent)
   {
     movingWebCamWindow.isMoving = false; 
     document.body.style.cursor = "default"; 
   }
 
-  function mouseMove(event)
+  function pointerMove(event : PointerEvent)
   {
+    if( !three || !event.isPrimary ) return;
     let endPosX = event.clientX;
     let endPosY = event.clientY;
-    let vidIndex = three.onMouseClick(event.clientX, event.clientY);
 
-    if( vidIndex > -1 )
+    if( event.pointerType === "mouse" )
     {
-      document.body.style.cursor = "move";
-    }
-    else if(!movingWebCamWindow.isMoving)
-    {
-      document.body.style.cursor = "default";
+      let vidIndex = three.onMouseClick(event.clientX, event.clientY);
+      if( vidIndex > -1 && !isOnControl(event) )
+      {
+        document.body.style.cursor = "move";
+      }
+      else if(!movingWebCamWindow.isMoving)
+      {
+        document.body.style.cursor = "default";
+      }
     }
 
     if(  movingWebCamWindow.isMoving )
     {
       three.moveVideoCam( movingWebCamWindow.which, endPosX, endPosY ) ;
-      let pos : Vector3 = three.positionFromScreen(endPosX, endPosY); 
-      sendVideoMoveMessage( movingWebCamWindow.which, pos.x, pos.y ) ;
+      if( layoutMode === "desktop" ) //phones move their videos only on their own screen
+      {
+        let pos : Vector3 = three.positionFromScreen(endPosX, endPosY); 
+        sendVideoMoveMessage( movingWebCamWindow.which, pos.x, pos.y ) ;
+      }
     }
 
   }
 
+  //stop the browser scrolling or zooming the page while a finger moves a video
+  onMount(() => {
+    document.documentElement.classList.add("skinhunger-app");
+    return () => document.documentElement.classList.remove("skinhunger-app");
+  });
 
 </script>
 
 <!-- <svelte:window on:resize={handleResize}/> -->
-<svelte:window on:beforeunload={beforeUnload} on:mousedown={mouseClick} on:mouseup={mouseUp} on:mousemove={mouseMove} />
+<svelte:window on:beforeunload={beforeUnload} on:pointerdown={pointerDown} on:pointerup={pointerUp} on:pointercancel={pointerUp} on:pointermove={pointerMove} on:resize={onViewportChange} on:orientationchange={onViewportChange} />
 
 
+{#if layoutMode === 'desktop'}
 <div class="valueSliders">
   <label for="mainVolume">Music Volume:</label>
   <div class={glowClass}>
@@ -868,7 +913,7 @@ import { Vector3 } from "three";
     class="slider1"
     id="mainVolume"
     step="0.01"
-    value="0"
+    value={volSliderReading}
     width="100%"
     on:input={onChangeVolumeSlider} />
   </div>
@@ -914,6 +959,7 @@ import { Vector3 } from "three";
   </button>
 </div>
 {/if}
+{/if}
 {#if showDebugPanel}
   <DebugPanel myId={myId}>
   <!--
@@ -951,9 +997,10 @@ import { Vector3 } from "three";
 <canvas
   class="videoAndPoseCanvas"
   bind:this={canvas}
-  style={`width: 100%; height: 100vh`}
+  style={`width: 100%; height: 100vh; height: 100dvh`}
 />
 
+{#if layoutMode === 'desktop'}
 <div class="callPanel">
   {#if peerIds.length === 0 && idToCall === null}
     <Call myId={myId} {turnUpVolume} {loadMusic} {mainVolume} on:call-link-changed={(e) => {
@@ -979,6 +1026,77 @@ import { Vector3 } from "three";
 <div class="linksPanel">
   <a href="/about" target="_blank">About Skin Hunger</a> | <a href="/instructions" target="_blank">Instructions</a>
 </div>
+{/if}
+
+{#if layoutMode !== 'desktop'}
+<div class="phoneUI {layoutMode}">
+  <div class="pBottom noDrag" bind:clientHeight={pBottomHeight}>
+
+    <div class="pMusic">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#a89d9d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg>
+      <div class="pSliderBox {glowClass}">
+        <input
+          type="range"
+          min="0"
+          max="0.75"
+          class="pSlider"
+          id="mainVolume"
+          aria-label="Music volume"
+          step="0.01"
+          value={volSliderReading}
+          on:input={onChangeVolumeSlider} />
+      </div>
+    </div>
+    <div class="pMeter" aria-hidden="true"><i style={`width:${volumeMeterReading * 100}%`}></i></div>
+    {#if volSliderReading <= 0 }
+      <div class="pHint">Turn up the volume to hear music.</div>
+    {/if}
+
+    {#if !connected}
+      <div class="pInvite">
+        <h2 class="pTitle">Invite someone to move with you</h2>
+        <Call myId={myId} compact={true} {turnUpVolume} {loadMusic} {mainVolume} on:call-link-changed={(e) => {
+          window.postMessage({ name: "call-call-link-changed", ...e.detail });
+        }} />
+        <button type="button" class="pPrimary" on:click={connectToRandomPartner}>Connect to a random partner</button>
+        {#if chatstatusMessage}
+          <div class="pStatus">{chatstatusMessage}</div>
+        {/if}
+      </div>
+    {:else if !myId}
+      <div class="pInvite"><div class="pStatus">Preparing to answer...</div></div>
+    {:else}
+      <div class="pCtrls">
+        <div class="ctl partner">
+          <button type="button" class="round" class:off={theirMuteButtonText === unmuteURL} on:click={muteThem}
+            aria-label={theirMuteButtonText === unmuteURL ? "Unmute the other participant" : "Mute the other participant"}>
+            <img src={theirMuteButtonText} alt="" />
+          </button>
+          <span>{theirMuteButtonText === unmuteURL ? "Unmute partner" : "Mute partner"}</span>
+        </div>
+        <div class="ctl mic">
+          <button type="button" class="round big" class:off={micMuted} on:click={muteSelf}
+            aria-label={micMuted ? "Unmute microphone" : "Mute microphone"}>
+            <img src={myMuteButtonText} alt="" />
+          </button>
+          <span>{micMuted ? "Mic is off" : "Mic is on"}</span>
+        </div>
+        <div class="ctl end">
+          <button type="button" class="round endCall" on:click={endCall} aria-label="End video call">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#e8d9de" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14.5c5-4 13-4 18 0l-2.5 3-3.5-1.5v-2.5c-2-.7-4-.7-6 0V16L5.5 17.5 3 14.5z"/></svg>
+          </button>
+          <span>End call</span>
+        </div>
+      </div>
+    {/if}
+
+    <div class="pLinks">
+      <a href="/about" target="_blank">About Skin Hunger</a>
+      <a href="/instructions" target="_blank">Instructions</a>
+    </div>
+  </div>
+</div>
+{/if}
 
 {#if loading}
   <Loading {progress} />
@@ -986,6 +1104,143 @@ import { Vector3 } from "three";
 
 <!-- <Balls /> -->
 <style>
+  /* a phone: nothing scrolls or zooms, so a finger can move the videos */
+  :global(html.skinhunger-app),
+  :global(html.skinhunger-app body) {
+    overflow: hidden;
+    touch-action: none;
+    overscroll-behavior: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  :global(html.skinhunger-app input[type="text"]) {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  .phoneUI {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none; /* empty areas fall through to the videos */
+    color: #a89d9d;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .phoneUI :global(button), .phoneUI :global(input), .phoneUI :global(a), .phoneUI .pHint, .phoneUI .pStatus, .phoneUI .pTitle {
+    pointer-events: auto;
+  }
+
+  .pMusic {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 44px;
+  }
+  .pSliderBox {
+    flex: 1;
+    min-width: 0;
+    border-radius: 100px;
+  }
+  .pSlider {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    width: 100%;
+    height: 44px;
+    margin: 0;
+    background: transparent;
+  }
+  .pSlider::-webkit-slider-runnable-track { height: 10px; background: #363535; border-radius: 5px; }
+  .pSlider::-moz-range-track { height: 10px; background: #363535; border-radius: 5px; }
+  .pSlider::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; margin-top: -9px; border-radius: 50%; background: #0a5ccc; border: 0; }
+  .pSlider::-moz-range-thumb { width: 28px; height: 28px; border-radius: 50%; background: #0a5ccc; border: 0; }
+
+  .pMeter { height: 6px; margin: 0 0 0 38px; border-radius: 3px; background: #444; }
+  .pMeter i { display: block; height: 6px; border-radius: 3px; background: #87CEFA; }
+  .pHint, .pStatus { font-size: 14px; line-height: 20px; }
+  .pTitle { margin: 0; font-size: 19px; line-height: 24px; font-weight: 600; color: #c8bfbf; }
+  .pInvite { display: flex; flex-direction: column; gap: 12px; }
+  .pPrimary {
+    height: 48px;
+    border: 0;
+    border-radius: 24px;
+    background: #57035f;
+    color: #efe6ef;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: inherit;
+  }
+  .pLinks { display: flex; justify-content: center; gap: 28px; font-size: 14px; }
+  .pLinks a { display: flex; align-items: center; height: 44px; color: #a89d9d; text-decoration: none; }
+
+  .ctl { display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 13px; line-height: 16px; color: #c8bfbf; text-align: center; }
+  .round {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 0;
+    padding: 0;
+    background: #37233b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .round.big { width: 64px; height: 64px; }
+  .round.off { background: #57035f; }
+  .round.endCall { background: #6a1f3a; }
+  .round img { width: 30px; height: 30px; pointer-events: none; }
+  .round.big img { width: 34px; height: 34px; }
+
+  /* phone held upright: a bar along the bottom, the videos overlap on a diagonal above it */
+  .portrait .pBottom {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    box-sizing: border-box;
+    padding: 8px 16px 4px;
+    max-height: 70dvh;
+    overflow-y: auto;
+    border-radius: 24px 24px 0 0;
+    background: rgba(18, 10, 22, 0.92);
+    border-top: 1px solid #3a3340;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    pointer-events: auto;
+  }
+  .portrait .pCtrls { display: flex; justify-content: space-around; align-items: flex-start; padding-top: 4px; }
+  .portrait .ctl { width: 96px; }
+  .portrait .round, .portrait .round.big { width: 60px; height: 60px; }
+  .portrait .round.big img { width: 30px; height: 30px; }
+
+  /* phone held sideways: music top left, mute buttons in a left rail, end call in a right rail */
+  .landscape .pBottom { display: contents; }
+  .landscape .pMusic { position: absolute; left: 24px; top: 6px; width: min(420px, 50vw); }
+  .landscape .pMeter { display: none; }
+  .landscape .pHint { position: absolute; left: min(456px, calc(50vw + 36px)); top: 15px; width: 280px; }
+  .landscape .pCtrls { display: contents; }
+  .landscape .ctl { position: absolute; width: 76px; font-size: 12px; line-height: 15px; }
+  .landscape .ctl.partner { left: 8px; top: 70px; }
+  .landscape .ctl.mic { left: 8px; top: 160px; }
+  .landscape .ctl.end { right: 8px; top: 70px; }
+  .landscape .round { width: 52px; height: 52px; }
+  .landscape .round.big { width: 52px; height: 52px; }
+  .landscape .round.big img { width: 30px; height: 30px; }
+  .landscape .pLinks { position: absolute; left: 0; right: 0; bottom: 0; height: 34px; align-items: center; }
+  .landscape .pLinks a { height: 34px; }
+  .landscape .pInvite {
+    position: absolute;
+    right: 12px;
+    top: 58px;
+    width: 300px;
+    max-height: calc(100dvh - 100px);
+    overflow-y: auto;
+    gap: 10px;
+  }
+  .landscape .pTitle { font-size: 17px; line-height: 22px; }
+
   :global(body) {
     background-color: #050505;
   }

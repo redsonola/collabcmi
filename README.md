@@ -110,6 +110,27 @@ reserved strips, so they never sit under the HTML controls:
 at the top or bottom, raise those numbers. The fit is recomputed when a video is
 added, not on window resize.
 
+### Phones
+
+`App2.svelte` picks one of three layouts (`layoutMode`) and re-picks it on
+resize or rotation: `desktop`, `portrait` (a phone held upright) or `landscape`
+(a phone held sideways). A phone is a touch screen whose short side is 600px or
+less. Add `?layout=portrait`, `?layout=landscape` or `?layout=desktop` to the
+URL to try one on a computer.
+
+- **Portrait:** the two videos overlap on a diagonal, and the music slider, mic,
+  mute-partner and end-call buttons sit in a bottom bar. While waiting alone the
+  bar becomes an invite sheet (copy link, random partner).
+- **Landscape:** the videos overlap side by side as on desktop, with the music
+  slider on top, mute buttons in a left rail, end call in a right rail, and the
+  invite panel on the right while waiting alone.
+- **Dragging:** videos move with a mouse or a finger (pointer events). On a
+  phone the page never scrolls or zooms. Phone drags stay on that phone, and
+  phones ignore the other person's `MoveVideo` messages.
+- The layouts are fitted in `src/draw3js.ts` (`setLayout`, `layoutVideos`,
+  `reserveFor`). If you change the height of the phone controls, update the
+  reserved pixels there.
+
 ### Dependency notes
 
 - `three` is pinned to 0.120.1. The creature code in `src/PByte3/` and
