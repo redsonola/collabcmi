@@ -88,7 +88,9 @@ export function mediapipeToPosenetKeypoints (result: pose.PoseResult, size: Vide
 
 export function initPosenet(
   // _vid?: CameraVideo,
-  config = defaultConfig
+  config = defaultConfig,
+  // called with the fraction (0 to 1) of the mediapipe files downloaded so far
+  onLoadProgress?: (fraction: number) => void
 ): PosenetSetup<pose.PoseOptions> {
   let running = false;
   const timestamp = Date.now();
@@ -98,7 +100,9 @@ export function initPosenet(
   let vid: CameraVideo | undefined;
 
   const net = pose.getPose();
-  const inited = net.initialize().then(() => {
+  const inited = pose.preloadPoseAssets(config.modelComplexity, f => onLoadProgress?.(f))
+    .then(() => net.initialize())
+    .then(() => {
     running = true;
     nextPose();
     net.setOptions(config);

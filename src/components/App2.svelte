@@ -6,7 +6,6 @@
   import DebugPanel from "./DebugPanel.svelte";
   import PrintPose from "./PrintPose.svelte";
   import Loading from "./Loading.svelte";
-  // import { interceptFileRequest } from "../hackXhrInterceptor";
   import '@tensorflow/tfjs-backend-webgl';
   // import { initPosenet } from "../threejs/posenetcopy";
   import { initPosenet } from "../threejs/mediapipePose";
@@ -134,26 +133,10 @@ import { Vector3 } from "three";
   export let size: { width: number; height: number };
 
   let loading = true;
-  let progressNumber = 0;
+  // fraction (0 to 1) of the pose model files downloaded, reported by initPosenet
+  let downloadFraction = 0;
   let progress = "0%";
-  $: progress = Math.min(Math.ceil(progressNumber), 100) + "%";
-
-  const loadInterval = setInterval(() => {
-    if (!loading)
-      clearInterval(loadInterval);
-    else
-      progressNumber = progressNumber + Math.random() * 2;
-  }, 5);
-
-  // interceptFileRequest(
-  //   "/@mediapipe/pose/pose_solution_packed_assets.data",
-  //   (req: XMLHttpRequest) => {
-  //     req.addEventListener("progress", (e) => {
-  //       progress = Math.round((e.loaded / (e.total || 17002032)) * 100) + "%";
-  //       if (progress === "100%") progress = "starting";
-  //     });
-  //   }
-  // );
+  $: progress = downloadFraction >= 1 ? "starting" : Math.floor(downloadFraction * 100) + "%";
 
   let canvas;
 
@@ -406,7 +389,7 @@ import { Vector3 } from "three";
 
   async function init() {
     let stopped = false;
-    const posenet: PosenetSetup<any> = initPosenet();
+    const posenet: PosenetSetup<any> = initPosenet(undefined, (fraction) => (downloadFraction = fraction));
 
     peer.on('open', setMyId);
     await waitFor(() => myId || null);

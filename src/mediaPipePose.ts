@@ -113,6 +113,72 @@ const defaultGetPoseParams: PoseParams = {
   // locateFile: (file) => `/mediapipe/pose/${file}`,
 }
 
+/**
+ * Files @mediapipe/pose downloads before it can produce its first result, with their
+ * decoded sizes in bytes (from node_modules/@mediapipe/pose; keep in sync with the
+ * version pinned in locateFile above). The model is chosen by modelComplexity, but initPosenet
+ * starts on 'lite' and then switches to the configured model, so both get fetched.
+ */
+const poseDownloadSizes: Record<string, number> = {
+  'pose_solution_packed_assets_loader.js': 7855,
+  'pose_solution_packed_assets.data': 7565664,
+  'pose_solution_simd_wasm_bin.js': 326273,
+  'pose_solution_simd_wasm_bin.wasm': 6849863,
+  'pose_web.binarypb': 615,
+  'pose_landmark_lite.tflite': 2955440,
+  'pose_landmark_full.tflite': 6418272,
+  'pose_landmark_heavy.tflite': 27308976,
+};
+
+const poseModelFiles = ['pose_landmark_lite.tflite', 'pose_landmark_full.tflite', 'pose_landmark_heavy.tflite'];
+
+/**
+ * Downloads the mediapipe files ahead of time so we can report real progress (0 to 1).
+ * They're served with immutable cache headers, so when mediapipe asks for the same URLs
+ * right afterwards, they come from the browser cache. Never rejects: if a download fails,
+ * mediapipe will try (and report) on its own.
+ */
+export async function preloadPoseAssets(
+  modelComplexity: number,
+  onProgress: (fraction: number) => void,
+  locateFile = defaultGetPoseParams.locateFile,
+) {
+  const wantedModel = poseModelFiles[modelComplexity] ?? poseModelFiles[1];
+  const files = Object.keys(poseDownloadSizes).filter(
+    f => !poseModelFiles.includes(f) || f === poseModelFiles[0] || f === wantedModel
+  );
+  const total = files.reduce((sum, f) => sum + poseDownloadSizes[f], 0);
+  const loaded: Record<string, number> = {};
+  const report = () => {
+    const done = files.reduce((sum, f) => sum + Math.min(loaded[f] || 0, poseDownloadSizes[f]), 0);
+    onProgress(Math.min(done / total, 1));
+  };
+
+  onProgress(0);
+  await Promise.all(files.map(async (file) => {
+    try {
+      const response = await fetch(locateFile(file));
+      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+      if (response.body) {
+        const reader = response.body.getReader();
+        loaded[file] = 0;
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          loaded[file] += value.byteLength;
+          report();
+        }
+      } else {
+        await response.arrayBuffer();
+      }
+    } catch (e) {
+      console.warn(`Couldn't preload ${file}; mediapipe will fetch it itself.`, e);
+    }
+    loaded[file] = poseDownloadSizes[file];
+    report();
+  }));
+}
+
 export const getPose = (p?: Partial<PoseParams>) => {
   const params = { ...defaultGetPoseParams, ...p };
   return new (window as any).Pose(params) as PoseClass;
