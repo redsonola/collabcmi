@@ -392,7 +392,15 @@ import { Vector3 } from "three";
     const posenet: PosenetSetup<any> = initPosenet(undefined, (fraction) => (downloadFraction = fraction));
 
     peer.on('open', setMyId);
-    await waitFor(() => myId || null);
+
+    // The peer server can take 30+ seconds to answer when it's been asleep, so don't make
+    // the camera, pose model, audio or controls wait for it. Only the things that need my
+    // peer id wait (see waitFor below).
+    // Subscribing now starts the webcam (and its permission prompt) right away; the
+    // later subscription below just gets the same video.
+    const startCameraEarly = webcamVideo.subscribe((video) => {
+      if (video) posenet.updateVideo(video);
+    });
 
     mainVolume = new MainVolume((val) => {
       volumeMeterReading = val;
@@ -589,6 +597,8 @@ import { Vector3 } from "three";
       loading = false;
       fpsTracker.refreshLoop();
 
+      if (!peer.id) return; //still waiting for the peer server; nothing to share yet
+
       const size = posenet.getSize();
       participant.setSize(size.width, size.height);
       participant.addKeypoint(pose.keypoints);
@@ -601,13 +611,13 @@ import { Vector3 } from "three";
 
     });
 
+    await waitFor(() => myId || null); //everything below uses my peer id
+
     const myVideoUnsubscribe = webcamVideo.subscribe(async (video) => {
       if (!video) return;
 
       localWebcamStream = video.stream;
       applyLocalMicMute(micMuted);
-
-      posenet.updateVideo(video);
 
       three.dispatch({ type: "AddVideo", personId: peer.id, video, recentIds });
       three.setWhichIsSelf(participant.getParticipantID()); 
@@ -719,6 +729,7 @@ import { Vector3 } from "three";
       three.cleanup();
       posenet.cleanup()
       callVideoUnsubscribe();
+      startCameraEarly();
       myVideoUnsubscribe();
       peer.disconnect();
     };
@@ -735,7 +746,7 @@ import { Vector3 } from "three";
   export function onChangeVolumeSlider(e) {
     let vol = parseFloat(e.currentTarget.value);
     volSliderReading = vol;
-    mainVolume.set(parseFloat(e.currentTarget.value));
+    mainVolume?.set(parseFloat(e.currentTarget.value));
     if( vol > 0 )
     {
       glowClass = "noGlow";
