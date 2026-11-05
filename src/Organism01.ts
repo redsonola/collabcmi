@@ -330,9 +330,120 @@ function updateNodes() {
     }
 }
 
+//Fully transparent objects draw nothing but still cost a draw call each (thousands of them while the
+//creature is still growing in), so skip them. Only objects hidden here are shown again here.
+const hiddenWhileTransparent = new Set<THREE.Object3D>();
+function skipInvisibleObjects() {
+    hiddenWhileTransparent.forEach((obj) => {
+        const mat = (obj as THREE.Mesh).material as THREE.Material;
+        if (!(mat.transparent && mat.opacity === 0)) {
+            obj.visible = true;
+            hiddenWhileTransparent.delete(obj);
+        }
+    });
+    scene.traverse((obj) => {
+        const mat = (obj as THREE.Mesh).material as THREE.Material | undefined;
+        if (mat && obj.visible && mat.transparent && mat.opacity === 0) {
+            obj.visible = false;
+            hiddenWhileTransparent.add(obj);
+        }
+    });
+}
+
+//The cilia are thousands of tiny identical dots, each its own draw call. Draw each set of identical
+//dots as one instanced mesh instead; the dots stay in the scene (hidden) so the physics is untouched.
+type DotSet = { key: string, dots: THREE.Mesh[], sizes: number[], instanced: THREE.InstancedMesh };
+let dotSets: DotSet[] = [];
+const instancedDots = new Set<THREE.Object3D>();
+
+//what makes a dot look different from another: its shape, color and sidedness (the size is applied per instance)
+function dotKey(dot: THREE.Mesh): string | null {
+    const mat = dot.material as THREE.MeshBasicMaterial;
+    const geom = dot.geometry as THREE.CircleBufferGeometry;
+    if (geom.type !== 'CircleBufferGeometry' || mat.type !== 'MeshBasicMaterial' || mat.transparent || mat.opacity !== 1) return null;
+    return geom.parameters.segments + '|' + mat.color.getHex() + '|' + mat.side;
+}
+
+//radius of a dot, read from its first rim vertex (setNodesScale rescales the vertices)
+function dotSize(dot: THREE.Mesh): number {
+    return (dot.geometry as THREE.BufferGeometry).attributes.position.getX(1);
+}
+
+function releaseDots(set: DotSet) {
+    scene.remove(set.instanced);
+    (set.instanced.material as THREE.Material).dispose();
+    set.dots.forEach((dot) => { dot.visible = true; instancedDots.delete(dot); });
+}
+
+let dotFrame = 0;
+function instanceDots() {
+    // dots that were faded or hidden by the sketch go back to being drawn on their own
+    dotSets = dotSets.filter((set) => {
+        const stillOpaque = set.dots.every((dot) => {
+            const mat = dot.material as THREE.Material;
+            return !mat.transparent && mat.opacity === 1;
+        });
+        if (stillOpaque) return true;
+        releaseDots(set);
+        return false;
+    });
+
+    // new dots appear only as the creature grows, so look for them (and look changes) now and then
+    if (dotFrame++ % 10 !== 0) return;
+    dotSets = dotSets.filter((set) => {
+        if (set.dots.every((dot, i) => dotKey(dot) === set.key && dotSize(dot) === set.sizes[i])) return true;
+        releaseDots(set);
+        return false;
+    });
+
+    const candidates = new Map<string, THREE.Mesh[]>();
+    scene.traverse((obj) => {
+        if (!(obj as THREE.Mesh).isMesh || (obj as THREE.InstancedMesh).isInstancedMesh || !obj.visible || instancedDots.has(obj)) return;
+        const key = dotKey(obj as THREE.Mesh);
+        if (key === null) return;
+        const list = candidates.get(key);
+        if (list) list.push(obj as THREE.Mesh); else candidates.set(key, [obj as THREE.Mesh]);
+    });
+
+    candidates.forEach((dots, key) => {
+        if (dots.length < 20) return; // only worth it for big crowds
+        // fold any existing set of the same look into the new one
+        const existing = dotSets.find((set) => set.key === key);
+        if (existing) {
+            dots = existing.dots.concat(dots);
+            dotSets = dotSets.filter((set) => set !== existing);
+            scene.remove(existing.instanced);
+            (existing.instanced.material as THREE.Material).dispose();
+        }
+        const sizes = dots.map(dotSize);
+        const material = (dots[0].material as THREE.MeshBasicMaterial).clone();
+        const instanced = new THREE.InstancedMesh(dots[0].geometry, material, dots.length);
+        instanced.frustumCulled = false;
+        instanced.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        instanced.onBeforeRender = () => {
+            // runs after three has updated every world matrix for this frame
+            const array = instanced.instanceMatrix.array as Float32Array;
+            const base = sizes[0];
+            for (let i = 0; i < dots.length; i++) {
+                const e = dots[i].matrixWorld.elements;
+                const k = sizes[i] / base; // dots are the same shape at different radii
+                const o = i * 16;
+                for (let m = 0; m < 12; m++) array[o + m] = e[m] * k;
+                for (let m = 12; m < 16; m++) array[o + m] = e[m];
+            }
+            instanced.instanceMatrix.needsUpdate = true;
+        };
+        scene.add(instanced);
+        dots.forEach((dot) => { dot.visible = false; instancedDots.add(dot); });
+        dotSets.push({ key, dots, sizes, instanced });
+    });
+}
+
 function render() {
     renderer.clear();
     scene.background = null; 
+    skipInvisibleObjects();
+    instanceDots();
     renderer.render(scene, camera);
     renderer.clearDepth();
 }
