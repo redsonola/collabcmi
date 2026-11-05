@@ -462,13 +462,16 @@ function onWindowResize() {
 
 //note call these functions in the main -- App2.svelte
 // ADD TOUCH EVENTS
+//Don't preventDefault on touchstart: on a phone that cancels the tap, so no button, link or
+//slider would ever respond. The page can't scroll or zoom anyway (touch-action: none, see App2.svelte).
+let touchStartedOnControl = false;
 window.addEventListener('touchstart', (event) => {
-    // prevent the window from scrolling
-    event.preventDefault();
+    touchStartedOnControl = !!(event.target as HTMLElement | null)?.closest?.("button, input, a, label, .noDrag");
     setPickPosition(event.touches[0]);
-}, { passive: false });
+}, { passive: true });
 
 window.addEventListener('touchmove', (event) => {
+    if (touchStartedOnControl) return; //using a control, not touching the creature
     setPickPosition(event.touches[0]);
 
     globalCounter++;

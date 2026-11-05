@@ -114,6 +114,10 @@ export async function makeVideoElement(source?: string | MediaStream): Promise<C
 
 export interface WritableVideoStore {
   setSource: (source?: string | MediaStream) => void;
+  // set when the camera/mic couldn't be opened (for example the person said no); null otherwise
+  error: Readable<string | null>;
+  // ask for the camera again, after an error
+  retry: () => void;
 }
 
 // source: 'webcam' or undefined opens the local webcam; a url or MediaStream plays that;
@@ -123,11 +127,12 @@ export function videoSubscription(source?: string | MediaStream | null): Readabl
   let lastVideo: Promise<CameraVideo | undefined> | undefined;
   let lastSource: string | MediaStream | null | undefined = source;
 
+  const error = writable<string | null>(null);
+
   const store = writable<CameraVideo | null>(null, (set) => {
     // when going from 0 to 1 subscribers, create the video:
     if (source !== null) {
-      lastVideo = makeVideoElement(source);
-      lastVideo.then(val => set(val || null));
+      startVideo(source, set);
     }
 
     return () => {
@@ -136,8 +141,19 @@ export function videoSubscription(source?: string | MediaStream | null): Readabl
     }
   });
 
+  function startVideo(src: string | MediaStream | undefined, set: (v: CameraVideo | null) => void) {
+    lastVideo = makeVideoElement(src);
+    lastVideo
+      .then(val => { error.set(null); set(val || null); })
+      .catch((e) => error.set(e?.name || String(e)));
+  }
+
   return {
     subscribe: store.subscribe,
+    error: { subscribe: error.subscribe },
+    retry() {
+      if (source !== null) startVideo(source, (v) => store.set(v));
+    },
     setSource(source?: string | MediaStream) {
       if (lastSource !== source) {
         if (lastVideo) {

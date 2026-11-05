@@ -52,6 +52,7 @@ import { Vector3 } from "three";
   export let showDebugPanel = router.query.debug === "true";
 
   const webcamVideo = videoSubscription("webcam");
+  const webcamError = webcamVideo.error;
   const theirVideo = videoSubscription(null); //their stream is set when they call; don't open a second webcam
   let theirVideoUnsubscribe;
   // const videoSources = ["webcam", "/spacebtwTest.mp4", "/synchTestVideo.mp4"];
@@ -98,6 +99,22 @@ import { Vector3 } from "three";
   let layoutMode : LayoutMode = detectLayoutMode();
   let pBottomHeight = 0; //portrait: height of the bottom control bar, so the videos stay above it
   $: connected = peerIds.length !== 0 || idToCall !== null;
+
+  // On phones the camera and audio start from a tap on the Start button. Browsers there
+  // drop a permission prompt that appears on its own while the page is loading, and iOS
+  // won't start audio without a tap. Desktop starts right away, as it always did.
+  let cameraAllowed = false;
+  let startTapped = false;
+  $: needsStartTap = layoutMode !== "desktop" && !cameraAllowed;
+  function startFromTap() {
+    startTapped = true;
+    cameraAllowed = true;
+    Tone.start(); //must be called from the tap itself
+  }
+  function retryCamera() {
+    webcamVideo.retry();
+    Tone.start();
+  }
   function onViewportChange() { layoutMode = detectLayoutMode(); }
 
 
@@ -398,6 +415,8 @@ import { Vector3 } from "three";
     // peer id wait (see waitFor below).
     // Subscribing now starts the webcam (and its permission prompt) right away; the
     // later subscription below just gets the same video.
+    if (layoutMode === "desktop") cameraAllowed = true;
+    await waitFor(() => (cameraAllowed ? true : null));
     const startCameraEarly = webcamVideo.subscribe((video) => {
       if (video) posenet.updateVideo(video);
     });
@@ -1092,6 +1111,20 @@ import { Vector3 } from "three";
 </div>
 {/if}
 
+{#if layoutMode !== 'desktop' && (needsStartTap || $webcamError)}
+  <div class="pStart noDrag" role="dialog" aria-label="Start Skin Hunger">
+    {#if $webcamError}
+      <h2 class="pTitle">Camera or microphone blocked</h2>
+      <p>Skin Hunger needs both to work. Allow them for this site in your browser's settings, then try again.</p>
+      <button type="button" class="pPrimary" on:click={retryCamera}>Try again</button>
+    {:else}
+      <h2 class="pTitle">Ready to move together?</h2>
+      <p>Skin Hunger uses your camera to follow your movement and your microphone so you can talk with your partner.</p>
+      <button type="button" class="pPrimary" on:click={startFromTap}>Start</button>
+    {/if}
+  </div>
+{/if}
+
 {#if loading}
   <Loading {progress} />
 {/if}
@@ -1164,6 +1197,30 @@ import { Vector3 } from "three";
     font-size: 16px;
     font-weight: 600;
     font-family: inherit;
+  }
+  .pStart {
+    position: fixed;
+    z-index: 30;
+    left: 50%;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    box-sizing: border-box;
+    width: min(420px, calc(100vw - 32px));
+    padding: 18px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border-radius: 24px;
+    background: #1a1020;
+    border: 1px solid #3a3340;
+    color: #a89d9d;
+    font-size: 15px;
+    line-height: 21px;
+  }
+  .pStart p { margin: 0; }
+  .pStart .pPrimary { height: 52px; font-size: 17px; }
+  @media (orientation: landscape) {
+    .pStart { left: auto; right: 12px; transform: none; bottom: 50%; margin-bottom: -110px; width: 340px; }
   }
   .pLinks { display: flex; justify-content: center; gap: 28px; font-size: 14px; }
   .pLinks a { display: flex; align-items: center; height: 44px; color: #a89d9d; text-decoration: none; }
